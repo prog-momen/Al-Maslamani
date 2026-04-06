@@ -1,5 +1,6 @@
 import { PropsWithChildren } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, ViewStyle } from 'react-native';
+import { ScrollView, ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenWrapperProps = PropsWithChildren<{
   scroll?: boolean;
@@ -9,27 +10,19 @@ type ScreenWrapperProps = PropsWithChildren<{
 export function ScreenWrapper({ children, scroll = false, style }: ScreenWrapperProps) {
   if (scroll) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={[styles.content, style]}>{children}</ScrollView>
+      <SafeAreaView className="flex-1 bg-[#F7F1E8]">
+        <ScrollView contentContainerStyle={[{ flexGrow: 1, padding: 20, gap: 16 }, style]}>
+          {children}
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={[styles.content, style]}>{children}</ScrollView>
+    <SafeAreaView className="flex-1 bg-[#F7F1E8]">
+      <ScrollView contentContainerStyle={[{ flexGrow: 1, padding: 20, gap: 16 }, style]}>
+        {children}
+      </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    padding: 16,
-    gap: 12,
-    flexGrow: 1,
-  },
-});

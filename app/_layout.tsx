@@ -17,16 +17,8 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="product/[id]" />
-            <Stack.Screen name="checkout/index" />
-            <Stack.Screen name="checkout/address" />
-            <Stack.Screen name="orders/confirmation" />
-            <Stack.Screen name="orders/tracking" />
-            <Stack.Screen name="orders/history" />
-            <Stack.Screen name="static/about" />
-            <Stack.Screen name="static/contact" />
+            <Stack.Screen name="home" />
+            <Stack.Screen name="login" />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>
