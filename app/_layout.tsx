@@ -3,22 +3,34 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { AuthProvider } from '@/src/shared/contexts/AuthContext';
+import { useColorScheme } from '@/src/shared/hooks/use-color-scheme';
+import { queryClient } from '@/src/shared/services/query-client';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="product/[id]" />
+            <Stack.Screen name="checkout/index" />
+            <Stack.Screen name="checkout/address" />
+            <Stack.Screen name="orders/confirmation" />
+            <Stack.Screen name="orders/tracking" />
+            <Stack.Screen name="orders/history" />
+            <Stack.Screen name="static/about" />
+            <Stack.Screen name="static/contact" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
