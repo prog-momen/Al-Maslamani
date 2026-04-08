@@ -1,9 +1,9 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 
 import { AuthInput } from '../components/AuthInput';
 import { useLogin } from '../hooks/useLogin';
@@ -30,16 +30,13 @@ export function LoginScreen() {
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                     <View className="flex-1 items-center px-6 pt-16 pb-8">
 
-                        {/* Logo Placeholder */}
-                        <View className="w-20 h-20 bg-white rounded-full items-center justify-center shadow-sm mb-6">
-                            <View className="w-14 h-14 rounded-full bg-brand-primary items-center justify-center">
-                                <Svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <Path d="M12 22S7 16 7 10a5 5 0 0 1 10 0c0 6-5 12-5 12z" />
-                                    <Path d="M12 22V12" />
-                                    <Path d="M12 12A3 3 0 0 0 9 9" />
-                                    <Path d="M12 12A3 3 0 0 1 15 9" />
-                                </Svg>
-                            </View>
+                        {/* Logo */}
+                        <View className="w-[100px] h-[100px] mb-4 rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">
+                            <Image
+                                source={require('@/assets/images/logo2.png')}
+                                style={{ width: 100, height: 100 }}
+                                contentFit="cover"
+                            />
                         </View>
 
                         {/* Title */}

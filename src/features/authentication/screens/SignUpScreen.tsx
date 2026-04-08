@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -36,11 +37,15 @@ export function SignUpScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                     <View className="flex-1 px-6 pt-8 pb-8">
-
-                        <Text className="text-center font-tajawal-bold text-[22px] text-brand-primary mb-8" style={{ textShadowColor: 'rgba(0, 0, 0, 0.4)', textShadowOffset: { width: 0, height: 0.5 }, textShadowRadius: 1 }}>
-                            سعد المسلماني
-                        </Text>
-
+                        <View className="items-center mb-8 mt-2">
+                            <View className="w-[100px] h-[100px] rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">
+                                <Image
+                                    source={require('@/assets/images/logo2.png')}
+                                    style={{ width: 100, height: 100 }}
+                                    contentFit="cover"
+                                />
+                            </View>
+                        </View>
                         <View className="items-end mb-8">
                             <Text className="font-tajawal-bold text-[28px] text-brand-title mb-2">إنشاء حساب</Text>
                             <Text className="font-tajawal-medium text-[16px] text-brand-text">أدخل بياناتك للانضمام إلى عالمنا.</Text>
