@@ -1,15 +1,36 @@
+import { Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, useFonts } from '@expo-google-fonts/tajawal';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
+import '../global.css';
 
 import { AuthProvider } from '@/src/shared/contexts/AuthContext';
 import { useColorScheme } from '@/src/shared/hooks/use-color-scheme';
 import { queryClient } from '@/src/shared/services/query-client';
 import { QueryClientProvider } from '@tanstack/react-query';
 
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    Tajawal_400Regular,
+    Tajawal_500Medium,
+    Tajawal_700Bold,
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -17,16 +38,8 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="product/[id]" />
-            <Stack.Screen name="checkout/index" />
-            <Stack.Screen name="checkout/address" />
-            <Stack.Screen name="orders/confirmation" />
-            <Stack.Screen name="orders/tracking" />
-            <Stack.Screen name="orders/history" />
-            <Stack.Screen name="static/about" />
-            <Stack.Screen name="static/contact" />
+            <Stack.Screen name="home" />
+            <Stack.Screen name="login" />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

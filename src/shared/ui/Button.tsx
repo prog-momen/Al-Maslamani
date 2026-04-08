@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 type ButtonProps = {
   label: string;
@@ -11,29 +11,10 @@ export function Button({ label, onPress, disabled = false }: ButtonProps) {
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed, disabled && styles.disabled]}>
-      <Text style={styles.label}>{label}</Text>
+      className={`rounded-full px-5 py-4 active:opacity-90 ${
+        disabled ? 'bg-[#8EC6A8]' : 'bg-[#1F8A5B]'
+      }`}>
+      <Text className="text-center text-base font-semibold text-white">{label}</Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  pressed: {
-    opacity: 0.9,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  label: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});

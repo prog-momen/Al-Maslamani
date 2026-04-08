@@ -7,12 +7,14 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   isInitializing: boolean;
+  isAuthenticated: boolean;
 };
 
 export const AuthContext = createContext<AuthContextValue>({
   user: null,
   session: null,
   isInitializing: true,
+  isAuthenticated: false,
 });
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -41,7 +43,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ user: session?.user ?? null, session, isInitializing }),
+    () => ({
+      user: session?.user ?? null,
+      session,
+      isInitializing,
+      isAuthenticated: Boolean(session?.user),
+    }),
     [session, isInitializing]
   );
 
