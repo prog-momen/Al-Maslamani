@@ -5,10 +5,18 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          green: '#1F8A5B',
-          greenSoft: '#DDEFD9',
-          pink: '#F9D9E3',
+          primary: '#67BB28',
+          surface: '#F2EFE9',
+          text: '#333333',
+          title: '#000000',
+          subtitle: '#1B1C1C',
         },
+      },
+      fontFamily: {
+        'tajawal-regular': ['Tajawal_400Regular'],
+        'tajawal-medium': ['Tajawal_500Medium'],
+        'tajawal-bold': ['Tajawal_700Bold'],
+        'tajawal': ['Tajawal_400Regular'],
       },
     },
   },
