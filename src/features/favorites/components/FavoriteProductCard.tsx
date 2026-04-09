@@ -21,9 +21,17 @@ interface FavoriteProductCardProps {
   onAddToCart?: (id: string) => void;
 }
 
+import { useRouter } from 'expo-router';
+
 export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: FavoriteProductCardProps) {
+  const router = useRouter();
+
   return (
-    <View className="bg-white rounded-[32px] p-5 relative shadow-sm h-[340px] overflow-hidden mb-4">
+    <TouchableOpacity 
+      activeOpacity={0.9} 
+      onPress={() => router.push('/product-details')}
+      className="bg-white rounded-[32px] p-5 relative shadow-sm h-[340px] overflow-hidden mb-4"
+    >
       {/* Heart Icon (Top Left) */}
       <TouchableOpacity 
         className="absolute top-5 left-5 z-10 w-10 h-10 items-center justify-center"
@@ -71,6 +79,6 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
           </Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
