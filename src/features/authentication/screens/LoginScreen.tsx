@@ -34,7 +34,7 @@ export function LoginScreen() {
                         {/* Logo */}
                         <View className="w-[100px] h-[100px] mb-4 rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">
                             <Image
-                                source={require('@/assets/images/logo-transparent.png')}
+                                source={require('@/assets/images/logo2.png')}
                                 style={{ width: 100, height: 100 }}
                                 contentFit="cover"
                             />
