@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthIcons, AuthInput } from '../components/AuthInput';
+import { AppHeader, Button, FormField, FormIcons } from '@/src/shared/ui';
 import { useForgotPassword } from '../hooks/useForgotPassword';
 
 export function ForgotPasswordScreen() {
@@ -32,23 +31,19 @@ export function ForgotPasswordScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                     {/* Header */}
-                    <View className="flex-row items-center justify-between px-6 pt-4 relative">
-                        {/* Placeholder for left space to center logo */}
-                        <View className="w-10 h-10" /> 
-                        <Image
-                            source={require('@/assets/images/logo2.png')}
-                            style={{ width: 100, height: 40 }}
-                            contentFit="contain"
-                        />
-                        <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
-                             <Text className="font-tajawal-bold text-[18px]">➔</Text>
-                        </Pressable>
-                    </View>
+                    <AppHeader
+                        left={<View />}
+                        right={
+                            <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
+                                <Text className="font-tajawal-bold text-[18px]">➔</Text>
+                            </Pressable>
+                        }
+                    />
 
                     <View className="flex-1 items-center px-6 pt-16 pb-8">
                         {/* Icon */}
                         <View className="w-[100px] h-[100px] mb-8 rounded-full items-center justify-center bg-[#C6ECCB]">
-                            <AuthIcons.LockRefresh color="#1F8A5B" width={50} height={50} />
+                            <FormIcons.LockRefresh color="#1F8A5B" width={50} height={50} />
                         </View>
 
                         {/* Text */}
@@ -61,7 +56,7 @@ export function ForgotPasswordScreen() {
 
                         {/* Form */}
                         <View className="w-full mb-6">
-                             <AuthInput
+                                <FormField
                                  label=""
                                  placeholder="البريد الإلكتروني أو رقم الجوال"
                                  iconType="Email"
@@ -78,20 +73,13 @@ export function ForgotPasswordScreen() {
                              {success && <Text className="font-tajawal-bold text-green-600 text-center mt-2 mb-2">تم الإرسال بنجاح!</Text>}
                         </View>
 
-                        <Pressable
+                        <Button
                             onPress={onSubmit}
-                            disabled={isLoading}
-                            className="w-full h-[54px] rounded-[30px] bg-brand-primary flex-row-reverse items-center justify-center mb-8 active:opacity-85 shadow-sm"
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Text className="font-tajawal-bold text-[18px] text-white">إرسال الرابط</Text>
-                                    <AuthIcons.Send color="white" width={20} height={20} className="mr-3 transform scale-x-[-1]" />
-                                </>
-                            )}
-                        </Pressable>
+                            loading={isLoading}
+                            label="إرسال الرابط"
+                            icon={<FormIcons.Send color="white" width={20} height={20} className="transform scale-x-[-1]" />}
+                            className="w-full h-[54px] mb-8"
+                        />
 
                         <View className="flex-row-reverse items-center justify-center gap-1 mb-10">
                             <Text className="font-tajawal-medium text-[15px] text-brand-text">
@@ -111,7 +99,7 @@ export function ForgotPasswordScreen() {
                                  <Text className="font-tajawal-medium text-[12px] text-brand-text text-right">تواصل مع الدعم الفني لمساعدتك فوراً</Text>
                              </View>
                              <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-[#EFECE5]">
-                                 <AuthIcons.Headset color="#1F8A5B" width={24} height={24} />
+                                 <FormIcons.Headset color="#1F8A5B" width={24} height={24} />
                              </View>
                         </View>
                     </View>

@@ -1,4 +1,5 @@
-import { Pressable, Text } from 'react-native';
+import { ReactNode } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 type ButtonVariant = 'primary' | 'secondary';
 
@@ -6,16 +7,31 @@ type ButtonProps = {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
+  loading?: boolean;
   variant?: ButtonVariant;
   className?: string;
+  textClassName?: string;
+  icon?: ReactNode;
+  iconPosition?: 'start' | 'end';
 };
 
-export function Button({ label, onPress, disabled = false, variant = 'primary', className = '' }: ButtonProps) {
+export function Button({
+  label,
+  onPress,
+  disabled = false,
+  loading = false,
+  variant = 'primary',
+  className = '',
+  textClassName = '',
+  icon,
+  iconPosition = 'end',
+}: ButtonProps) {
   let bgClass = '';
   let textClass = '';
   let borderClass = '';
+  const isDisabled = disabled || loading;
 
-  if (disabled) {
+  if (isDisabled) {
     bgClass = 'bg-[#F2F2F2]';
     textClass = 'text-[#AFAFAF]';
     borderClass = 'border-transparent';
@@ -32,9 +48,17 @@ export function Button({ label, onPress, disabled = false, variant = 'primary', 
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={isDisabled}
       className={`rounded-full px-5 py-4 active:opacity-90 flex-row items-center justify-center ${bgClass} ${borderClass} ${className}`}>
-      <Text className={`text-center text-lg font-tajawal-bold ${textClass}`}>{label}</Text>
+      {loading ? (
+        <ActivityIndicator color={variant === 'primary' ? 'white' : '#67BB28'} />
+      ) : (
+        <>
+          {icon && iconPosition === 'start' ? <View className="mr-2">{icon}</View> : null}
+          <Text className={`text-center text-lg font-tajawal-bold ${textClass} ${textClassName}`}>{label}</Text>
+          {icon && iconPosition === 'end' ? <View className="ml-2">{icon}</View> : null}
+        </>
+      )}
     </Pressable>
   );
 }

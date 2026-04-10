@@ -1,3 +1,4 @@
+import { AppHeader } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -18,26 +19,23 @@ export function ProductDetailsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#F6F5F2]" edges={['top']}>
       {/* Top Header */}
-      <View className="flex-row items-center justify-between px-6 pt-4 pb-2 z-10">
-        <TouchableOpacity
-          className="w-10 h-10 items-center justify-center bg-white/50 rounded-full"
-          onPress={() => router.back()}
-        >
-          {/* Back Arrow as shown in the design: top left, pointing left */}
-          <Feather name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-
-        <Image
-          source={require('@/assets/images/logo-transparent.png')}
-          className="w-56 h-20"
-          contentFit="contain"
-          transition={200}
-        />
-
-        <TouchableOpacity className="w-10 h-10 items-center justify-center bg-white/50 rounded-full">
-          <Ionicons name="heart-outline" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        logo="transparent"
+        className="z-10"
+        left={
+          <TouchableOpacity
+            className="w-10 h-10 items-center justify-center bg-white/50 rounded-full"
+            onPress={() => router.back()}
+          >
+            <Feather name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+        }
+        right={
+          <TouchableOpacity className="w-10 h-10 items-center justify-center bg-white/50 rounded-full">
+            <Ionicons name="heart-outline" size={24} color="#000" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
 

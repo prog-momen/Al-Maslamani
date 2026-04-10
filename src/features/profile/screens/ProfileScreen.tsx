@@ -1,11 +1,11 @@
-import { Image } from 'expo-image';
+import { supabase } from '@/src/lib/supabase/client';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, Text, View, Platform, Dimensions } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
-import { useAuth } from '@/src/shared/hooks/useAuth';
-import { supabase } from '@/src/lib/supabase/client';
 
 const Icons = {
   Search: (props: any) => (
@@ -105,7 +105,6 @@ const Icons = {
 export function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     try {
@@ -121,19 +120,18 @@ export function ProfileScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <SafeAreaView edges={['top']}>
           {/* Header */}
-          <View className="flex-row items-center justify-between px-4 mt-2">
-            <Pressable className="hit-slop-10">
-              <Icons.Search color="#67BB28" />
-            </Pressable>
-            <Image
-              source={require('@/assets/images/logo2.png')}
-              style={{ width: 120, height: 40 }}
-              contentFit="contain"
-            />
-            <Pressable className="hit-slop-10">
-              <Icons.Menu color="#67BB28" />
-            </Pressable>
-          </View>
+          <AppHeader
+            left={
+              <Pressable className="hit-slop-10">
+                <Icons.Search color="#67BB28" />
+              </Pressable>
+            }
+            right={
+              <Pressable className="hit-slop-10">
+                <Icons.Menu color="#67BB28" />
+              </Pressable>
+            }
+          />
 
           {/* Profile Section */}
           <View className="items-center mt-8">
@@ -250,38 +248,7 @@ export function ProfileScreen() {
         </SafeAreaView>
       </ScrollView>
 
-      {/* Bottom Tab Bar (Simulated) */}
-      <View 
-        className="absolute bottom-0 left-0 right-0 bg-[#FCFBFA] flex-row-reverse items-center justify-around rounded-t-[30px] border border-[#EBEBEB] pt-4"
-        style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-      >
-        <Pressable className="items-center w-[60px]" onPress={() => router.push('/home')}>
-          <Icons.Home color="#A1A1AA" />
-          <Text className="font-tajawal-medium text-[10px] text-[#A1A1AA] mt-1">الرئيسية</Text>
-        </Pressable>
-        
-        <Pressable className="items-center w-[60px]">
-          <Icons.Category color="#A1A1AA" />
-          <Text className="font-tajawal-medium text-[10px] text-[#A1A1AA] mt-1">الفئات</Text>
-        </Pressable>
-
-        <Pressable className="items-center w-[60px]">
-          <Icons.Cart color="#A1A1AA" />
-          <Text className="font-tajawal-medium text-[10px] text-[#A1A1AA] mt-1">السلة</Text>
-        </Pressable>
-
-        <Pressable className="items-center w-[60px]">
-          <Icons.Heart color="#A1A1AA" />
-          <Text className="font-tajawal-medium text-[10px] text-[#A1A1AA] mt-1">المفضلة</Text>
-        </Pressable>
-
-        <Pressable className="items-center w-[60px]">
-          <View className="w-10 h-10 bg-[#67BB28] rounded-full items-center justify-center mb-1">
-            <Icons.User color="white" width={20} height={20} />
-          </View>
-          <Text className="font-tajawal-bold text-[10px] text-[#67BB28] mt-1">حسابي</Text>
-        </Pressable>
-      </View>
+      <BottomNavbar activeTab="profile" />
     </View>
   );
 }

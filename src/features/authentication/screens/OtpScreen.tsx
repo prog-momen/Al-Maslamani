@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthIcons } from '../components/AuthInput';
+import { AppHeader, Button, FormIcons } from '@/src/shared/ui';
 import { useVerifyOtp } from '../hooks/useVerifyOtp';
 
 export function OtpScreen() {
@@ -77,17 +76,14 @@ export function OtpScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                     {/* Header */}
-                    <View className="flex-row items-center justify-between px-6 pt-4 relative">
-                        <View className="w-10 h-10" /> 
-                        <Image
-                            source={require('@/assets/images/logo2.png')}
-                            style={{ width: 100, height: 40 }}
-                            contentFit="contain"
-                        />
-                        <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
-                             <Text className="font-tajawal-bold text-[18px]">➔</Text>
-                        </Pressable>
-                    </View>
+                    <AppHeader
+                        left={<View />}
+                        right={
+                            <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
+                                <Text className="font-tajawal-bold text-[18px]">➔</Text>
+                            </Pressable>
+                        }
+                    />
 
                     <View className="flex-1 items-center px-6 pt-16 pb-8">
                         {/* Text */}
@@ -122,7 +118,7 @@ export function OtpScreen() {
                                  <Text className="font-tajawal-medium text-[14px] text-brand-text">
                                      {formatTime(timeLeft)}
                                  </Text>
-                                 <AuthIcons.Clock color="#757575" width={14} height={14} />
+                                 <FormIcons.Clock color="#757575" width={14} height={14} />
                              </View>
 
                              {/* Resend */}
@@ -140,20 +136,13 @@ export function OtpScreen() {
                         {success && <Text className="font-tajawal-bold text-green-600 text-center mb-6">تم التحقق بنجاح!</Text>}
 
                         {/* Submit Button */}
-                        <Pressable
+                        <Button
                             onPress={onSubmit}
-                            disabled={isLoading}
-                            className="w-full h-[54px] rounded-[30px] bg-brand-primary flex-row-reverse items-center justify-center active:opacity-85 shadow-sm"
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Text className="font-tajawal-bold text-[18px] text-white">تحقق</Text>
-                                    <AuthIcons.ShieldCheck color="white" width={20} height={20} className="mr-3" />
-                                </>
-                            )}
-                        </Pressable>
+                            loading={isLoading}
+                            label="تحقق"
+                            icon={<FormIcons.ShieldCheck color="white" width={20} height={20} />}
+                            className="w-full h-[54px]"
+                        />
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
