@@ -19,6 +19,7 @@ export function LoginScreen() {
     const onSubmit = async (data: any) => {
         try {
             await login(data);
+            router.replace('/home');
         } catch {
             // Error is handled by hook and displayed below
         }
