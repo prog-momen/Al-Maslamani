@@ -19,7 +19,7 @@ export function LoginScreen() {
     const onSubmit = async (data: any) => {
         try {
             await login(data);
-        } catch (e) {
+        } catch {
             // Error is handled by hook and displayed below
         }
     };
@@ -74,7 +74,7 @@ export function LoginScreen() {
 
                             <View className="flex-row-reverse items-center justify-between mb-2 mt-2">
                                 <Text className="font-tajawal-bold text-brand-title text-[15px]">كلمة المرور</Text>
-                                <Pressable onPress={() => { }}>
+                                <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                                     <Text className="font-tajawal-bold text-brand-primary text-[14px]">نسيت كلمة المرور؟</Text>
                                 </Pressable>
                             </View>

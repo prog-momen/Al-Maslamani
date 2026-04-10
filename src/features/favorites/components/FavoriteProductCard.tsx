@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Text, TouchableOpacity, View } from 'react-native';
 
+import { useRouter } from 'expo-router';
+
 export type FavoriteProduct = {
   id: string;
   title: string;
@@ -20,8 +22,6 @@ interface FavoriteProductCardProps {
   onToggleFavorite?: (id: string) => void;
   onAddToCart?: (id: string) => void;
 }
-
-import { useRouter } from 'expo-router';
 
 export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: FavoriteProductCardProps) {
   const router = useRouter();
