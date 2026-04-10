@@ -72,6 +72,13 @@ export const AuthIcons = {
             <Path d="M9 12l2 2 4-4" />
         </Svg>
     ),
+    Error: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Circle cx="12" cy="12" r="10" />
+            <Line x1="12" y1="8" x2="12" y2="12" />
+            <Line x1="12" y1="16" x2="12.01" y2="16" />
+        </Svg>
+    ),
 };
 
 interface AuthInputProps extends TextInputProps {
@@ -87,16 +94,20 @@ export function AuthInput({ label, error, iconType, secureTextEntry, className, 
 
     return (
         <View className="mb-4">
-            <Text className="font-tajawal-bold text-brand-title text-[15px] mb-2 text-right">
+            <Text className={`font-tajawal-bold text-[15px] mb-2 text-right ${error ? 'text-brand-error' : 'text-brand-title'}`}>
                 {label}
             </Text>
             <View
-                className={`w-full h-[54px] rounded-2xl bg-[#EFECE5] flex-row-reverse items-center px-4 ${error ? 'border border-red-500' : ''}`}
+                className={`w-full h-[54px] rounded-2xl flex-row-reverse items-center px-4 ${error ? 'bg-red-50 border border-brand-error' : 'bg-brand-background border border-transparent'}`}
             >
-                {Icon && <Icon color="#757575" size={20} className="ml-3" />}
+                {error ? (
+                    <AuthIcons.Error color="#D32F2F" size={20} className="ml-3" />
+                ) : Icon ? (
+                    <Icon color="#757575" size={20} className="ml-3" />
+                ) : null}
                 <TextInput
-                    className={`flex-1 font-tajawal-medium text-[15px] text-brand-text text-right px-2 ${className || ''}`}
-                    placeholderTextColor="#9ca3af"
+                    className={`flex-1 font-tajawal-medium text-[15px] text-right px-2 ${error ? 'text-brand-error' : 'text-brand-text'} ${className || ''}`}
+                    placeholderTextColor={error ? '#fca5a5' : '#9ca3af'}
                     secureTextEntry={isPassword && !isPasswordVisible}
                     {...props}
                 />
@@ -106,7 +117,7 @@ export function AuthInput({ label, error, iconType, secureTextEntry, className, 
                     </Pressable>
                 )}
             </View>
-            {error && <Text className="text-red-500 text-right mt-1 font-tajawal-medium text-[13px]">{error}</Text>}
+            {error && <Text className="text-brand-error text-right mt-1 font-tajawal-medium text-[13px]">{error}</Text>}
         </View>
     );
 }

@@ -7,10 +7,11 @@ module.exports = {
       colors: {
         brand: {
           primary: '#67BB28',
+          secondary: '#4CAF50',
+          background: '#F2EFE9',
           surface: '#F2EFE9',
-          text: '#333333',
-          title: '#000000',
-          subtitle: '#1B1C1C',
+          text: '#1B1C1C',
+          error: '#D32F2F',
         },
       },
       fontFamily: {
