@@ -31,7 +31,7 @@ export function SplashScreen() {
         <View className="flex-1 w-full items-center justify-center py-8">
           <View className="items-center justify-center bg-[#84BD25]" style={{ width: 280, height: 280, borderRadius: 24 }}>
             <Image
-              source={require('@/assets/images/logo.png')}
+              source={require('@/assets/images/logo-transparent.png')}
               contentFit="contain"
               style={{ width: 240, height: 240 }}
             />

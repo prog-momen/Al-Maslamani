@@ -120,18 +120,19 @@ export function ProfileScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <SafeAreaView edges={['top']}>
           {/* Header */}
-          <AppHeader
-            left={
-              <Pressable className="hit-slop-10">
-                <Icons.Search color="#67BB28" />
-              </Pressable>
-            }
-            right={
-              <Pressable className="hit-slop-10">
-                <Icons.Menu color="#67BB28" />
-              </Pressable>
-            }
-          />
+          <View className="flex-row items-center justify-between px-4 mt-2">
+            <Pressable className="hit-slop-10">
+              <Icons.Search color="#67BB28" />
+            </Pressable>
+            <Image
+              source={require('@/assets/images/logo-transparent.png')}
+              style={{ width: 120, height: 40 }}
+              contentFit="contain"
+            />
+            <Pressable className="hit-slop-10">
+              <Icons.Menu color="#67BB28" />
+            </Pressable>
+          </View>
 
           {/* Profile Section */}
           <View className="items-center mt-8">
