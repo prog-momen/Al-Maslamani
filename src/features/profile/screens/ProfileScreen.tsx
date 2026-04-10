@@ -126,7 +126,7 @@ export function ProfileScreen() {
               <Icons.Search color="#67BB28" />
             </Pressable>
             <Image
-              source={require('@/assets/images/logo2.png')}
+              source={require('@/assets/images/logo-transparent.png')}
               style={{ width: 120, height: 40 }}
               contentFit="contain"
             />
