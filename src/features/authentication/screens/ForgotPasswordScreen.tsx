@@ -36,7 +36,7 @@ export function ForgotPasswordScreen() {
                         {/* Placeholder for left space to center logo */}
                         <View className="w-10 h-10" /> 
                         <Image
-                            source={require('@/assets/images/logo2.png')}
+                            source={require('@/assets/images/logo-transparent.png')}
                             style={{ width: 100, height: 40 }}
                             contentFit="contain"
                         />

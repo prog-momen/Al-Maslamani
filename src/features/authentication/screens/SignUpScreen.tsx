@@ -42,7 +42,7 @@ export function SignUpScreen() {
                         <View className="items-center mb-8 mt-2">
                             <View className="w-[100px] h-[100px] rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">
                                 <Image
-                                    source={require('@/assets/images/logo2.png')}
+                                    source={require('@/assets/images/logo-transparent.png')}
                                     style={{ width: 100, height: 100 }}
                                     contentFit="cover"
                                 />
