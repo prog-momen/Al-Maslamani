@@ -40,6 +40,38 @@ export const AuthIcons = {
             <Circle cx="12" cy="7" r="4" />
         </Svg>
     ),
+    Send: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Path d="M22 2L11 13" />
+            <Path d="M22 2L15 22L11 13L2 9L22 2z" />
+        </Svg>
+    ),
+    Headset: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-9 6v3Zm-4 3h8" />
+        </Svg>
+    ),
+    LockRefresh: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Path d="M12 2A10 10 0 1 0 22 12" />
+            <Path d="M22 12V6" />
+            <Path d="M22 6H16" />
+            <Rect x="9" y="11" width="6" height="8" rx="1" />
+            <Path d="M10 11V9a2 2 0 0 1 4 0v2" />
+        </Svg>
+    ),
+    Clock: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Circle cx="12" cy="12" r="10" />
+            <Path d="M12 6v6l4 2" />
+        </Svg>
+    ),
+    ShieldCheck: (props: any) => (
+        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <Path d="M9 12l2 2 4-4" />
+        </Svg>
+    ),
 };
 
 interface AuthInputProps extends TextInputProps {

@@ -27,8 +27,10 @@ export function SignUpScreen() {
         }
         try {
             await register({ email: data.email, password: data.password }, data.fullName);
-        } catch (e) {
-            // Hook sets error state
+            // Navigate to login after successful registration
+            router.push('/(auth)/login');
+        } catch {
+            // Error is handled by hook
         }
     };
 

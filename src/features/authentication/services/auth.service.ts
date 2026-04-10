@@ -30,5 +30,27 @@ export const authService = {
         }
 
         return data;
+    },
+
+    async forgotPassword(emailOrPhone: string) {
+        const { data, error } = await supabase.auth.resetPasswordForEmail(emailOrPhone);
+        
+        if (error) {
+            throw error;
+        }
+        
+        return { success: true, message: 'Password reset link sent' };
+    },
+
+    // Mock API for Verify OTP
+    async verifyOtp(code: string) {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        if (code === '1234') { // A mock simple valid code
+             return { success: true, message: 'Code verified successfully' };
+        } else {
+             throw new Error('رمز التحقق غير صحيح'); // Invalid code error
+        }
     }
 };
