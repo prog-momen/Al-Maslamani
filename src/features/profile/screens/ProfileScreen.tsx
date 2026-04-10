@@ -211,7 +211,7 @@ export function ProfileScreen() {
               </Pressable>
 
               {/* About Company */}
-              <Pressable className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+              <Pressable onPress={() => router.push('/about-us')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
                 <View className="flex-row-reverse items-center gap-4">
                   <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
                     <Icons.Info color="white" />
@@ -222,7 +222,7 @@ export function ProfileScreen() {
               </Pressable>
 
               {/* Contact Us */}
-              <Pressable className="flex-row-reverse items-center justify-between p-4 border-b-transparent">
+              <Pressable onPress={() => router.push('/contact-us')} className="flex-row-reverse items-center justify-between p-4 border-b-transparent">
                 <View className="flex-row-reverse items-center gap-4">
                   <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
                     <Icons.Headset color="white" />
