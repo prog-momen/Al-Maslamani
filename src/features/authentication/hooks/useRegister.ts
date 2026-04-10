@@ -1,4 +1,4 @@
-import { SignUpWithPasswordCredentials } from '@supabase/supabase-js';
+
 import { useState } from 'react';
 import { authService } from '../services/auth.service';
 
@@ -6,7 +6,7 @@ export function useRegister() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const register = async (credentials: SignUpWithPasswordCredentials, fullName?: string) => {
+    const register = async (credentials: { email: string; password: string }, fullName?: string) => {
         setIsLoading(true);
         setError(null);
         try {
