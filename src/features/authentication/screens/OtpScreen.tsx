@@ -76,17 +76,15 @@ export function OtpScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
                     {/* Header */}
-                    <View className="flex-row items-center justify-between px-6 pt-4 relative">
-                        <View className="w-10 h-10" /> 
-                        <Image
-                            source={require('@/assets/images/logo-transparent.png')}
-                            style={{ width: 100, height: 40 }}
-                            contentFit="contain"
-                        />
-                        <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
-                             <Text className="font-tajawal-bold text-[18px]">➔</Text>
-                        </Pressable>
-                    </View>
+                    <AppHeader
+                        logo="transparent"
+                        left={<View />}
+                        right={
+                            <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
+                                <Text className="font-tajawal-bold text-[18px]">➔</Text>
+                            </Pressable>
+                        }
+                    />
 
                     <View className="flex-1 items-center px-6 pt-16 pb-8">
                         {/* Text */}
