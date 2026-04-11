@@ -1,9 +1,9 @@
-import { AppHeader, FormField } from '@/src/shared/ui';
+import { AppHeader, BottomNavbar, CARD_BASE_CLASS, FormField } from '@/src/shared/ui';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 const Icons = {
   Menu: (props: any) => (
@@ -90,7 +90,7 @@ export function ContactUsScreen() {
 
           {/* Form */}
           <View className="px-6 mt-8">
-            <View className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#EBEBEB]">
+            <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6`}>
               <FormField
                 label="الاسم الكامل"
                 placeholder="ادخل اسمك هنا"
@@ -133,7 +133,7 @@ export function ContactUsScreen() {
 
           {/* Location Block */}
           <View className="px-6 mt-6">
-            <View className="bg-[#A1A1AA] rounded-[24px] h-40 items-center justify-center overflow-hidden relative">
+            <View className={`${CARD_BASE_CLASS} bg-[#A1A1AA] h-40 items-center justify-center overflow-hidden relative`}>
               <View className="absolute inset-0 opacity-20">
                 <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                   {/* Simplistic map line pattern simulation */}
@@ -151,7 +151,7 @@ export function ContactUsScreen() {
 
           {/* Contact Info Cards */}
           <View className="px-6 mt-6 gap-4">
-            <View className="bg-[#EAF3E2] rounded-[24px] p-4 flex-row-reverse items-center justify-between">
+            <View className={`${CARD_BASE_CLASS} bg-[#EAF3E2] p-4 flex-row-reverse items-center justify-between`}>
               <View className="w-12 h-12 bg-white rounded-full items-center justify-center border border-[#EBEBEB]">
                 <Icons.Phone color="#18181B" />
               </View>
@@ -161,7 +161,7 @@ export function ContactUsScreen() {
               </View>
             </View>
 
-            <View className="bg-[#FAF9F5] border border-[#EBEBEB] rounded-[24px] p-4 flex-row-reverse items-center justify-between">
+            <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-4 flex-row-reverse items-center justify-between`}>
               <View className="w-12 h-12 bg-white rounded-full items-center justify-center border border-[#EBEBEB]">
                 <Icons.Mail color="#18181B" />
               </View>
@@ -174,7 +174,7 @@ export function ContactUsScreen() {
 
           {/* Working Hours */}
           <View className="px-6 mt-6">
-             <View className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#EBEBEB] border-r-4 border-r-[#67BB28]">
+             <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 border-r-4 border-r-[#67BB28]`}>
                  <Text className="font-tajawal-bold text-[18px] text-brand-title text-right mb-2">ساعات العمل</Text>
                  <Text className="font-tajawal-medium text-[14px] text-brand-text text-right leading-relaxed">
                      الأحد - الخميس: 9:00 صباحاً - 8:00 مساءً{'\n'}الجمعة: مغلق
@@ -184,6 +184,8 @@ export function ContactUsScreen() {
 
         </SafeAreaView>
       </ScrollView>
+
+      <BottomNavbar activeTab="profile" />
     </View>
   );
 }

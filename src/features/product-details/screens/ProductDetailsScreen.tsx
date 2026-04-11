@@ -1,20 +1,128 @@
 import { AppHeader } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {
+    CatalogProduct,
+    getFavoriteProductIds,
+    getProductById,
+    setFavoriteProduct,
+} from '@/src/features/products/services/products.service';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+
+const DEFAULT_WEIGHTS = ['250 جرام', '500 جرام', '1 كيلو'];
 
 export function ProductDetailsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const productId = Array.isArray(id) ? id[0] : id;
+  const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedWeight, setSelectedWeight] = useState('250 جرام');
   const [quantity, setQuantity] = useState(1);
 
   const incrementQuantity = () => setQuantity((prev) => prev + 1);
   const decrementQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
-  const weights = ['250 جرام', '500 جرام', '1 كيلو'];
+  const fallbackProductImage = require('@/assets/images/mixed_nuts.png');
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      if (!productId) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setProduct(null);
+      try {
+        const [data, favoriteIds] = await Promise.all([
+          getProductById(productId),
+          user?.id ? getFavoriteProductIds(user.id) : Promise.resolve([]),
+        ]);
+
+        if (mounted) {
+          setProduct(data);
+          setIsFavorite(favoriteIds.includes(productId));
+          if (data?.description) {
+            setSelectedWeight(data.description);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load product details:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [productId, user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      const refreshFavorite = async () => {
+        if (!user?.id || !productId) {
+          return;
+        }
+
+        try {
+          const ids = await getFavoriteProductIds(user.id);
+          if (active) {
+            setIsFavorite(ids.includes(productId));
+          }
+        } catch (error) {
+          console.error('Failed to refresh product favorite on focus:', error);
+        }
+      };
+
+      refreshFavorite();
+      return () => {
+        active = false;
+      };
+    }, [productId, user?.id])
+  );
+  const handleToggleFavorite = () => {
+    if (!user?.id || !productId) {
+      return;
+    }
+
+    const nextValue = !isFavorite;
+    setIsFavorite(nextValue);
+
+    setFavoriteProduct(user.id, productId, nextValue).catch((error) => {
+      console.error('Failed to toggle favorite from product details:', error);
+      setIsFavorite(!nextValue);
+    });
+  };
+
+  const shownWeights = useMemo(() => {
+    if (product?.description) {
+      return [product.description, ...DEFAULT_WEIGHTS.filter((w) => w !== product.description)];
+    }
+    return DEFAULT_WEIGHTS;
+  }, [product?.description]);
+
+  const unitPrice = Number.isFinite(product?.price) ? Number(product?.price) : 0;
+  const displayPrice = `${unitPrice.toFixed(0)} ₪`;
+  const displayImage = product?.image_url ? { uri: product.image_url } : fallbackProductImage;
+  const displayName = product?.name ?? 'منتج';
+  const displayDescription = product?.description ?? 'وصف المنتج غير متوفر حالياً.';
 
   return (
     <SafeAreaView className="flex-1 bg-[#F6F5F2]" edges={['top']}>
@@ -27,47 +135,53 @@ export function ProductDetailsScreen() {
             className="w-10 h-10 items-center justify-center bg-white/50 rounded-full"
             onPress={() => router.back()}
           >
-            <Feather name="arrow-left" size={24} color="#000" />
+            <Feather name="arrow-left" size={22} color="#4E5D50" />
           </TouchableOpacity>
         }
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center bg-white/50 rounded-full">
-            <Ionicons name="heart-outline" size={24} color="#000" />
+          <TouchableOpacity className="w-10 h-10 items-center justify-center bg-white/50 rounded-full" onPress={handleToggleFavorite}>
+            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? '#E53935' : '#4E5D50'} />
           </TouchableOpacity>
         }
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
-
-        {/* Product Image Section */}
-        <View className="items-center mt-4">
-          <View className="relative w-[300px] h-[340px] items-center justify-center">
-            {/* The transparent jar product image */}
-            <Image
-              source={require('@/assets/images/لوز 250 غرام علبة.png')}
-              className="w-full h-full"
-              contentFit="contain"
-              transition={200}
-            />
-
-            {/* Badge Over Image */}
-            <View className="absolute bottom-4 right-4 bg-[#B5E4B7] px-4 py-1.5 rounded-full">
-              <Text className="text-[#327038] font-tajawal-bold text-[14px]">محمص طازج</Text>
-            </View>
+        {isLoading ? (
+          <View className="mt-14 items-center justify-center">
+            <ActivityIndicator color="#67BB28" size="large" />
           </View>
-        </View>
+        ) : (
+          <>
 
-        {/* Details Section */}
-        <View className="px-6 mt-8">
+            {/* Product Image Section */}
+            <View className="items-center mt-4">
+              <View className="relative w-[300px] h-[340px] items-center justify-center">
+                {/* The transparent jar product image */}
+                <Image
+                  source={displayImage}
+                  className="w-full h-full"
+                  contentFit="contain"
+                  transition={200}
+                />
+
+                {/* Badge Over Image */}
+                <View className="absolute bottom-4 right-4 bg-[#B5E4B7] px-4 py-1.5 rounded-full">
+                  <Text className="text-[#327038] font-tajawal-bold text-[14px]">محمص طازج</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Details Section */}
+            <View className="px-6 mt-8">
 
           {/* Title and Price */}
           <View className="flex-row justify-between items-start mb-6">
             <View>
-              <Text className="text-brand-primary font-tajawal-bold text-[24px]">20 ₪</Text>
+              <Text className="text-brand-primary font-tajawal-bold text-[24px]">{displayPrice}</Text>
               <Text className="text-gray-500 font-tajawal-medium text-[12px] mt-1">شامل الضريبة</Text>
             </View>
             <View className="items-end">
-              <Text className="text-[32px] font-tajawal-bold text-brand-title">لوز محمص</Text>
+              <Text className="text-[32px] font-tajawal-bold text-brand-title">{displayName}</Text>
               <View className="flex-row items-center mt-2">
                 <Text className="text-gray-500 font-tajawal-regular text-[13px] mr-2">(120 تقييم)</Text>
                 <Text className="text-brand-text font-tajawal-bold text-[16px] mr-1">4.9</Text>
@@ -80,7 +194,7 @@ export function ProductDetailsScreen() {
           <View className="mb-8">
             <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-3">عن المنتج</Text>
             <Text className="font-tajawal-regular text-[14px] text-right text-[#4D4D4D] leading-6">
-              لوز، محمص ببطء للحفاظ على الزيوت الطبيعية والنكهة الغنية، طبيعي 100% وبدون إضافات صناعية.
+              {displayDescription}
             </Text>
           </View>
 
@@ -88,7 +202,7 @@ export function ProductDetailsScreen() {
           <View className="mb-8">
             <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-4">اختر الوزن</Text>
             <View className="flex-row items-center justify-end flex-wrap gap-x-3">
-              {weights.map((weight) => {
+              {shownWeights.map((weight) => {
                 const isSelected = selectedWeight === weight;
                 return (
                   <TouchableOpacity
@@ -144,24 +258,28 @@ export function ProductDetailsScreen() {
               <Ionicons name="flash-outline" size={16} color="#4F8D40" />
             </View>
           </View>
-        </View>
+            </View>
+          </>
+        )}
 
       </ScrollView>
 
       {/* Sticky Bottom Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white pt-4 pb-8 px-6 flex-row items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[32px]">
-        {/* Total Price */}
-        <View className="bg-[#EAE8E3] px-6 py-3 rounded-[20px] items-center">
-          <Text className="font-tajawal-medium text-[11px] text-[#666]">المجموع</Text>
-          <Text className="font-tajawal-bold text-[16px] text-brand-title">{20 * quantity} ₪</Text>
-        </View>
+      {!isLoading ? (
+        <View className="absolute bottom-0 left-0 right-0 bg-white pt-4 pb-8 px-6 flex-row items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[32px]">
+          {/* Total Price */}
+          <View className="bg-[#EAE8E3] px-6 py-3 rounded-[20px] items-center">
+            <Text className="font-tajawal-medium text-[11px] text-[#666]">المجموع</Text>
+            <Text className="font-tajawal-bold text-[16px] text-brand-title">{(unitPrice * quantity).toFixed(0)} ₪</Text>
+          </View>
 
-        {/* Add to Cart Button */}
-        <TouchableOpacity className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm">
-          <Text className="font-tajawal-bold text-[16px] text-white mr-3">إضافة إلى السلة</Text>
-          <Ionicons name="cart-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+          {/* Add to Cart Button */}
+          <TouchableOpacity className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm">
+            <Text className="font-tajawal-bold text-[16px] text-white mr-3">إضافة إلى السلة</Text>
+            <Ionicons name="cart-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }

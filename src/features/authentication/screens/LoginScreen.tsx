@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, FormField } from '@/src/shared/ui';
+import { Button, CARD_BASE_CLASS, FormField } from '@/src/shared/ui';
 import { useLogin } from '../hooks/useLogin';
 
 export function LoginScreen() {
@@ -49,7 +49,7 @@ export function LoginScreen() {
                         </Text>
 
                         {/* Form Card */}
-                        <View className="w-full bg-[#fcfbfa] rounded-[30px] p-6 shadow-sm flex-col">
+                        <View className={`${CARD_BASE_CLASS} w-full bg-[#FCFBFA] p-6 flex-col`}>
 
                             <Controller
                                 control={control}

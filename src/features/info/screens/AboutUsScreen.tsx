@@ -1,10 +1,10 @@
-import { AppHeader } from '@/src/shared/ui';
+import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Polyline } from 'react-native-svg';
-import { Image } from 'expo-image';
 
 const Icons = {
   Bell: (props: any) => (
@@ -70,7 +70,7 @@ export function AboutUsScreen() {
             <Text className="font-tajawal-bold text-[14px] text-[#67BB28]">منذ 1953</Text>
             <Text className="font-tajawal-bold text-[32px] text-brand-title">عن الشركة</Text>
             <Text className="font-tajawal-medium text-[15px] text-brand-text text-right mt-3 leading-relaxed">
-              انطلاقاً من أب على بيت لتقوم شركة "سعد المسلماني" كرمز للجودة والتميز في عالم المكسرات والتمور المحمصة.
+              انطلاقاً من أب على بيت لتقوم شركة &quot;سعد المسلماني&quot; كرمز للجودة والتميز في عالم المكسرات والتمور المحمصة.
             </Text>
           </View>
 
@@ -96,7 +96,7 @@ export function AboutUsScreen() {
 
           {/* Quality Block */}
           <View className="px-6 mt-8">
-             <View className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#EBEBEB] items-center">
+             <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 items-center`}>
                  <Text className="font-tajawal-bold text-[20px] text-brand-title text-center mb-3">الجودة هي المعيار</Text>
                  <Text className="font-tajawal-medium text-[14px] text-[#71717A] text-center leading-relaxed mb-6">
                      نلتزم بتقديم أعلى معايير الجودة في كل تفصيلة لنضمن لك تجربة متكاملة و منتج يفوق توقعاتك.
@@ -117,7 +117,7 @@ export function AboutUsScreen() {
 
           {/* Second Image with Text Overlay */}
           <View className="px-6 mt-8">
-              <View className="rounded-[24px] overflow-hidden">
+              <View className={`${CARD_BASE_CLASS} overflow-hidden`}>
                 <Image
                     source={require('@/assets/images/about2.png')}
                     className="w-full h-64"
@@ -138,7 +138,7 @@ export function AboutUsScreen() {
             </View>
 
             <View className="px-6 mb-4">
-                <View className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#EBEBEB] items-center pt-8 mt-6">
+              <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 items-center pt-8 mt-6`}>
                     <View className="absolute -top-6 w-12 h-12 rounded-full bg-[#67BB28] items-center justify-center border-4 border-[#F5F2EC]">
                         <Icons.Info color="white" />
                     </View>
@@ -153,7 +153,7 @@ export function AboutUsScreen() {
             </View>
 
             <View className="px-6">
-                <View className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#EBEBEB] items-center pt-8 mt-6">
+              <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 items-center pt-8 mt-6`}>
                     <View className="absolute -top-6 w-12 h-12 rounded-full bg-[#67BB28] items-center justify-center border-4 border-[#F5F2EC]">
                         <Icons.Diamond color="white" />
                     </View>
@@ -199,6 +199,8 @@ export function AboutUsScreen() {
 
         </SafeAreaView>
       </ScrollView>
+
+      <BottomNavbar activeTab="profile" />
     </View>
   );
 }

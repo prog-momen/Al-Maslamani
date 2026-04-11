@@ -1,3 +1,4 @@
+import { CARD_BASE_CLASS } from '@/src/shared/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -29,25 +30,27 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
   return (
     <TouchableOpacity 
       activeOpacity={0.9} 
-      onPress={() => router.push('/product-details')}
-      className="bg-white rounded-[24px] relative shadow-sm h-[320px] overflow-hidden mb-4"
+      onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
+      className={`${CARD_BASE_CLASS} relative h-[320px] overflow-hidden mb-4`}
     >
       {/* Heart Icon (Top Left) */}
       <TouchableOpacity 
         className="absolute top-4 left-4 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         onPress={() => onToggleFavorite?.(product.id)}
       >
-        <Ionicons name={product.isFavorite ? "heart" : "heart-outline"} size={22} color="#67BB28" />
+        <Ionicons name={product.isFavorite ? "heart" : "heart-outline"} size={22} color={product.isFavorite ? '#E53935' : '#67BB28'} />
       </TouchableOpacity>
 
       {/* Product Image */}
       <View className="w-full h-[180px] bg-[#F9F9F9]">
-        <Image
-          source={product.image}
-          className="w-full h-full"
-          contentFit="cover"
-          transition={200}
-        />
+        <View className="w-full h-full items-center justify-center">
+          <Image
+            source={product.image}
+            className="w-[104px] h-[104px]"
+            contentFit="contain"
+            transition={200}
+          />
+        </View>
       </View>
 
       {/* Bottom Section */}
@@ -73,10 +76,10 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
 
         {/* Right Side: Title and Price */}
         <View className="items-end justify-center h-full py-2">
-          <Text className="font-tajawal-bold text-brand-subtitle text-[16px] text-right leading-6 mb-2" numberOfLines={2}>
+          <Text className="font-tajawal-bold text-brand-subtitle text-[14px] text-right leading-5 mb-2" numberOfLines={2}>
             {product.title}
           </Text>
-          <Text className="font-tajawal-bold text-brand-primary text-[18px]">
+          <Text className="font-tajawal-bold text-brand-primary text-[16px]">
             {product.price} 
           </Text>
         </View>

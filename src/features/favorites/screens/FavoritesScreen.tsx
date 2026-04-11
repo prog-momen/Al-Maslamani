@@ -1,60 +1,138 @@
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+    CatalogProduct,
+    getCatalogProducts,
+    getFavoriteProducts,
+    setFavoriteProduct,
+} from '@/src/features/products/services/products.service';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { FavoriteProduct, FavoriteProductCard } from '../components/FavoriteProductCard';
 import { SuggestedProduct, SuggestedProductCard } from '../components/SuggestedProductCard';
 
-export function FavoritesScreen() {
-  // Mock Data
-  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([
-    {
-      id: '1',
-      title: 'قضامة',
-      price: '00₪',
-      image: require('@/assets/images/chickpeas.png'),
-      isFavorite: true,
-      tag: { text: 'عضوي', bgColor: 'bg-[#CFF3D2]', textColor: 'text-brand-primary' },
-    },
-    {
-      id: '2',
-      title: 'مخلوطة محمصة\nاكسترا مبهرة',
-      price: '00₪',
-      image: require('@/assets/images/mixed_nuts.png'),
-      isFavorite: true,
-      tag: { text: 'الأكثر مبيعاً', bgColor: 'bg-[#F9C3D9]', textColor: 'text-[#D81B60]' },
-    },
-    {
-      id: '3',
-      title: 'ذرة محمصة',
-      price: '00₪',
-      image: require('@/assets/images/corn.png'),
-      isFavorite: true,
-      tag: { text: 'خلطة سرية', bgColor: 'bg-[#CFF3D2]', textColor: 'text-brand-primary' },
-    },
-  ]);
+const fallbackProductImage = require('@/assets/images/mixed_nuts.png');
 
-  const suggestedProducts: SuggestedProduct[] = [
-    {
-      id: '4',
-      title: 'بيكان محمص',
-      price: '00₪',
-      image: require('@/assets/images/pecan.png'),
-    },
-    {
-      id: '5',
-      title: 'مقرمشات الأرز',
-      price: '00₪',
-      image: require('@/assets/images/rice_crispies.png'),
-    },
-  ];
+function toFavoriteUi(product: CatalogProduct): FavoriteProduct {
+  return {
+    id: product.id,
+    title: product.name,
+    price: `${Number.isFinite(product.price) ? product.price.toFixed(0) : '0'} ₪`,
+    image: product.image_url ? { uri: product.image_url } : fallbackProductImage,
+    isFavorite: true,
+    tag: product.description
+      ? { text: product.description, bgColor: 'bg-[#CFF3D2]', textColor: 'text-brand-primary' }
+      : undefined,
+  };
+}
+
+function toSuggestedUi(product: CatalogProduct): SuggestedProduct {
+  return {
+    id: product.id,
+    title: product.name,
+    price: `${Number.isFinite(product.price) ? product.price.toFixed(0) : '0'} ₪`,
+    image: product.image_url ? { uri: product.image_url } : fallbackProductImage,
+  };
+}
+
+export function FavoritesScreen() {
+  const { user, isAuthenticated } = useAuth();
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
+  const [suggestedProducts, setSuggestedProducts] = useState<SuggestedProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      if (!user?.id) {
+        if (mounted) {
+          setFavoriteProducts([]);
+          setSuggestedProducts([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const [favorites, catalog] = await Promise.all([
+          getFavoriteProducts(user.id),
+          getCatalogProducts(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        const favoriteIds = new Set(favorites.map((p) => p.id));
+        setFavoriteProducts(favorites.map(toFavoriteUi));
+        setSuggestedProducts(catalog.filter((p) => !favoriteIds.has(p.id)).slice(0, 8).map(toSuggestedUi));
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let mounted = true;
+
+      const reload = async () => {
+        if (!user?.id) {
+          return;
+        }
+
+        try {
+          const [favorites, catalog] = await Promise.all([
+            getFavoriteProducts(user.id),
+            getCatalogProducts(),
+          ]);
+
+          if (!mounted) {
+            return;
+          }
+
+          const favoriteIds = new Set(favorites.map((p) => p.id));
+          setFavoriteProducts(favorites.map(toFavoriteUi));
+          setSuggestedProducts(catalog.filter((p) => !favoriteIds.has(p.id)).slice(0, 8).map(toSuggestedUi));
+        } catch (error) {
+          console.error('Failed to refresh favorites on focus:', error);
+        }
+      };
+
+      reload();
+      return () => {
+        mounted = false;
+      };
+    }, [user?.id])
+  );
+
+  const favoriteCount = useMemo(() => favoriteProducts.length, [favoriteProducts]);
 
   const handleToggleFavorite = (id: string) => {
-    setFavoriteProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isFavorite: !p.isFavorite } : p))
-    );
+    if (!user?.id) {
+      return;
+    }
+
+    setFavoriteProduct(user.id, id, false).catch((error) => {
+      console.error('Failed to remove favorite:', error);
+    });
+
+    setFavoriteProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleAddToCart = (id: string) => {
@@ -68,12 +146,12 @@ export function FavoritesScreen() {
         logo="transparent"
         left={
           <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="menu" size={24} color="#67BB28" />
+            <Feather name="search" size={26} color="#67BB28" />
           </TouchableOpacity>
         }
         right={
           <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="search" size={24} color="#67BB28" />
+            <Feather name="menu" size={26} color="#67BB28" />
           </TouchableOpacity>
         }
       />
@@ -83,11 +161,25 @@ export function FavoritesScreen() {
         <View className="flex-row items-center justify-between px-6 mt-4 mb-6">
           <View className="bg-[#E2F2E2] px-4 py-2 rounded-full">
             <Text className="text-brand-primary font-tajawal-bold text-xs">
-              {favoriteProducts.filter(p => p.isFavorite).length} منتجات
+              {favoriteCount} منتجات
             </Text>
           </View>
           <Text className="text-[28px] font-tajawal-bold text-brand-title">المفضلة</Text>
         </View>
+
+        {!isAuthenticated ? (
+          <View className="px-6">
+            <Text className="font-tajawal-medium text-brand-text text-right">
+              الرجاء تسجيل الدخول لعرض منتجاتك المفضلة.
+            </Text>
+          </View>
+        ) : null}
+
+        {isLoading ? (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator color="#67BB28" size="large" />
+          </View>
+        ) : null}
 
         {/* Favorite Products List */}
         <View className="px-6 space-y-6">

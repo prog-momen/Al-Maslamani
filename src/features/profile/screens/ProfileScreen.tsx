@@ -1,6 +1,6 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -158,11 +158,11 @@ export function ProfileScreen() {
 
           {/* Stats Cards */}
           <View className="flex-row px-4 mt-8 gap-4">
-            <View className="flex-1 bg-[#FCFBFA] rounded-[24px] py-6 items-center justify-center border border-[#EBEBEB]">
+            <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
               <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">4</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">قائمة الأمنيات</Text>
             </View>
-            <View className="flex-1 bg-[#FCFBFA] rounded-[24px] py-6 items-center justify-center border border-[#EBEBEB]">
+            <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
               <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">12</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">طلبات مكتملة</Text>
             </View>
@@ -170,7 +170,7 @@ export function ProfileScreen() {
 
           {/* Menu List */}
           <View className="px-4 mt-6">
-            <View className="bg-[#FCFBFA] rounded-[30px] p-2 border border-[#EBEBEB]">
+            <View className={`${CARD_BASE_CLASS} p-2`}>
               
               {/* My Orders */}
               <Pressable className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">

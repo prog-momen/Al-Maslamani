@@ -8,18 +8,23 @@ type BottomTabKey = 'home' | 'categories' | 'cart' | 'favorites' | 'profile';
 
 type BottomNavbarProps = {
   activeTab: BottomTabKey;
+  cartCount?: number;
 };
 
-export function BottomNavbar({ activeTab }: BottomNavbarProps) {
+export function BottomNavbar({ activeTab, cartCount = 0 }: BottomNavbarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const iconColor = (tab: BottomTabKey) => (activeTab === tab ? '#67BB28' : '#A3A3A3');
+  const iconColor = (tab: BottomTabKey) => (activeTab === tab ? '#FFFFFF' : '#4E5D50');
   const textWeight = (tab: BottomTabKey) => (activeTab === tab ? 'font-tajawal-bold' : 'font-tajawal-medium');
 
   const navigate = (tab: BottomTabKey) => {
     if (tab === 'home') {
       router.replace('/home');
+      return;
+    }
+    if (tab === 'categories') {
+      router.replace('/categories' as never);
       return;
     }
     if (tab === 'favorites') {
@@ -32,47 +37,49 @@ export function BottomNavbar({ activeTab }: BottomNavbarProps) {
     }
   };
 
+  const TabItem = ({
+    tab,
+    label,
+    icon,
+    showBadge,
+  }: {
+    tab: BottomTabKey;
+    label: string;
+    icon: React.ReactNode;
+    showBadge?: boolean;
+  }) => {
+    const isActive = activeTab === tab;
+
+    return (
+      <Pressable
+        className={`items-center justify-center min-w-[62px] h-[54px] rounded-full px-3 ${isActive ? 'bg-brand-primary' : ''}`}
+        onPress={() => navigate(tab)}
+      >
+        <View className="relative">
+          {icon}
+          {showBadge && cartCount > 0 ? (
+            <View className="absolute -top-2 -left-3 min-w-[18px] h-[18px] rounded-full bg-[#C53673] items-center justify-center px-1">
+              <Text className="text-white text-[10px] font-tajawal-bold">{cartCount}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text className={`${textWeight(tab)} text-[11px] mt-1`} style={{ color: isActive ? '#FFFFFF' : '#4E5D50' }}>
+          {label}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
     <View
-      className="absolute bottom-0 left-0 right-0 bg-[#FCFBFA] flex-row-reverse items-center justify-around rounded-t-[30px] border border-[#EBEBEB] pt-4"
+      className="absolute bottom-0 left-0 right-0 bg-[#FCFBFA] flex-row-reverse items-center justify-around rounded-t-[30px] border border-[#EBEBEB] pt-3"
       style={{ paddingBottom: Math.max(insets.bottom, 16) }}
     >
-      <Pressable className="items-center w-[60px]" onPress={() => navigate('home')}>
-        <Ionicons name="home-outline" size={24} color={iconColor('home')} />
-        <Text className={`${textWeight('home')} text-[10px] mt-1`} style={{ color: iconColor('home') }}>الرئيسية</Text>
-      </Pressable>
-
-      <Pressable className="items-center w-[60px]">
-        <Feather name="grid" size={22} color={iconColor('categories')} />
-        <Text className={`${textWeight('categories')} text-[10px] mt-1`} style={{ color: iconColor('categories') }}>الفئات</Text>
-      </Pressable>
-
-      <Pressable className="items-center w-[60px]">
-        <Ionicons name="cart-outline" size={24} color={iconColor('cart')} />
-        <Text className={`${textWeight('cart')} text-[10px] mt-1`} style={{ color: iconColor('cart') }}>السلة</Text>
-      </Pressable>
-
-      <Pressable className="items-center w-[60px]" onPress={() => navigate('favorites')}>
-        {activeTab === 'favorites' ? (
-          <View className="w-10 h-10 bg-[#67BB28] rounded-full items-center justify-center mb-1">
-            <Ionicons name="heart" size={20} color="white" />
-          </View>
-        ) : (
-          <Ionicons name="heart-outline" size={24} color={iconColor('favorites')} />
-        )}
-        <Text className={`${textWeight('favorites')} text-[10px] mt-1`} style={{ color: iconColor('favorites') }}>المفضلة</Text>
-      </Pressable>
-
-      <Pressable className="items-center w-[60px]" onPress={() => navigate('profile')}>
-        {activeTab === 'profile' ? (
-          <View className="w-10 h-10 bg-[#67BB28] rounded-full items-center justify-center mb-1">
-            <Feather name="user" size={20} color="white" />
-          </View>
-        ) : (
-          <Feather name="user" size={24} color={iconColor('profile')} />
-        )}
-        <Text className={`${textWeight('profile')} text-[10px] mt-1`} style={{ color: iconColor('profile') }}>حسابي</Text>
-      </Pressable>
+      <TabItem tab="home" label="الرئيسية" icon={<Ionicons name={activeTab === 'home' ? 'home' : 'home-outline'} size={23} color={iconColor('home')} />} />
+      <TabItem tab="categories" label="الفئات" icon={<Feather name="grid" size={22} color={iconColor('categories')} />} />
+      <TabItem tab="cart" label="السلة" icon={<Ionicons name="cart-outline" size={23} color={iconColor('cart')} />} showBadge />
+      <TabItem tab="favorites" label="المفضلة" icon={<Ionicons name={activeTab === 'favorites' ? 'heart' : 'heart-outline'} size={23} color={iconColor('favorites')} />} />
+      <TabItem tab="profile" label="حسابي" icon={<Feather name="user" size={22} color={iconColor('profile')} />} />
     </View>
   );
 }

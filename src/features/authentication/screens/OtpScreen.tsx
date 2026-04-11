@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppHeader, Button, FormIcons } from '@/src/shared/ui';
+import { AppHeader, Button, CARD_BASE_CLASS, FormIcons } from '@/src/shared/ui';
 import { useVerifyOtp } from '../hooks/useVerifyOtp';
 
 export function OtpScreen() {
@@ -93,7 +93,7 @@ export function OtpScreen() {
                             لقد قمنا بإرسال رمز التحقق المكون من ٦ أرقام إلى بريدك الإلكتروني.
                         </Text>
 
-                        <View className="w-full bg-[#FCFBFA] rounded-[30px] p-8 shadow-sm items-center mb-10 border border-[#EFECE5]">
+                        <View className={`${CARD_BASE_CLASS} w-full bg-[#FCFBFA] p-8 items-center mb-10 border-[#EFECE5]`}>
                             <View className="flex-row items-center justify-center gap-2 mb-6">
                                 {otp.map((digit, index) => (
                                     <TextInput
