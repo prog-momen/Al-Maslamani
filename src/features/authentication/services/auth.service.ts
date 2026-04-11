@@ -42,15 +42,17 @@ export const authService = {
         return { success: true, message: 'Password reset link sent' };
     },
 
-    // Mock API for Verify OTP
-    async verifyOtp(code: string) {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    async verifyOtp(email: string, code: string) {
+        const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token: code,
+            type: 'recovery',
+        });
         
-        if (code === '1234') { // A mock simple valid code
-             return { success: true, message: 'Code verified successfully' };
-        } else {
-             throw new Error('رمز التحقق غير صحيح'); // Invalid code error
+        if (error) {
+            throw error;
         }
+        
+        return { success: true, message: 'Code verified successfully', data };
     }
 };

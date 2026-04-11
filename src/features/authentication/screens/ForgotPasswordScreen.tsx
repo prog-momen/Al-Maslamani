@@ -19,8 +19,8 @@ export function ForgotPasswordScreen() {
         
         try {
             await forgotPassword(contact);
-            // Navigate to OTP screen after successful submission
-            router.push('/(auth)/otp');
+            // Navigate to OTP screen after successful submission, passing the email
+            router.push({ pathname: '/(auth)/otp', params: { email: contact } });
         } catch {
             // Error handled by hook
         }
