@@ -6,12 +6,12 @@ export function useVerifyOtp() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const verifyOtp = async (code: string) => {
+    const verifyOtp = async (email: string, code: string) => {
         setIsLoading(true);
         setError(null);
         setSuccess(false);
         try {
-            await authService.verifyOtp(code);
+            await authService.verifyOtp(email, code);
             setSuccess(true);
         } catch (err: any) {
             setError(err.message || 'حدث خطأ. يرجى المحاولة مرة أخرى.');
