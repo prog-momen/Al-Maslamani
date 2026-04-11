@@ -2,10 +2,10 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AuthInput } from '../components/AuthInput';
+import { Button, FormField } from '@/src/shared/ui';
 import { useLogin } from '../hooks/useLogin';
 
 export function LoginScreen() {
@@ -19,6 +19,7 @@ export function LoginScreen() {
     const onSubmit = async (data: any) => {
         try {
             await login(data);
+            router.replace('/home');
         } catch {
             // Error is handled by hook and displayed below
         }
@@ -57,7 +58,7 @@ export function LoginScreen() {
                                     pattern: { value: /\S+@\S+\.\S+/, message: 'بريد إلكتروني غير صالح' }
                                 }}
                                 render={({ field: { onChange, onBlur, value } }) => (
-                                    <AuthInput
+                                    <FormField
                                         label="البريد الإلكتروني أو رقم الهاتف"
                                         placeholder="example@gmail.com"
                                         iconType="Email"
@@ -83,9 +84,7 @@ export function LoginScreen() {
                                 control={control}
                                 rules={{ required: 'كلمة المرور مطلوبة', minLength: { value: 6, message: 'كلمة المرور قصيرة جداً' } }}
                                 render={({ field: { onChange, onBlur, value } }) => (
-                                    // AuthInput handles the label slightly differently if we inject the "Forgot Password" node, 
-                                    // but we mapped the label outside to have flex layout with forgot password link!
-                                    <AuthInput
+                                    <FormField
                                         label=""
                                         placeholder="........"
                                         iconType="Lock"
@@ -101,20 +100,13 @@ export function LoginScreen() {
 
                             {error && <Text className="font-tajawal-bold text-red-500 text-center mt-2 mb-2">{error}</Text>}
 
-                            <Pressable
+                            <Button
                                 onPress={handleSubmit(onSubmit)}
-                                disabled={isLoading}
-                                className="w-full h-[54px] rounded-[30px] bg-brand-primary flex-row items-center justify-center mt-6 active:opacity-85 shadow-sm"
-                            >
-                                {isLoading ? (
-                                    <ActivityIndicator color="white" />
-                                ) : (
-                                    <>
-                                        <Text className="font-tajawal-bold text-[18px] text-white">تسجيل الدخول</Text>
-                                        <Text className="font-tajawal-bold text-[18px] text-white absolute left-5">←</Text>
-                                    </>
-                                )}
-                            </Pressable>
+                                loading={isLoading}
+                                label="تسجيل الدخول"
+                                icon={<Text className="font-tajawal-bold text-[18px] text-white">←</Text>}
+                                className="w-full h-[54px] mt-6"
+                            />
 
                             <View className="items-center mt-8 space-y-2">
                                 <Text className="font-tajawal-bold text-brand-title text-[14px]">المتابعة عبر Google .</Text>

@@ -1,6 +1,5 @@
-import { Image } from 'expo-image';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,8 +8,6 @@ import { FavoriteProduct, FavoriteProductCard } from '../components/FavoriteProd
 import { SuggestedProduct, SuggestedProductCard } from '../components/SuggestedProductCard';
 
 export function FavoritesScreen() {
-  const router = useRouter();
-
   // Mock Data
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([
     {
@@ -67,22 +64,19 @@ export function FavoritesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-brand-surface" edges={['top']}>
       {/* Top Header */}
-      <View className="flex-row items-center justify-between px-6 pt-4 pb-2 bg-brand-surface">
-        <TouchableOpacity className="w-10 h-10 items-center justify-center">
-          <Feather name="menu" size={24} color="#67BB28" />
-        </TouchableOpacity>
-        
-        <Image
-          source={require('@/assets/images/logo-transparent.png')}
-          className="w-56 h-20"
-          contentFit="contain"
-          transition={200}
-        />
-
-        <TouchableOpacity className="w-10 h-10 items-center justify-center">
-          <Feather name="search" size={24} color="#67BB28" />
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        logo="transparent"
+        left={
+          <TouchableOpacity className="w-10 h-10 items-center justify-center">
+            <Feather name="menu" size={24} color="#67BB28" />
+          </TouchableOpacity>
+        }
+        right={
+          <TouchableOpacity className="w-10 h-10 items-center justify-center">
+            <Feather name="search" size={24} color="#67BB28" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Title and Badge */}
@@ -125,35 +119,7 @@ export function FavoritesScreen() {
         </View>
       </ScrollView>
 
-      {/* Custom Bottom Navbar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-[#F9F9F9] rounded-t-[36px] flex-row justify-between items-end pb-8 pt-5 px-8 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-gray-100">
-        <TouchableOpacity className="items-center" onPress={() => router.replace('/home')}>
-          <Ionicons name="home-outline" size={24} color="#A3A3A3" />
-          <Text className="text-[#A3A3A3] text-[11px] font-tajawal-bold mt-1.5">الرئيسية</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="items-center">
-          <Feather name="grid" size={22} color="#A3A3A3" />
-          <Text className="text-[#A3A3A3] text-[11px] font-tajawal-bold mt-1.5">الفئات</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="items-center relative">
-          <Ionicons name="cart-outline" size={26} color="#A3A3A3" />
-          <Text className="text-[#A3A3A3] text-[11px] font-tajawal-bold mt-1.5">السلة</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="items-center -mt-2">
-          <View className="w-14 h-14 bg-brand-primary rounded-full justify-center items-center -top-2">
-            <Ionicons name="heart" size={24} color="white" />
-          </View>
-          <Text className="text-brand-primary text-[11px] font-tajawal-bold -mt-1">المفضلة</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="items-center">
-          <Feather name="user" size={24} color="#A3A3A3" />
-          <Text className="text-[#A3A3A3] text-[11px] font-tajawal-bold mt-1.5">حسابي</Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavbar activeTab="favorites" />
     </SafeAreaView>
   );
 }

@@ -1,4 +1,5 @@
 import { useAppEntry } from '@/src/features/app-entry/hooks/useAppEntry';
+import { Button } from '@/src/shared/ui';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,7 +31,7 @@ export function SplashScreen() {
         <View className="flex-1 w-full items-center justify-center py-8">
           <View className="items-center justify-center bg-[#84BD25]" style={{ width: 280, height: 280, borderRadius: 24 }}>
             <Image
-              source={require('@/assets/images/logo.png')}
+              source={require('@/assets/images/logo-transparent.png')}
               contentFit="contain"
               style={{ width: 240, height: 240 }}
             />
@@ -49,15 +50,12 @@ export function SplashScreen() {
           </View>
 
           {/* CTA */}
-          <Pressable
+          <Button
             onPress={handleContinue}
-            className="w-full h-[54px] rounded-[30px] bg-brand-primary flex-row-reverse items-center justify-center shadow-sm active:opacity-85"
-          >
-            <Text className="font-tajawal-bold text-[18px] text-white">ابدأ التسوق</Text>
-            <View className="ml-2 mt-1">
-              <Text className="font-tajawal-bold text-[20px] text-white">←</Text>
-            </View>
-          </Pressable>
+            label="ابدأ التسوق"
+            icon={<Text className="font-tajawal-bold text-[20px] text-white">←</Text>}
+            className="w-full h-[54px]"
+          />
 
           {/* Login Link */}
           <View className="mt-6 flex-row-reverse items-center justify-center gap-2">

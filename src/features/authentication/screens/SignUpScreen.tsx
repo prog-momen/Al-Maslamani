@@ -2,11 +2,11 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { AuthInput } from '../components/AuthInput';
+import { Button, FormField } from '@/src/shared/ui';
 import { useRegister } from '../hooks/useRegister';
 
 export function SignUpScreen() {
@@ -57,7 +57,7 @@ export function SignUpScreen() {
                             control={control}
                             rules={{ required: 'الاسم الكامل مطلوب' }}
                             render={({ field: { onChange, onBlur, value } }) => (
-                                <AuthInput label="الاسم الكامل" placeholder="أدخل اسمك هنا" iconType="User" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.fullName?.message as string} />
+                                <FormField label="الاسم الكامل" placeholder="أدخل اسمك هنا" iconType="User" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.fullName?.message as string} />
                             )}
                             name="fullName"
                         />
@@ -69,7 +69,7 @@ export function SignUpScreen() {
                                 pattern: { value: /\S+@\S+\.\S+/, message: 'بريد إلكتروني غير صالح' }
                             }}
                             render={({ field: { onChange, onBlur, value } }) => (
-                                <AuthInput label="البريد الإلكتروني" placeholder="example@domain.com" iconType="Email" keyboardType="email-address" autoCapitalize="none" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.email?.message as string} />
+                                <FormField label="البريد الإلكتروني" placeholder="example@domain.com" iconType="Email" keyboardType="email-address" autoCapitalize="none" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.email?.message as string} />
                             )}
                             name="email"
                         />
@@ -78,7 +78,7 @@ export function SignUpScreen() {
                             control={control}
                             rules={{ required: 'رقم الهاتف مطلوب' }}
                             render={({ field: { onChange, onBlur, value } }) => (
-                                <AuthInput label="رقم الهاتف" placeholder="05XXXXXXXX" iconType="Phone" keyboardType="phone-pad" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.phone?.message as string} />
+                                <FormField label="رقم الهاتف" placeholder="05XXXXXXXX" iconType="Phone" keyboardType="phone-pad" onBlur={onBlur} onChangeText={onChange} value={value} error={errors.phone?.message as string} />
                             )}
                             name="phone"
                         />
@@ -87,7 +87,7 @@ export function SignUpScreen() {
                             control={control}
                             rules={{ required: 'كلمة المرور مطلوبة', minLength: { value: 6, message: '6 أحرف كحد أدنى' } }}
                             render={({ field: { onChange, onBlur, value } }) => (
-                                <AuthInput label="كلمة المرور" placeholder="........" iconType="Lock" secureTextEntry onBlur={onBlur} onChangeText={onChange} value={value} error={errors.password?.message as string} />
+                                <FormField label="كلمة المرور" placeholder="........" iconType="Lock" secureTextEntry onBlur={onBlur} onChangeText={onChange} value={value} error={errors.password?.message as string} />
                             )}
                             name="password"
                         />
@@ -99,7 +99,7 @@ export function SignUpScreen() {
                                 validate: (value) => value === pwd || 'كلمتا المرور غير متطابقتين'
                             }}
                             render={({ field: { onChange, onBlur, value } }) => (
-                                <AuthInput label="تأكيد كلمة المرور" placeholder="........" iconType="Lock" secureTextEntry onBlur={onBlur} onChangeText={onChange} value={value} error={errors.confirmPassword?.message as string} />
+                                <FormField label="تأكيد كلمة المرور" placeholder="........" iconType="Lock" secureTextEntry onBlur={onBlur} onChangeText={onChange} value={value} error={errors.confirmPassword?.message as string} />
                             )}
                             name="confirmPassword"
                         />
@@ -119,17 +119,12 @@ export function SignUpScreen() {
 
                         {error && <Text className="font-tajawal-bold text-red-500 text-center mb-4">{error}</Text>}
 
-                        <Pressable
+                        <Button
                             onPress={handleSubmit(onSubmit)}
-                            disabled={isLoading}
-                            className="w-full h-[54px] rounded-full bg-brand-primary flex-row items-center justify-center active:opacity-85 shadow-sm"
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text className="font-tajawal-bold text-[18px] text-white">إنشاء حساب</Text>
-                            )}
-                        </Pressable>
+                            loading={isLoading}
+                            label="إنشاء حساب"
+                            className="w-full h-[54px]"
+                        />
 
                         <View className="mt-8 flex-row-reverse items-center justify-center gap-2 mb-10">
                             <Text className="font-tajawal-medium text-[16px] text-brand-text">
