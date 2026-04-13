@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -8,12 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 
 const Icons = {
-  Search: (props: any) => (
-    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <Circle cx="11" cy="11" r="8" />
-      <Path d="m21 21-4.3-4.3" />
-    </Svg>
-  ),
   Menu: (props: any) => (
     <Svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <Line x1="4" x2="20" y1="12" y2="12" />
@@ -122,14 +117,13 @@ export function ProfileScreen() {
           {/* Header */}
           <AppHeader
             logo="transparent"
-            left={
-              <Pressable className="hit-slop-10">
-                <Icons.Search color="#67BB28" />
-              </Pressable>
-            }
+            withSidebar
+            sidebarActiveItem="profile"
+            sidebarSide="left"
+            left={<Icons.Menu color="#67BB28" />}
             right={
-              <Pressable className="hit-slop-10">
-                <Icons.Menu color="#67BB28" />
+              <Pressable className="hit-slop-10" onPress={() => router.push('/contact-us')}>
+                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
               </Pressable>
             }
           />
@@ -160,7 +154,7 @@ export function ProfileScreen() {
           <View className="flex-row px-4 mt-8 gap-4">
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
               <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">4</Text>
-              <Text className="font-tajawal-medium text-[14px] text-brand-text">قائمة الأمنيات</Text>
+              <Text className="font-tajawal-medium text-[14px] text-brand-text">المفضلة</Text>
             </View>
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
               <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">12</Text>
@@ -173,7 +167,7 @@ export function ProfileScreen() {
             <View className={`${CARD_BASE_CLASS} p-2`}>
               
               {/* My Orders */}
-              <Pressable className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+              <Pressable onPress={() => router.push('/order-history')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
                 <View className="flex-row-reverse items-center gap-4">
                   <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
                     <Icons.Bag color="white" />

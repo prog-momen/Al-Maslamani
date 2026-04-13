@@ -1,422 +1,349 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  FlatList,
-} from 'react-native';
+import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import {
+    FlatList,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
-const PRIMARY_GREEN = '#2E7D32';
-const LIGHT_GREEN = '#E8F5E9';
+  const PRIMARY_GREEN = '#67BB28';
+  const PAGE_BG = '#F5F4F0';
 
-// بيانات وهمية للطلبات السابقة
+  type OrderStatus = 'completed' | 'cancelled' | 'processing';
+
 const MOCK_ORDERS = [
   {
     id: '1',
-    orderNumber: '#100245',
-    date: '12 أبريل 2026',
-    total: '145.50',
-    status: 'delivered',
-    itemsCount: 5,
-    items: 'مكسرات مشكلة، تمر مجدول...',
+      orderNumber: '#100245',
+      status: 'completed' as OrderStatus,
+      weight: '250 غرام',
+      name: 'بزر بطيخ محمص',
+      subtitle: 'بطعم الباربكيو',
+      total: '0.00',
+      image: require('@/assets/images/corn.png'),
   },
   {
     id: '2',
-    orderNumber: '#100198',
-    date: '05 أبريل 2026',
-    total: '89.00',
-    status: 'processing',
-    itemsCount: 3,
-    items: 'لوز، فستق، كاجو',
+      orderNumber: '#100198',
+      status: 'cancelled' as OrderStatus,
+      weight: '250 غرام',
+      name: 'كاشو بقشرة',
+      subtitle: '',
+      total: '0.00',
+      image: require('@/assets/images/chickpeas.png'),
   },
   {
     id: '3',
-    orderNumber: '#100150',
-    date: '28 مارس 2026',
-    total: '220.00',
-    status: 'delivered',
-    itemsCount: 8,
-    items: 'سلة هدايا فاخرة...',
+      orderNumber: '#100150',
+      status: 'completed' as OrderStatus,
+      weight: '250 غرام',
+      name: 'لوز',
+      subtitle: '',
+      total: '0.00',
+      image: require('@/assets/images/mixed_nuts.png'),
   },
   {
     id: '4',
-    orderNumber: '#100099',
-    date: '15 مارس 2026',
-    total: '60.00',
-    status: 'cancelled',
-    itemsCount: 2,
-    items: 'بسكويت، شوكولاتة',
-  },
-  {
-    id: '5',
-    orderNumber: '#100050',
-    date: '02 مارس 2026',
-    total: '175.00',
-    status: 'delivered',
-    itemsCount: 6,
-    items: 'تمر، مكسرات، عصير',
+      orderNumber: '#100099',
+      status: 'completed' as OrderStatus,
+      weight: '400 غرام',
+      name: 'مكسرات اكسترا',
+      subtitle: '',
+      total: '0.00',
+      image: require('@/assets/images/pecan.png'),
   },
 ];
 
-// بيانات الحالات
 const STATUS_CONFIG = {
-  delivered: {
-    label: 'تم التوصيل',
-    color: PRIMARY_GREEN,
-    bgColor: LIGHT_GREEN,
-    icon: 'checkmark-circle',
-  },
-  processing: {
-    label: 'جاري التنفيذ',
-    color: '#1565C0',
-    bgColor: '#E3F2FD',
-    icon: 'hourglass-outline',
+    completed: {
+      label: 'مكتمل',
+      color: '#2F6D34',
+      bgColor: '#B8E8BE',
   },
   cancelled: {
-    label: 'ملغي',
-    color: '#C62828',
-    bgColor: '#FFEBEE',
-    icon: 'close-circle',
+      label: 'ملغي',
+      color: '#A61E23',
+      bgColor: '#F7CCCA',
+    },
+    processing: {
+      label: 'جاري',
+      color: '#1565C0',
+      bgColor: '#E3F2FD',
   },
 };
 
-// مكون بطاقة الطلب
-function OrderCard({ order, onPress }) {
+  function OrderCard({ order, onPress }) {
   const statusInfo = STATUS_CONFIG[order.status];
 
   return (
-    <TouchableOpacity
-      style={styles.orderCard}
-      onPress={() => onPress(order)}
-      activeOpacity={0.85}
-    >
-      {/* رأس البطاقة */}
-      <View style={styles.cardHeader}>
-        <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-          <Ionicons
-            name={statusInfo.icon}
-            size={13}
-            color={statusInfo.color}
-            style={{ marginLeft: 4 }}
-          />
-          <Text style={[styles.statusText, { color: statusInfo.color }]}>
-            {statusInfo.label}
-          </Text>
+      <TouchableOpacity style={styles.orderCard} onPress={() => onPress(order)} activeOpacity={0.9}>
+        <View style={styles.cardTopRow}>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
         </View>
-        <View style={styles.orderNumberRow}>
-          <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-          <Ionicons name="receipt-outline" size={16} color={PRIMARY_GREEN} style={{ marginLeft: 6 }} />
+
+          <View style={styles.productInfoRow}>
+            <View style={styles.productImageWrap}>
+              <Image source={order.image} style={styles.productImage} contentFit="contain" />
+            </View>
+            <View style={styles.productTextWrap}>
+              <Text style={styles.productWeight}>{order.weight}</Text>
+              <Text style={styles.productName}>{order.name}</Text>
+              {order.subtitle ? <Text style={styles.productSubtitle}>{order.subtitle}</Text> : null}
+            </View>
         </View>
       </View>
 
-      {/* فاصل */}
       <View style={styles.cardDivider} />
 
-      {/* تفاصيل الطلب */}
-      <View style={styles.cardBody}>
-        <View style={styles.infoRow}>
-          <Ionicons name="fast-food-outline" size={15} color="#888" />
-          <Text style={styles.itemsText} numberOfLines={1}>
-            {order.items}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="cube-outline" size={15} color="#888" />
-          <Text style={styles.infoText}>{order.itemsCount} منتجات</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={15} color="#888" />
-          <Text style={styles.infoText}>{order.date}</Text>
-        </View>
-      </View>
-
-      {/* ذيل البطاقة */}
       <View style={styles.cardFooter}>
-        <TouchableOpacity
-          style={styles.reorderButton}
-          activeOpacity={0.8}
-          onPress={() => {}}
-        >
+          <TouchableOpacity style={styles.reorderButton} activeOpacity={0.85} onPress={() => {}}>
+            <Ionicons name="refresh" size={18} color="#FFFFFF" />
           <Text style={styles.reorderText}>إعادة الطلب</Text>
         </TouchableOpacity>
+
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>الإجمالي</Text>
-          <Text style={styles.totalValue}>{order.total} ر.س</Text>
+            <Text style={styles.totalValue}>{order.total}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-// مكون الشاشة الرئيسي
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState('all');
-
-  // تصفية الطلبات حسب الفلتر
-  const filteredOrders = MOCK_ORDERS.filter((order) => {
-    if (activeFilter === 'all') return true;
-    return order.status === activeFilter;
-  });
 
   const handleOrderPress = (order) => {
-    // يمكن الانتقال لشاشة التتبع إذا كان الطلب قيد التنفيذ
-    if (order.status === 'processing') {
-      router.push({
-        pathname: '/order-tracking',
-        params: {
-          orderNumber: order.orderNumber,
-          currentStep: 1,
-        }
-      });
-    }
+    const statusStepMap = {
+      processing: 2,
+      completed: 3,
+      cancelled: 1,
+    };
+
+    const isPreviousOrder = order.status !== 'processing';
+
+    router.push({
+      pathname: '/order-tracking',
+      params: {
+        orderNumber: order.orderNumber,
+        currentStep: statusStepMap[order.status],
+        previous: isPreviousOrder ? '1' : '0',
+        allowReorder: isPreviousOrder ? '1' : '0',
+        productName: order.name,
+        productSubtitle: order.subtitle || '-',
+        productWeight: order.weight,
+        total: order.total,
+      },
+    });
   };
 
-  const FILTERS = [
-    { id: 'all', label: 'الكل' },
-    { id: 'delivered', label: 'مُوصَّل' },
-    { id: 'processing', label: 'جاري' },
-    { id: 'cancelled', label: 'ملغي' },
-  ];
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={PRIMARY_GREEN} barStyle="light-content" />
+    <View style={styles.container}>
+        <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
-      {/* الهيدر */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>سجل الطلبات</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      {/* أزرار الفلترة */}
-      <View style={styles.filterContainer}>
-        {FILTERS.map((filter) => (
-          <TouchableOpacity
-            key={filter.id}
-            style={[
-              styles.filterButton,
-              activeFilter === filter.id && styles.filterButtonActive,
-            ]}
-            onPress={() => setActiveFilter(filter.id)}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                activeFilter === filter.id && styles.filterTextActive,
-              ]}
-            >
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* قائمة الطلبات */}
-      {filteredOrders.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="receipt-outline" size={64} color="#CCCCCC" />
-          <Text style={styles.emptyText}>لا توجد طلبات</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredOrders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <OrderCard order={item} onPress={handleOrderPress} />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
+      <SafeAreaView style={styles.safeArea}>
+        <AppHeader
+          logo="transparent"
+          withSidebar
+          sidebarActiveItem="orders"
+          sidebarSide="left"
+          left={<Ionicons name="menu" size={34} color={PRIMARY_GREEN} />}
+          right={
+            <TouchableOpacity onPress={() => router.push('/contact-us')} activeOpacity={0.8}>
+              <Ionicons name="help-circle-outline" size={30} color={PRIMARY_GREEN} />
+            </TouchableOpacity>
+          }
         />
-      )}
-    </SafeAreaView>
+
+          <View style={styles.titleSection}>
+            <Text style={styles.pageTitle}>سجل الطلبات</Text>
+            <Text style={styles.pageSubtitle}>تتبع مشترياتك السابقة من متجرنا</Text>
+            <Text style={styles.pageSubtitle}>المنسق</Text>
+        </View>
+
+          <FlatList
+            data={MOCK_ORDERS}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <OrderCard order={item} onPress={handleOrderPress} />}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+      </SafeAreaView>
+
+      <BottomNavbar activeTab="profile" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: PAGE_BG,
   },
-  header: {
-    backgroundColor: PRIMARY_GREEN,
-    flexDirection: 'row-reverse',
+  safeArea: {
+    flex: 1,
+  },
+  headerAction: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+  },
+  titleSection: {
+    paddingHorizontal: 34,
+    paddingTop: 8,
+    paddingBottom: 8,
+    alignItems: 'flex-end',
+  },
+  pageTitle: {
+    fontSize: 29,
+    lineHeight: 36,
+    color: '#0F0F0F',
+    fontFamily: 'Tajawal_700Bold',
+    textAlign: 'right',
+  },
+  pageSubtitle: {
+    fontSize: 16,
+    lineHeight: 23,
+    color: '#6E6D6A',
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'right',
+  },
+  listContent: {
+    paddingHorizontal: 28,
+    paddingTop: 6,
+    paddingBottom: 150,
+  },
+  orderCard: {
+    backgroundColor: '#F9F7F2',
+    borderRadius: 26,
+    marginBottom: 16,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 16,
+    paddingBottom: 14,
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
   },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  // الفلاتر
-  filterContainer: {
-    flexDirection: 'row-reverse',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  filterButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  filterButtonActive: {
-    backgroundColor: PRIMARY_GREEN,
-    borderColor: PRIMARY_GREEN,
-  },
-  filterText: {
-    fontSize: 13,
-    color: '#666666',
-    fontWeight: '500',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  // قائمة الطلبات
-  listContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 30,
-  },
-  // بطاقة الطلب
-  orderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    marginBottom: 4,
-  },
-  cardHeader: {
+  cardTopRow: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
-  },
-  orderNumberRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-  },
-  orderNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    alignItems: 'flex-start',
   },
   statusBadge: {
-    flexDirection: 'row-reverse',
+    marginTop: 4,
+    borderRadius: 999,
+    minWidth: 90,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    justifyContent: 'center',
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 14,
+    lineHeight: 19,
+    fontFamily: 'Tajawal_700Bold',
+  },
+  productInfoRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    gap: 10,
+    flex: 1,
+  },
+  productImageWrap: {
+    width: 82,
+    height: 82,
+    borderRadius: 20,
+    backgroundColor: '#ECEBE8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productImage: {
+    width: 68,
+    height: 68,
+  },
+  productTextWrap: {
+    alignItems: 'flex-end',
+    flexShrink: 1,
+    maxWidth: 190,
+  },
+  productWeight: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#6E6D6A',
+    fontFamily: 'Tajawal_500Medium',
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  productName: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#1D1D1D',
+    fontFamily: 'Tajawal_700Bold',
+    textAlign: 'right',
+    marginTop: 1,
+  },
+  productSubtitle: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: '#1D1D1D',
+    fontFamily: 'Tajawal_700Bold',
+    marginTop: 2,
+    textAlign: 'right',
   },
   cardDivider: {
     height: 1,
-    backgroundColor: '#F5F5F5',
-    marginHorizontal: 16,
-  },
-  cardBody: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  infoRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-  },
-  itemsText: {
-    fontSize: 13,
-    color: '#555555',
-    flex: 1,
-    textAlign: 'right',
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#666666',
+    backgroundColor: '#E9E6DF',
+    marginTop: 14,
+    marginBottom: 14,
   },
   cardFooter: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    paddingTop: 4,
+  },
+  reorderButton: {
+    backgroundColor: PRIMARY_GREEN,
+    minWidth: 172,
+    height: 44,
+    borderRadius: 22,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  reorderText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: 'Tajawal_700Bold',
   },
   totalRow: {
     alignItems: 'flex-end',
+    minWidth: 76,
   },
   totalLabel: {
-    fontSize: 12,
-    color: '#888888',
+    fontSize: 15,
+    lineHeight: 18,
+    color: '#75736F',
+    fontFamily: 'Tajawal_500Medium',
     marginBottom: 2,
   },
   totalValue: {
-    fontSize: 17,
-    fontWeight: 'bold',
+    fontSize: 32,
+    lineHeight: 30,
     color: PRIMARY_GREEN,
-  },
-  reorderButton: {
-    borderWidth: 1.5,
-    borderColor: PRIMARY_GREEN,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  reorderText: {
-    color: PRIMARY_GREEN,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  // Empty State
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#AAAAAA',
-    fontWeight: '500',
+    fontFamily: 'Tajawal_700Bold',
   },
 });

@@ -1,12 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { ReactNode } from 'react';
-import { View } from 'react-native';
+import React, { ReactNode, useState } from 'react';
+import { Pressable, View } from 'react-native';
+import { SidebarDrawer, SidebarItemKey } from './SidebarDrawer';
 
 type AppHeaderProps = {
   left?: ReactNode;
   right?: ReactNode;
   logo?: 'logo2' | 'transparent' | 'none';
   className?: string;
+  withSidebar?: boolean;
+  sidebarActiveItem?: SidebarItemKey;
+  sidebarSide?: 'left' | 'right';
 };
 
 const logoSourceMap = {
@@ -14,21 +19,58 @@ const logoSourceMap = {
   transparent: require('@/assets/images/logo-transparent.png'),
 };
 
-export function AppHeader({ left, right, logo = 'transparent', className = '' }: AppHeaderProps) {
+export function AppHeader({
+  left,
+  right,
+  logo = 'transparent',
+  className = '',
+  withSidebar = false,
+  sidebarActiveItem,
+  sidebarSide = 'right',
+}: AppHeaderProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const openSidebar = () => setIsSidebarOpen(true);
+
+  const leftNode = withSidebar && sidebarSide === 'left' ? (
+    <Pressable onPress={openSidebar} hitSlop={10} className="w-11 h-11 items-center justify-center">
+      {left ?? <Ionicons name="menu" size={28} color="#67BB28" />}
+    </Pressable>
+  ) : (
+    left
+  );
+
+  const rightNode = withSidebar && sidebarSide === 'right' ? (
+    <Pressable onPress={openSidebar} hitSlop={10} className="w-11 h-11 items-center justify-center">
+      {right ?? <Ionicons name="menu" size={28} color="#67BB28" />}
+    </Pressable>
+  ) : (
+    right
+  );
+
   return (
-    <View className={`flex-row items-center justify-between px-6 pt-2 pb-2 ${className}`}>
-      <View className="w-11 h-11 items-center justify-center">{left}</View>
-      <View className="flex-1 items-center justify-center">
-        {logo === 'none' ? null : (
-          <Image
-            source={logoSourceMap[logo]}
-            className={logo === 'transparent' ? 'w-[170px] h-[90px]' : 'w-[84px] h-[36px]'}
-            contentFit="contain"
-            transition={200}
-          />
-        )}
+    <>
+      <View className={`flex-row items-center justify-between px-6 pt-1 pb-1 ${className}`}>
+        <View className="w-11 h-11 items-center justify-center">{leftNode}</View>
+        <View className="flex-1 items-center justify-center">
+          {logo === 'none' ? null : (
+            <Image
+              source={logoSourceMap[logo]}
+              className={logo === 'transparent' ? 'w-[170px] h-[72px]' : 'w-[84px] h-[34px]'}
+              contentFit="contain"
+              transition={200}
+            />
+          )}
+        </View>
+        <View className="w-11 h-11 items-center justify-center">{rightNode}</View>
       </View>
-      <View className="w-11 h-11 items-center justify-center">{right}</View>
-    </View>
+      {withSidebar ? (
+        <SidebarDrawer
+          visible={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          activeItem={sidebarActiveItem}
+        />
+      ) : null}
+    </>
   );
 }

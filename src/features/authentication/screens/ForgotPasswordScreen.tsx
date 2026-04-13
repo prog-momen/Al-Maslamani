@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
@@ -33,10 +34,12 @@ export function ForgotPasswordScreen() {
                     {/* Header */}
                     <AppHeader
                         logo="transparent"
-                        left={<View />}
+                        withSidebar
+                        sidebarSide="left"
+                        left={<Ionicons name="menu" size={26} color="#67BB28" />}
                         right={
-                            <Pressable onPress={() => router.back()} className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100">
-                                <Text className="font-tajawal-bold text-[18px]">➔</Text>
+                            <Pressable onPress={() => router.push('/contact-us')} hitSlop={10} className="w-10 h-10 items-center justify-center">
+                                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
                             </Pressable>
                         }
                     />

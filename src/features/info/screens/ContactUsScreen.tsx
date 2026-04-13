@@ -1,4 +1,5 @@
 import { AppHeader, BottomNavbar, CARD_BASE_CLASS, FormField } from '@/src/shared/ui';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -68,14 +69,13 @@ export function ContactUsScreen() {
           {/* Header */}
           <AppHeader
             logo="transparent"
-            left={
-              <Pressable onPress={() => router.back()} className="hit-slop-10 items-center justify-center w-10 h-10">
-                <Icons.ChevronRight color="#67BB28" />
-              </Pressable>
-            }
+            withSidebar
+            sidebarActiveItem="contact"
+            sidebarSide="left"
+            left={<Icons.Menu color="#67BB28" />}
             right={
-              <Pressable className="hit-slop-10">
-                <Icons.Menu color="#67BB28" />
+              <Pressable onPress={() => router.push('/contact-us')} hitSlop={10} className="hit-slop-10 items-center justify-center w-10 h-10">
+                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
               </Pressable>
             }
           />

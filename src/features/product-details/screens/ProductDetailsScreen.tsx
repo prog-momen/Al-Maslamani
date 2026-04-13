@@ -28,6 +28,14 @@ export function ProductDetailsScreen() {
   const [selectedWeight, setSelectedWeight] = useState('250 جرام');
   const [quantity, setQuantity] = useState(1);
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/home');
+  };
+
   const incrementQuantity = () => setQuantity((prev) => prev + 1);
   const decrementQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
@@ -130,17 +138,12 @@ export function ProductDetailsScreen() {
       <AppHeader
         logo="transparent"
         className="z-10"
-        left={
-          <TouchableOpacity
-            className="w-10 h-10 items-center justify-center bg-white/50 rounded-full"
-            onPress={() => router.back()}
-          >
-            <Feather name="arrow-left" size={22} color="#4E5D50" />
-          </TouchableOpacity>
-        }
+        withSidebar
+        sidebarSide="left"
+        left={<Feather name="menu" size={24} color="#67BB28" />}
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center bg-white/50 rounded-full" onPress={handleToggleFavorite}>
-            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? '#E53935' : '#4E5D50'} />
+          <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
+            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
           </TouchableOpacity>
         }
       />

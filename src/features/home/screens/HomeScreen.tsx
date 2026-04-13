@@ -148,14 +148,13 @@ export function HomeScreen() {
     <SafeAreaView className="flex-1 bg-brand-surface" edges={['top']}>
       <AppHeader
         logo="transparent"
-        left={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="search" size={27} color="#67BB28" />
-          </TouchableOpacity>
-        }
+        withSidebar
+        sidebarActiveItem="home"
+        sidebarSide="left"
+        left={<Feather name="menu" size={27} color="#67BB28" />}
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="menu" size={27} color="#67BB28" />
+          <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
+            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
           </TouchableOpacity>
         }
       />

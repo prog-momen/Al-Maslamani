@@ -1,445 +1,521 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import {
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 
-const PRIMARY_GREEN = '#2E7D32';
-const LIGHT_GREEN = '#E8F5E9';
+const PRIMARY_GREEN = '#67BB28';
+const PAGE_BG = '#F5F4F0';
+const LIGHT_GREEN = '#B8E8BE';
 
-// مراحل الطلب
-const ORDER_STEPS = [
-  {
-    id: 1,
-    title: 'تم استلام الطلب',
-    subtitle: 'طلبك قيد المعالجة',
-    icon: 'receipt-outline',
-  },
-  {
-    id: 2,
-    title: 'جاري التجهيز',
-    subtitle: 'يتم تجهيز طلبك الآن',
-    icon: 'construct-outline',
-  },
-  {
-    id: 3,
-    title: 'في الطريق',
-    subtitle: 'المندوب في طريقه إليك',
-    icon: 'bicycle-outline',
-  },
-  {
-    id: 4,
-    title: 'تم التوصيل',
-    subtitle: 'تم تسليم طلبك بنجاح',
-    icon: 'home-outline',
-  },
-];
+const getParamString = (value: string | string[] | undefined, fallback: string) => {
+  if (Array.isArray(value)) {
+    return value[0] ?? fallback;
+  }
+  return value ?? fallback;
+};
 
 export default function OrderTrackingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  // المرحلة الحالية (0-based index) - يمكن تمريرها من الشاشة السابقة
-  const currentStep = params?.currentStep ? parseInt(params.currentStep as string) : 2; // "في الطريق" بشكل افتراضي
-  const orderNumber = params?.orderNumber || '#123456';
+
+  const currentStepRaw = parseInt(getParamString(params.currentStep as string | string[] | undefined, '2'), 10);
+  const currentStep = Number.isNaN(currentStepRaw) ? 2 : Math.max(0, Math.min(3, currentStepRaw));
+
+  const orderNumber = getParamString(params.orderNumber as string | string[] | undefined, '#123456');
+  const eta = getParamString(params.eta as string | string[] | undefined, '12:45 مساء');
+  const total = getParamString(params.total as string | string[] | undefined, '0.00');
+  const productName = getParamString(params.productName as string | string[] | undefined, 'شوكلاته مشكّلة');
+  const productSubtitle = getParamString(params.productSubtitle as string | string[] | undefined, 'يا نسون نجمي');
+  const productWeight = getParamString(params.productWeight as string | string[] | undefined, '1x');
+
+  const allowReorder = getParamString(params.allowReorder as string | string[] | undefined, '0') === '1';
+
+  const ORDER_STEPS = [
+    {
+      id: 0,
+      title: 'تم الطلب',
+      subtitle: `استلمنا طلبك رقم ${orderNumber}`,
+      time: '12:10 مساء',
+      icon: 'checkmark',
+    },
+    {
+      id: 1,
+      title: 'قيد المعالجة',
+      subtitle: 'يتم الآن تحضير وتغليف طلبك بعناية',
+      time: '12:25 مساء',
+      icon: 'checkmark',
+    },
+    {
+      id: 2,
+      title: 'في الطريق',
+      subtitle: 'المندوب في طريقه إلى موقعك حالياً',
+      time: 'مباشر',
+      icon: 'bicycle-outline',
+    },
+    {
+      id: 3,
+      title: 'تم التوصيل',
+      subtitle: 'بالهنا والشفا!',
+      time: '',
+      icon: 'home-outline',
+    },
+  ];
+
+  const statusBanner = currentStep >= 3 ? 'تم توصيل الطلب بنجاح' : 'الطلب يتحرك بسرعة';
+
+  const renderStep = (step: (typeof ORDER_STEPS)[number], index: number) => {
+    const isCompleted = index < currentStep;
+    const isCurrent = index === currentStep;
+    const isPending = index > currentStep;
+
+    const circleStyle = isPending
+      ? styles.timelineCirclePending
+      : isCurrent
+      ? styles.timelineCircleCurrent
+      : styles.timelineCircleCompleted;
+
+    const iconColor = isPending ? '#BFC5BC' : '#FFFFFF';
+    const textStyle = isPending ? styles.timelineTitlePending : styles.timelineTitle;
+    const subtitleStyle = isPending ? styles.timelineSubtitlePending : styles.timelineSubtitle;
+
+    return (
+      <View key={step.id} style={styles.timelineRow}>
+        <View style={styles.timelineIconColumn}>
+          <View style={[styles.timelineCircle, circleStyle]}>
+            <Ionicons name={step.icon as any} size={16} color={iconColor} />
+          </View>
+          {index < ORDER_STEPS.length - 1 ? (
+            <View style={[styles.timelineLine, isPending ? styles.timelineLinePending : styles.timelineLineActive]} />
+          ) : null}
+        </View>
+
+        <View style={styles.timelineTextColumn}>
+          <Text style={textStyle}>{step.title}</Text>
+          <Text style={subtitleStyle}>{step.subtitle}</Text>
+          {step.time ? (
+            <View style={isCurrent && step.time === 'مباشر' ? styles.liveBadge : undefined}>
+              <Text style={isCurrent && step.time === 'مباشر' ? styles.liveBadgeText : styles.timelineTime}>{step.time}</Text>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={PRIMARY_GREEN} barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
-      {/* الهيدر */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>تتبع الطلب</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <AppHeader
+          logo="transparent"
+          withSidebar
+          sidebarActiveItem="orders"
+          sidebarSide="left"
+          left={<Ionicons name="menu" size={22} color={PRIMARY_GREEN} />}
+          right={
+            <TouchableOpacity style={styles.headerAction} activeOpacity={0.8} onPress={() => router.push('/contact-us')}>
+              <Ionicons name="help-circle-outline" size={26} color="#4F5C50" />
+            </TouchableOpacity>
+          }
+        />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* بطاقة خريطة الموقع (placeholder بدل Map حقيقي) */}
-        <View style={styles.mapContainer}>
-          <View style={styles.mapPlaceholder}>
-            <Ionicons name="map" size={48} color={PRIMARY_GREEN} />
-            <Text style={styles.mapLabel}>موقع المندوب</Text>
-            <View style={styles.mapPin}>
-              <Ionicons name="location" size={28} color="#FF3D00" />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.etaCard}>
+            <View style={styles.etaShape} />
+            <Text style={styles.etaLabel}>وقت التوصيل المتوقع</Text>
+            <Text style={styles.etaValue}>{eta}</Text>
+            <View style={styles.speedBadge}>
+              <Text style={styles.speedBadgeText}>{statusBanner}</Text>
             </View>
           </View>
-        </View>
 
-        {/* معلومات الطلب */}
-        <View style={styles.orderInfoCard}>
-          <View style={styles.orderInfoRow}>
-            <Text style={styles.orderInfoLabel}>رقم الطلب</Text>
-            <Text style={styles.orderInfoValue}>{orderNumber}</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.orderInfoRow}>
-            <Text style={styles.orderInfoLabel}>الحالة الحالية</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>
-                {ORDER_STEPS[currentStep]?.title}
-              </Text>
+          <View style={styles.mapCard}>
+            <Image source={require('@/assets/images/about2.png')} style={styles.mapImage} contentFit="cover" />
+            <View style={styles.mapOverlay} />
+            <View style={styles.riderPin}>
+              <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
+            </View>
+            <View style={styles.riderTag}>
+              <Text style={styles.riderTagText}>(أحمد المندوب)</Text>
             </View>
           </View>
-        </View>
 
-        {/* خط زمني / Stepper */}
-        <View style={styles.stepperContainer}>
-          <Text style={styles.stepperTitle}>مراحل الطلب</Text>
-          {ORDER_STEPS.map((step, index) => {
-            const isCompleted = index < currentStep;
-            const isCurrent = index === currentStep;
-            const isPending = index > currentStep;
+          <View style={styles.driverRow}>
+            <TouchableOpacity style={styles.callCircle} activeOpacity={0.8}>
+              <Ionicons name="call-outline" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
 
-            return (
-              <View key={step.id} style={styles.stepRow}>
-                {/* الخط الرابط */}
-                <View style={styles.stepLineColumn}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      isCompleted && styles.stepCircleCompleted,
-                      isCurrent && styles.stepCircleCurrent,
-                      isPending && styles.stepCirclePending,
-                    ]}
-                  >
-                    {isCompleted ? (
-                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                    ) : (
-                      <Ionicons
-                        name={step.icon}
-                        size={16}
-                        color={isCurrent ? '#FFFFFF' : '#BBBBBB'}
-                      />
-                    )}
-                  </View>
-                  {/* خط رأسي */}
-                  {index < ORDER_STEPS.length - 1 && (
-                    <View
-                      style={[
-                        styles.stepConnector,
-                        index < currentStep && styles.stepConnectorCompleted,
-                      ]}
-                    />
-                  )}
-                </View>
+            <View style={styles.driverInfo}>
+              <Text style={styles.driverName}>أحمد محمود</Text>
+              <Text style={styles.driverPhone}>رقم التواصل: 05xxxxxxx</Text>
+            </View>
 
-                {/* محتوى الخطوة */}
-                <View style={styles.stepContent}>
-                  <Text
-                    style={[
-                      styles.stepTitle,
-                      (isCompleted || isCurrent) && styles.stepTitleActive,
-                    ]}
-                  >
-                    {step.title}
-                  </Text>
-                  <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
-                </View>
-
-                {/* علامة "الحالي" */}
-                {isCurrent && (
-                  <View style={styles.currentBadge}>
-                    <Text style={styles.currentBadgeText}>الحالي</Text>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        {/* بطاقة المندوب */}
-        <View style={styles.driverCard}>
-          <View style={styles.driverInfo}>
             <View style={styles.driverAvatar}>
-              <Ionicons name="person" size={28} color={PRIMARY_GREEN} />
-            </View>
-            <View style={styles.driverDetails}>
-              <Text style={styles.driverName}>محمد العلي</Text>
-              <View style={styles.ratingRow}>
-                <Ionicons name="star" size={14} color="#FFC107" />
-                <Text style={styles.driverRating}>4.8</Text>
-                <Text style={styles.driverLabel}> • المندوب</Text>
-              </View>
+              <Ionicons name="person" size={18} color="#5B5B5B" />
             </View>
           </View>
-          <TouchableOpacity style={styles.callButton} activeOpacity={0.8}>
-            <Ionicons name="call" size={20} color="#FFFFFF" />
-            <Text style={styles.callButtonText}>اتصال</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+          <View style={styles.timelineCard}>{ORDER_STEPS.map(renderStep)}</View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>ملخص الطلب</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryValue}>{`${productWeight} ${productName}`}</Text>
+              <Text style={styles.summaryLabel}>الصنف</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryValue}>{productSubtitle}</Text>
+              <Text style={styles.summaryLabel}>الوصف</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryFooter}>
+              <Text style={styles.summaryTotalValue}>{total} ₪</Text>
+              <Text style={styles.summaryTotalLabel}>الإجمالي</Text>
+            </View>
+
+            {allowReorder ? (
+              <TouchableOpacity style={styles.reorderButton} activeOpacity={0.85}>
+                <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                <Text style={styles.reorderText}>إعادة الطلب</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+
+      <BottomNavbar activeTab="profile" />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: PAGE_BG,
   },
-  header: {
-    backgroundColor: PRIMARY_GREEN,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  safeArea: {
+    flex: 1,
   },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    paddingBottom: 30,
-  },
-  // الخريطة
-  mapContainer: {
-    margin: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  mapPlaceholder: {
-    height: 180,
-    backgroundColor: '#E0F2F1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapLabel: {
-    marginTop: 8,
-    fontSize: 14,
-    color: PRIMARY_GREEN,
-    fontWeight: '500',
-  },
-  mapPin: {
-    position: 'absolute',
-    top: 60,
-    right: 100,
-  },
-  // بطاقة معلومات الطلب
-  orderInfoCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  orderInfoRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  orderInfoLabel: {
-    fontSize: 14,
-    color: '#777777',
-  },
-  orderInfoValue: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginVertical: 8,
-  },
-  statusBadge: {
-    backgroundColor: LIGHT_GREEN,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  statusBadgeText: {
-    color: PRIMARY_GREEN,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  // الـ Stepper
-  stepperContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  stepperTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    textAlign: 'right',
-    marginBottom: 16,
-  },
-  stepRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  stepLineColumn: {
-    alignItems: 'center',
-    width: 36,
-    marginLeft: 12,
-  },
-  stepCircle: {
+  headerAction: {
     width: 36,
     height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepCircleCompleted: {
-    backgroundColor: PRIMARY_GREEN,
+  scrollContent: {
+    paddingHorizontal: 10,
+    paddingBottom: 118,
   },
-  stepCircleCurrent: {
-    backgroundColor: '#FF8F00',
+  etaCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingTop: 9,
+    paddingBottom: 9,
+    overflow: 'hidden',
   },
-  stepCirclePending: {
-    backgroundColor: '#E0E0E0',
+  etaShape: {
+    width: 120,
+    height: 120,
+    backgroundColor: '#EEF1EE',
+    position: 'absolute',
+    top: -44,
+    right: -36,
+    borderRadius: 60,
   },
-  stepConnector: {
-    width: 2,
+  etaLabel: {
+    fontSize: 13,
+    lineHeight: 17,
+    color: '#44484B',
+    textAlign: 'center',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  etaValue: {
+    marginTop: 2,
+    fontSize: 26,
+    lineHeight: 31,
+    color: '#2C2F33',
+    textAlign: 'center',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  speedBadge: {
     height: 32,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: PRIMARY_GREEN,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
   },
-  stepConnectorCompleted: {
+  speedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: 'Tajawal_700Bold',
+  },
+  mapCard: {
+    height: 170,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  mapImage: {
+    width: '100%',
+    height: '100%',
+  },
+  mapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(78, 129, 121, 0.26)',
+  },
+  riderPin: {
+    position: 'absolute',
+    top: 50,
+    alignSelf: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: PRIMARY_GREEN,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  riderTag: {
+    position: 'absolute',
+    top: 104,
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: 9,
+    paddingVertical: 2,
+  },
+  riderTagText: {
+    fontSize: 10,
+    lineHeight: 13,
+    color: '#2B2B2B',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  callCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: PRIMARY_GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverInfo: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginHorizontal: 10,
+  },
+  driverName: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#2A2D2E',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  driverPhone: {
+    fontSize: 9,
+    lineHeight: 13,
+    color: '#666C67',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  driverAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#D9DBD8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineCard: {
+    paddingTop: 2,
+  },
+  timelineRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  timelineIconColumn: {
+    alignItems: 'center',
+    width: 40,
+  },
+  timelineCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineCircleCompleted: {
     backgroundColor: PRIMARY_GREEN,
   },
-  stepContent: {
-    flex: 1,
-    paddingBottom: 16,
+  timelineCircleCurrent: {
+    backgroundColor: PRIMARY_GREEN,
+    borderWidth: 3,
+    borderColor: '#0B7B26',
   },
-  stepTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#AAAAAA',
+  timelineCirclePending: {
+    backgroundColor: '#E6EAE4',
+  },
+  timelineLine: {
+    width: 2,
+    height: 44,
+    marginVertical: 2,
+  },
+  timelineLineActive: {
+    backgroundColor: PRIMARY_GREEN,
+  },
+  timelineLinePending: {
+    backgroundColor: '#D9DEDA',
+  },
+  timelineTextColumn: {
+    flex: 1,
+    alignItems: 'flex-end',
+    paddingTop: 2,
+    paddingLeft: 4,
+  },
+  timelineTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    color: '#222629',
+    fontFamily: 'Tajawal_700Bold',
     textAlign: 'right',
   },
-  stepTitleActive: {
-    color: '#1A1A1A',
+  timelineTitlePending: {
+    fontSize: 20,
+    lineHeight: 24,
+    color: '#C7D1C5',
+    fontFamily: 'Tajawal_700Bold',
+    textAlign: 'right',
   },
-  stepSubtitle: {
-    fontSize: 12,
-    color: '#AAAAAA',
+  timelineSubtitle: {
+    fontSize: 10,
+    lineHeight: 14,
+    color: '#555C59',
+    fontFamily: 'Tajawal_500Medium',
     textAlign: 'right',
     marginTop: 2,
   },
-  currentBadge: {
-    backgroundColor: '#FFF3E0',
+  timelineSubtitlePending: {
+    fontSize: 10,
+    lineHeight: 14,
+    color: '#BCC5BA',
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  timelineTime: {
+    marginTop: 4,
+    fontSize: 9,
+    lineHeight: 12,
+    color: '#626865',
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'right',
+  },
+  liveBadge: {
+    marginTop: 4,
+    backgroundColor: LIGHT_GREEN,
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
-    alignSelf: 'center',
-    marginLeft: 4,
   },
-  currentBadgeText: {
-    color: '#FF8F00',
-    fontSize: 11,
-    fontWeight: '600',
+  liveBadgeText: {
+    fontSize: 10,
+    lineHeight: 13,
+    color: '#2E7035',
+    fontFamily: 'Tajawal_700Bold',
   },
-  // بطاقة المندوب
-  driverCard: {
+  summaryCard: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 18,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  summaryTitle: {
+    fontSize: 15,
+    lineHeight: 19,
+    color: '#202428',
+    fontFamily: 'Tajawal_700Bold',
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  summaryRow: {
     flexDirection: 'row-reverse',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  driverInfo: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: 12,
+    marginBottom: 5,
   },
-  driverAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: LIGHT_GREEN,
+  summaryLabel: {
+    fontSize: 10,
+    lineHeight: 13,
+    color: '#5F6561',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  summaryValue: {
+    flex: 1,
+    fontSize: 10,
+    lineHeight: 13,
+    color: '#202428',
+    fontFamily: 'Tajawal_500Medium',
+    textAlign: 'right',
+    marginLeft: 8,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: '#E8E9E5',
+    marginVertical: 6,
+  },
+  summaryFooter: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryTotalLabel: {
+    fontSize: 17,
+    lineHeight: 21,
+    color: '#202428',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  summaryTotalValue: {
+    fontSize: 17,
+    lineHeight: 21,
+    color: PRIMARY_GREEN,
+    fontFamily: 'Tajawal_700Bold',
+  },
+  reorderButton: {
+    marginTop: 8,
+    backgroundColor: PRIMARY_GREEN,
+    borderRadius: 14,
+    height: 32,
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  driverDetails: {
-    alignItems: 'flex-end',
-  },
-  driverName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  ratingRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginTop: 3,
-  },
-  driverRating: {
-    fontSize: 13,
-    color: '#FFC107',
-    fontWeight: '600',
-    marginRight: 3,
-  },
-  driverLabel: {
-    fontSize: 12,
-    color: '#888888',
-  },
-  callButton: {
-    backgroundColor: PRIMARY_GREEN,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 22,
     gap: 6,
-    elevation: 2,
   },
-  callButtonText: {
+  reorderText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 10,
+    lineHeight: 13,
+    fontFamily: 'Tajawal_700Bold',
   },
 });

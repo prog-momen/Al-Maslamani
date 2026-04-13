@@ -1,4 +1,5 @@
 import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -53,14 +54,13 @@ export function AboutUsScreen() {
           {/* Header */}
           <AppHeader
             logo="transparent"
-            left={
-              <Pressable onPress={() => router.back()} className="hit-slop-10 items-center justify-center w-10 h-10">
-                <Icons.ChevronRight color="#67BB28" />
-              </Pressable>
-            }
+            withSidebar
+            sidebarActiveItem="about"
+            sidebarSide="left"
+            left={<Icons.Menu color="#67BB28" />}
             right={
-              <Pressable className="hit-slop-10">
-                <Icons.Menu color="#67BB28" />
+              <Pressable onPress={() => router.push('/contact-us')} hitSlop={10} className="hit-slop-10 items-center justify-center w-10 h-10">
+                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
               </Pressable>
             }
           />

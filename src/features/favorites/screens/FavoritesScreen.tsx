@@ -1,5 +1,5 @@
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -144,14 +144,13 @@ export function FavoritesScreen() {
       {/* Top Header */}
       <AppHeader
         logo="transparent"
-        left={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="search" size={26} color="#67BB28" />
-          </TouchableOpacity>
-        }
+        withSidebar
+        sidebarActiveItem="favorites"
+        sidebarSide="left"
+        left={<Feather name="menu" size={26} color="#67BB28" />}
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center">
-            <Feather name="menu" size={26} color="#67BB28" />
+          <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
+            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
           </TouchableOpacity>
         }
       />
