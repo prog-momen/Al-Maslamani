@@ -15,8 +15,8 @@ type AppHeaderProps = {
 };
 
 const logoSourceMap = {
-  logo2: require('@/assets/images/logo2.png'),
-  transparent: require('@/assets/images/logo-transparent.png'),
+  logo2: require('../../../assets/images/logo2.png'),
+  transparent: require('../../../assets/images/logo-transparent.png'),
 };
 
 export function AppHeader({
@@ -56,7 +56,7 @@ export function AppHeader({
           {logo === 'none' ? null : (
             <Image
               source={logoSourceMap[logo]}
-              className={logo === 'transparent' ? 'w-[170px] h-[72px]' : 'w-[84px] h-[34px]'}
+              style={logo === 'transparent' ? { width: 170, height: 72 } : { width: 84, height: 34 }}
               contentFit="contain"
               transition={200}
             />
