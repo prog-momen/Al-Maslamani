@@ -10,9 +10,9 @@ export type SuggestedProduct = {
   image: any;
 };
 
-interface SuggestedProductCardProps {
+type SuggestedProductCardProps = {
   product: SuggestedProduct;
-}
+};
 
 export function SuggestedProductCard({ product }: SuggestedProductCardProps) {
   const router = useRouter();

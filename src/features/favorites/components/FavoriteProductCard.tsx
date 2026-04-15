@@ -18,11 +18,11 @@ export type FavoriteProduct = {
   };
 };
 
-interface FavoriteProductCardProps {
+type FavoriteProductCardProps = {
   product: FavoriteProduct;
   onToggleFavorite?: (id: string) => void;
   onAddToCart?: (id: string) => void;
-}
+};
 
 export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: FavoriteProductCardProps) {
   const router = useRouter();

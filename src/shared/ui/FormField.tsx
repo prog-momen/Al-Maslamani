@@ -81,11 +81,11 @@ export const FormIcons = {
   ),
 };
 
-interface FormFieldProps extends TextInputProps {
+type FormFieldProps = TextInputProps & {
   label: string;
   error?: string;
   iconType?: keyof typeof FormIcons;
-}
+};
 
 export function FormField({ label, error, iconType, secureTextEntry, className, ...props }: FormFieldProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
