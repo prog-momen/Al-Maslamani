@@ -35,6 +35,10 @@ export function BottomNavbar({ activeTab, cartCount = 0 }: BottomNavbarProps) {
       router.replace('/profile');
       return;
     }
+    if (tab === 'cart') {
+      router.replace('/cart');
+      return;
+    }
   };
 
   const TabItem = ({

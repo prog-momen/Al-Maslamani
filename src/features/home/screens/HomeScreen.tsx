@@ -6,8 +6,9 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, setFavoriteProduct } from '@/src/features/products/services/products.service';
+import { addToCart } from '@/src/features/cart/services/cart.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 
 type Product = {
@@ -39,6 +40,7 @@ export function HomeScreen() {
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const { addItem } = useCartActions();
 
   const categoryTabs = useMemo(() => {
     const names = Array.from(new Set(products.map((p) => p.category_name).filter(Boolean) as string[]));
@@ -278,9 +280,16 @@ export function HomeScreen() {
                 <Text className="font-tajawal-bold text-[20px] text-brand-primary mt-1">{product.price}</Text>
               </View>
 
-              <TouchableOpacity className="absolute bottom-1 left-1 w-12 h-12 rounded-full bg-brand-primary items-center justify-center">
-                <Feather name="plus" size={28} color="white" />
-              </TouchableOpacity>
+              <TouchableOpacity
+  className="absolute bottom-1 left-1 w-12 h-12 rounded-full bg-brand-primary items-center justify-center"
+  onPress={() => {
+    if (!user?.id) return;
+
+    addItem(user.id, product.id);
+  }}
+>
+  <Feather name="plus" size={28} color="white" />
+</TouchableOpacity>
             </Pressable>
           ))}
         </View>

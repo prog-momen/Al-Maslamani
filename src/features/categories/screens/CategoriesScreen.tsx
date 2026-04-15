@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
+import { useAuth } from '@/src/shared/hooks/useAuth'; 
 
 import { CatalogProduct, getCatalogProducts } from '@/src/features/products/services/products.service';
 
@@ -40,6 +42,8 @@ export function CategoriesScreen() {
     return ['الكل', ...names];
   }, [products]);
   const [activeTab, setActiveTab] = useState('الكل');
+  const { user } = useAuth();
+  const { addItem } = useCartActions();
 
   useEffect(() => {
     let mounted = true;
@@ -170,7 +174,14 @@ export function CategoriesScreen() {
 
               <View className="flex-row-reverse items-center justify-between mt-3">
                 <Text className="font-tajawal-bold text-[20px] text-brand-primary">{product.price}</Text>
-                <TouchableOpacity className="w-12 h-12 rounded-full bg-brand-primary items-center justify-center">
+                <TouchableOpacity
+                  className="absolute bottom-1 left-1 w-12 h-12 rounded-full bg-brand-primary items-center justify-center"
+                  onPress={() => {
+                    if (!user?.id) return;
+                
+                    addItem(user.id, product.id);
+                  }}
+                >
                   <Feather name="plus" size={28} color="white" />
                 </TouchableOpacity>
               </View>

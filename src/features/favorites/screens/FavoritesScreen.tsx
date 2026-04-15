@@ -4,7 +4,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
+import { useRouter } from 'expo-router';
+import { addToCart } from '@/src/features/cart/services/cart.service';
 import {
     CatalogProduct,
     getCatalogProducts,
@@ -44,6 +46,8 @@ export function FavoritesScreen() {
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [suggestedProducts, setSuggestedProducts] = useState<SuggestedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { addItem } = useCartActions();
+  const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
@@ -135,10 +139,11 @@ export function FavoritesScreen() {
     setFavoriteProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleAddToCart = (id: string) => {
-    console.log('Added to cart:', id);
-  };
+  const handleAddToCart = async (productId: string) => {
+  if (!user?.id) return;
 
+  await addToCart(user.id, productId);
+};
   return (
     <SafeAreaView className="flex-1 bg-brand-surface" edges={['top']}>
       {/* Top Header */}
