@@ -1,3 +1,5 @@
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -5,8 +7,6 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { useAuth } from '@/src/shared/hooks/useAuth'; 
 
 import { CatalogProduct, getCatalogProducts } from '@/src/features/products/services/products.service';
 
@@ -111,7 +111,7 @@ export function CategoriesScreen() {
             <Feather name="sliders" size={19} color="#4E5D50" />
           </TouchableOpacity>
           <TouchableOpacity className="w-11 h-11 rounded-full bg-[#EAE8E6] items-center justify-center">
-            <Feather name="arrow-up-down" size={18} color="#4E5D50" />
+            <Ionicons name="swap-vertical-outline" size={18} color="#4E5D50" />
           </TouchableOpacity>
         </View>
 
