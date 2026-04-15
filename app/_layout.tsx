@@ -41,6 +41,7 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="home" />
             <Stack.Screen name="categories" />
+            <Stack.Screen name="cart" />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
