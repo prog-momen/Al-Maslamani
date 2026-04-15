@@ -95,7 +95,6 @@ export const CartScreen = () => {
           <Text style={styles.subtitle}>لديك {items.length} منتجات في سلتك</Text>
         </View>
 
-        /* ITEMS */
         <View style={styles.itemsBox}>{items.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyText}>السلة فارغة حالياً</Text>
@@ -113,7 +112,6 @@ export const CartScreen = () => {
           )}
         </View>
 
-        /* COUPON */
         <View style={styles.couponBox}>
           <Text style={styles.couponTitle}>كود الخصم</Text>
           <View style={styles.couponInputContainer}>
@@ -131,7 +129,6 @@ export const CartScreen = () => {
           )}
         </View>
 
-        /*  SUMMARY */
         <View style={styles.summaryBox}>
           <View style={styles.row}>
             <Text style={styles.label}>المجموع الفرعي</Text>
