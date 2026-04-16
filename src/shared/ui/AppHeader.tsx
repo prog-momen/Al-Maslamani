@@ -50,7 +50,7 @@ export function AppHeader({
 
   return (
     <>
-      <View className={`flex-row items-center justify-between px-6 pt-1 pb-1 ${className}`}>
+      <View className={`flex-row items-center justify-between px-6 pt-2 pb-2 min-h-[64px] ${className}`}>
         <View className="w-11 h-11 items-center justify-center">{leftNode}</View>
         <View className="flex-1 items-center justify-center">
           {logo === 'none' ? null : (

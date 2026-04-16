@@ -10,6 +10,7 @@ export type Database = {
           email: string | null;
           phone: string | null;
           avatar_url: string | null;
+          role: 'member' | 'delivery' | 'admin';
           created_at: string;
           updated_at: string;
         };
@@ -19,6 +20,7 @@ export type Database = {
           email?: string | null;
           phone?: string | null;
           avatar_url?: string | null;
+          role?: 'member' | 'delivery' | 'admin';
           created_at?: string;
           updated_at?: string;
         };
@@ -27,6 +29,7 @@ export type Database = {
           email?: string | null;
           phone?: string | null;
           avatar_url?: string | null;
+          role?: 'member' | 'delivery' | 'admin';
           updated_at?: string;
         };
       };
@@ -138,6 +141,7 @@ export type Database = {
           id: string;
           user_id: string;
           address_id: string | null;
+          assigned_delivery_user_id: string | null;
           status: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
           payment_method: 'cash_on_delivery' | 'card';
           subtotal: number;
@@ -151,6 +155,7 @@ export type Database = {
           id?: string;
           user_id: string;
           address_id?: string | null;
+          assigned_delivery_user_id?: string | null;
           status?: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
           payment_method: 'cash_on_delivery' | 'card';
           subtotal: number;
@@ -162,6 +167,7 @@ export type Database = {
         };
         Update: {
           address_id?: string | null;
+          assigned_delivery_user_id?: string | null;
           status?: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
           payment_method?: 'cash_on_delivery' | 'card';
           subtotal?: number;
@@ -207,6 +213,25 @@ export type Database = {
           order_id: string;
           status: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
           note?: string | null;
+          created_at?: string;
+        };
+        Update: never;
+      };
+      user_role_audit: {
+        Row: {
+          id: string;
+          changed_by: string;
+          target_user_id: string;
+          old_role: 'member' | 'delivery' | 'admin';
+          new_role: 'member' | 'delivery' | 'admin';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          changed_by: string;
+          target_user_id: string;
+          old_role: 'member' | 'delivery' | 'admin';
+          new_role: 'member' | 'delivery' | 'admin';
           created_at?: string;
         };
         Update: never;

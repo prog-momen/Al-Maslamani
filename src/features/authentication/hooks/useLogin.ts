@@ -9,7 +9,8 @@ export function useLogin() {
         setIsLoading(true);
         setError(null);
         try {
-            await authService.signIn(credentials);
+            const data = await authService.signIn(credentials);
+            return data;
         } catch (err: any) {
             setError(err.message || 'فشل تسجيل الدخول. يرجى التحقق من بياناتك.');
             throw err;

@@ -1,9 +1,13 @@
+import { getMyOrders } from '@/src/features/orders/services/orders.service';
+import { getFavoriteProductIds } from '@/src/features/products/services/products.service';
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
@@ -100,6 +104,36 @@ const Icons = {
 export function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [completedOrdersCount, setCompletedOrdersCount] = useState(0);
+
+  const loadStats = useCallback(async () => {
+    if (!user?.id) {
+      setFavoritesCount(0);
+      setCompletedOrdersCount(0);
+      return;
+    }
+
+    try {
+      const [favoriteIds, orders] = await Promise.all([
+        getFavoriteProductIds(user.id),
+        getMyOrders(user.id),
+      ]);
+
+      setFavoritesCount(favoriteIds.length);
+      setCompletedOrdersCount(orders.filter((order) => order.status === 'delivered').length);
+    } catch (error) {
+      console.error('Failed to load profile stats:', error);
+      setFavoritesCount(0);
+      setCompletedOrdersCount(0);
+    }
+  }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats])
+  );
 
   const handleLogout = async () => {
     try {
@@ -153,11 +187,11 @@ export function ProfileScreen() {
           {/* Stats Cards */}
           <View className="flex-row px-4 mt-8 gap-4">
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">4</Text>
+              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">{favoritesCount}</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">المفضلة</Text>
             </View>
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">12</Text>
+              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">{completedOrdersCount}</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">طلبات مكتملة</Text>
             </View>
           </View>

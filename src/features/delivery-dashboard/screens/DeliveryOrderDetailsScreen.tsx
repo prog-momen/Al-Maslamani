@@ -1,73 +1,141 @@
-import { AppHeader, Card } from '@/src/shared/ui';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { DeliveryOrderDetails, getDeliveryOrderDetails, setOrderStatus } from '@/src/features/orders/services/orders.service';
+import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import { AppHeader, Card, StaffBottomNavbar } from '@/src/shared/ui';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-type DeliveryProduct = {
-  id: string;
-  name: string;
-  size: string;
-  quantity: number;
-  image: any;
-};
+import * as Linking from 'expo-linking';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PAGE_BG = '#F2EFE9';
-const SURFACE = '#FCFBF8';
 const PRIMARY = '#67BB28';
 const TITLE = '#1F2120';
 
-const PRODUCTS: DeliveryProduct[] = [
-  {
-    id: '1',
-    name: 'بزر مفرغ',
-    size: '160 غرام',
-    quantity: 1,
-    image: require('@/assets/images/mixed_nuts.png'),
-  },
-  {
-    id: '2',
-    name: 'بزر مشام',
-    size: '300 غرام',
-    quantity: 2,
-    image: require('@/assets/images/corn.png'),
-  },
-];
-
-function DeliveryBottomNav() {
-  return (
-    <View style={styles.bottomNav}>
-      <TouchableOpacity style={styles.bottomItem} activeOpacity={0.9}>
-        <Feather name="home" size={19} color={PRIMARY} />
-        <Text style={styles.bottomItemActive}>الرئيسية</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.bottomItem, styles.bottomItemCenter]} activeOpacity={0.9}>
-        <View style={styles.centerTabCircle}>
-          <MaterialCommunityIcons name="clipboard-list-outline" size={20} color="#FFFFFF" />
-        </View>
-        <Text style={styles.bottomItemText}>طلباتي</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.bottomItem} activeOpacity={0.9}>
-        <Feather name="user" size={19} color="#5B5D59" />
-        <Text style={styles.bottomItemText}>حسابي</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 export function DeliveryOrderDetailsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { user, role, isAuthenticated, isInitializing } = useAuth();
+  const [order, setOrder] = useState<DeliveryOrderDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+
+  const loadOrder = useCallback(async () => {
+    if (!user?.id) {
+      setOrder(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = await getDeliveryOrderDetails({ deliveryUserId: user.id, orderId });
+      setOrder(data);
+    } catch (error) {
+      console.error('Failed to load delivery order details:', error);
+      setOrder(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [orderId, user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated || (role !== 'delivery' && role !== 'admin')) {
+        return;
+      }
+      loadOrder();
+    }, [isAuthenticated, role, loadOrder])
+  );
+
+  if (!isInitializing && (!isAuthenticated || (role !== 'delivery' && role !== 'admin'))) {
+    router.replace(isAuthenticated ? getHomeRouteForRole(role) : '/(auth)/login');
+    return null;
+  }
+
+  const canConfirmDelivery = order?.status === 'shipped';
+  const isOrderClosed = order?.status === 'delivered' || order?.status === 'cancelled';
+
+  const openCustomerPhone = async () => {
+    if (!order?.customerPhone) {
+      Alert.alert('تنبيه', 'لا يوجد رقم هاتف متوفر.');
+      return;
+    }
+
+    const phoneLink = `tel:${order.customerPhone}`;
+    const canOpen = await Linking.canOpenURL(phoneLink);
+    if (!canOpen) {
+      Alert.alert('تعذر التنفيذ', 'تعذر فتح تطبيق الاتصال على هذا الجهاز.');
+      return;
+    }
+
+    await Linking.openURL(phoneLink);
+  };
+
+  const openMaps = async () => {
+    if (!order) {
+      return;
+    }
+
+    const query = encodeURIComponent(`${order.addressTitle} ${order.addressDetails}`);
+    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      Alert.alert('تعذر التنفيذ', 'تعذر فتح الخرائط على هذا الجهاز.');
+      return;
+    }
+
+    await Linking.openURL(url);
+  };
+
+  const markDelivered = async () => {
+    if (!order) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await setOrderStatus(order.id, 'delivered', 'تم التأكيد من المندوب');
+      setOrder({ ...order, status: 'delivered' });
+    } catch (error) {
+      console.error('Failed to mark as delivered:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const markFailed = async () => {
+    if (!order) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await setOrderStatus(order.id, 'cancelled', 'تعذر التوصيل');
+      setOrder({ ...order, status: 'cancelled' });
+    } catch (error) {
+      console.error('Failed to mark as not delivered:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <AppHeader
           logo="none"
-          left={<Text style={styles.orderId}>#SAM-1239</Text>}
+          withSidebar
+          sidebarActiveItem="dashboard"
+          sidebarSide="left"
+          left={<Ionicons name="menu" size={24} color={PRIMARY} />}
           right={
             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
               <Feather name="arrow-right" size={20} color={PRIMARY} />
@@ -75,105 +143,134 @@ export function DeliveryOrderDetailsScreen() {
           }
         />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.topTitleRow}>
-            <Text style={styles.pageTitle}>تفاصيل الطلب</Text>
-            <Text style={styles.helperText}>اطلبها</Text>
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={PRIMARY} />
           </View>
-
-          <View style={styles.callRow}>
-            <TouchableOpacity style={styles.callButton} activeOpacity={0.9}>
-              <Feather name="phone" size={14} color="#FFFFFF" />
-              <Text style={styles.callButtonText}>اتصال</Text>
-            </TouchableOpacity>
+        ) : !order ? (
+          <View style={styles.loadingBox}>
+            <Text style={styles.emptyText}>لا يوجد طلب مخصص حالياً.</Text>
           </View>
-
-          <Card className="rounded-[22px] border border-[#ECE7DD] bg-[#FCFBF8] px-4 py-4">
-            <View style={styles.customerHeader}>
-              <View style={styles.customerAvatar}>
-                <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
-              </View>
-
-              <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>احمد عامر</Text>
-                <Text style={styles.customerMeta}>عميل مميز منذ 2022</Text>
-              </View>
-
-              <View style={styles.phoneIconCircle}>
-                <Feather name="phone" size={15} color={PRIMARY} />
-              </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.topTitleRow}>
+              <Text style={styles.pageTitle}>تفاصيل الطلب</Text>
+              <Text style={styles.helperText}>{order.orderNumber}</Text>
             </View>
 
-            <View style={styles.addressCard}>
-              <View style={styles.addressTitleRow}>
-                <Ionicons name="location-outline" size={15} color={PRIMARY} />
-                <Text style={styles.addressTitle}>عنوان التوصيل</Text>
-              </View>
-              <Text style={styles.addressText}>شارع رفيديا، قرب شارع القدس، مبنى 21</Text>
-              <Text style={styles.addressHint}>الطابق 2، شقة 15</Text>
+            <View style={styles.callRow}>
+              <TouchableOpacity style={styles.callButton} activeOpacity={0.9} onPress={openCustomerPhone}>
+                <Feather name="phone" size={14} color="#FFFFFF" />
+                <Text style={styles.callButtonText}>اتصال</Text>
+              </TouchableOpacity>
+            </View>
 
-              <View style={styles.mapBox}>
-                <Image source={require('@/assets/images/hero-products.png')} style={styles.mapImage} contentFit="cover" />
-                <TouchableOpacity style={styles.mapButton} activeOpacity={0.9}>
-                  <Feather name="navigation" size={13} color="#FFFFFF" />
-                  <Text style={styles.mapButtonText}>فتح الخرائط</Text>
+            <Card className="rounded-[22px] border border-[#ECE7DD] bg-[#FCFBF8] px-4 py-4">
+              <View style={styles.customerHeader}>
+                <View style={styles.customerAvatar}>
+                  <Ionicons name="chatbubble" size={18} color="#FFFFFF" />
+                </View>
+
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerName}>{order.customerName}</Text>
+                  <Text style={styles.customerMeta}>{order.customerPhone ? `هاتف: ${order.customerPhone}` : 'عميل'}</Text>
+                </View>
+
+                <TouchableOpacity style={styles.phoneIconCircle} activeOpacity={0.9} onPress={openCustomerPhone}>
+                  <Feather name="phone" size={15} color={PRIMARY} />
                 </TouchableOpacity>
               </View>
-            </View>
-          </Card>
 
-          <Card className="mt-4 rounded-[22px] border border-[#ECE7DD] bg-[#FCFBF8] px-4 py-4">
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionCount}>2 اصناف</Text>
-              <Text style={styles.sectionTitle}>المنتجات</Text>
-            </View>
-
-            {PRODUCTS.map((product) => (
-              <View key={product.id} style={styles.productRow}>
-                <View style={styles.productQtyBadge}>
-                  <Text style={styles.productQtyText}>{product.quantity}x</Text>
+              <View style={styles.addressCard}>
+                <View style={styles.addressTitleRow}>
+                  <Ionicons name="location-outline" size={15} color={PRIMARY} />
+                  <Text style={styles.addressTitle}>{order.addressTitle}</Text>
                 </View>
+                <Text style={styles.addressText}>{order.addressDetails}</Text>
+                {order.notes ? <Text style={styles.addressHint}>{order.notes}</Text> : null}
 
-                <View style={styles.productImageWrap}>
-                  <Image source={product.image} style={styles.productImage} contentFit="contain" />
-                </View>
-
-                <View style={styles.productMeta}>
-                  <Text style={styles.productName}>{product.name}</Text>
-                  <Text style={styles.productSize}>{product.size}</Text>
+                <View style={styles.mapBox}>
+                  <Image source={require('@/assets/images/hero-products.png')} style={styles.mapImage} contentFit="cover" />
+                  <TouchableOpacity style={styles.mapButton} activeOpacity={0.9} onPress={openMaps}>
+                    <Feather name="navigation" size={13} color="#FFFFFF" />
+                    <Text style={styles.mapButtonText}>فتح الخرائط</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            ))}
+            </Card>
 
-            <View style={styles.noteBox}>
-              <Text style={styles.noteText}>ملاحظة: يرجى التأكيد عند الباب...</Text>
+            <Card className="mt-4 rounded-[22px] border border-[#ECE7DD] bg-[#FCFBF8] px-4 py-4">
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionCount}>{order.items.length} اصناف</Text>
+                <Text style={styles.sectionTitle}>المنتجات</Text>
+              </View>
+
+              {order.items.map((product) => (
+                <View key={product.id} style={styles.productRow}>
+                  <View style={styles.productQtyBadge}>
+                    <Text style={styles.productQtyText}>{product.quantity}x</Text>
+                  </View>
+
+                  <View style={styles.productImageWrap}>
+                    <Image
+                      source={product.imageUrl ? { uri: product.imageUrl } : require('@/assets/images/mixed_nuts.png')}
+                      style={styles.productImage}
+                      contentFit="contain"
+                    />
+                  </View>
+
+                  <View style={styles.productMeta}>
+                    <Text style={styles.productName}>{product.name}</Text>
+                    <Text style={styles.productSize}>₪ {product.unitPrice.toFixed(2)}</Text>
+                  </View>
+                </View>
+              ))}
+
+              <View style={styles.noteBox}>
+                <Text style={styles.noteText}>إجمالي الطلب: ₪ {order.total.toFixed(2)}</Text>
+              </View>
+            </Card>
+
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={[styles.successBtn, (!canConfirmDelivery || isSaving || isOrderClosed) && styles.disabledBtn]}
+                activeOpacity={0.9}
+                disabled={isSaving || !canConfirmDelivery || isOrderClosed}
+                onPress={markDelivered}
+              >
+                <Text style={styles.successBtnText}>تم التوصيل</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.failBtn, (!canConfirmDelivery || isSaving || isOrderClosed) && styles.disabledBtn]}
+                activeOpacity={0.9}
+                disabled={isSaving || !canConfirmDelivery || isOrderClosed}
+                onPress={markFailed}
+              >
+                <Text style={styles.failBtnText}>لم يتم التوصيل</Text>
+              </TouchableOpacity>
             </View>
-          </Card>
 
-          <View style={styles.actionsRow}>
-            <TouchableOpacity style={styles.successBtn} activeOpacity={0.9}>
-              <Text style={styles.successBtnText}>تم التوصيل</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.failBtn} activeOpacity={0.9}>
-              <Text style={styles.failBtnText}>لم يتم التوصيل</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+            {!canConfirmDelivery && !isOrderClosed ? (
+              <Text style={styles.statusHintText}>يمكن تأكيد التوصيل بعد أن يغيّر الادمن الحالة إلى تم الشحن.</Text>
+            ) : null}
+          </ScrollView>
+        )}
       </SafeAreaView>
 
-      <DeliveryBottomNav />
+      <StaffBottomNavbar role="delivery" activeTab="roleHome" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PAGE_BG,
-  },
-  safeArea: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: PAGE_BG },
+  safeArea: { flex: 1 },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyText: {
+    color: '#6D716A',
+    fontFamily: 'Tajawal_500Medium',
+    fontSize: 14,
   },
   scrollContent: {
     paddingHorizontal: 10,
@@ -186,25 +283,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  pageTitle: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 22,
-    color: TITLE,
-  },
-  helperText: {
-    fontFamily: 'Tajawal_500Medium',
-    fontSize: 12,
-    color: '#A8ABA3',
-  },
-  orderId: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 18,
-    color: TITLE,
-  },
-  callRow: {
-    flexDirection: 'row-reverse',
-    marginBottom: 8,
-  },
+  pageTitle: { fontFamily: 'Tajawal_700Bold', fontSize: 22, color: TITLE },
+  helperText: { fontFamily: 'Tajawal_500Medium', fontSize: 12, color: '#A8ABA3' },
+  orderId: { fontFamily: 'Tajawal_700Bold', fontSize: 18, color: TITLE },
+  callRow: { flexDirection: 'row-reverse', marginBottom: 8 },
   callButton: {
     backgroundColor: PRIMARY,
     borderRadius: 999,
@@ -214,11 +296,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  callButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 12,
-  },
+  callButtonText: { color: '#FFFFFF', fontFamily: 'Tajawal_700Bold', fontSize: 12 },
   customerHeader: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -232,21 +310,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  customerInfo: {
-    flex: 1,
-    marginHorizontal: 10,
-    alignItems: 'flex-end',
-  },
-  customerName: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 17,
-    color: '#2B2D2A',
-  },
-  customerMeta: {
-    fontFamily: 'Tajawal_500Medium',
-    fontSize: 11,
-    color: '#8A8D85',
-  },
+  customerInfo: { flex: 1, marginHorizontal: 10, alignItems: 'flex-end' },
+  customerName: { fontFamily: 'Tajawal_700Bold', fontSize: 17, color: '#2B2D2A' },
+  customerMeta: { fontFamily: 'Tajawal_500Medium', fontSize: 11, color: '#8A8D85' },
   phoneIconCircle: {
     width: 30,
     height: 30,
@@ -261,16 +327,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 10,
   },
-  addressTitleRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 4,
-  },
-  addressTitle: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 12,
-    color: '#2D2F2C',
-  },
+  addressTitleRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
+  addressTitle: { fontFamily: 'Tajawal_700Bold', fontSize: 12, color: '#2D2F2C' },
   addressText: {
     fontFamily: 'Tajawal_500Medium',
     fontSize: 11,
@@ -293,10 +351,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#CFE7E9',
   },
-  mapImage: {
-    width: '100%',
-    height: '100%',
-  },
+  mapImage: { width: '100%', height: '100%' },
   mapButton: {
     position: 'absolute',
     right: 8,
@@ -309,32 +364,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  mapButtonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 10,
-  },
+  mapButtonText: { color: '#FFFFFF', fontFamily: 'Tajawal_700Bold', fontSize: 10 },
   sectionHeader: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  sectionCount: {
-    fontFamily: 'Tajawal_500Medium',
-    fontSize: 11,
-    color: '#8A8D85',
-  },
-  sectionTitle: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 21,
-    color: TITLE,
-  },
-  productRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
+  sectionCount: { fontFamily: 'Tajawal_500Medium', fontSize: 11, color: '#8A8D85' },
+  sectionTitle: { fontFamily: 'Tajawal_700Bold', fontSize: 21, color: TITLE },
+  productRow: { flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 10 },
   productQtyBadge: {
     width: 26,
     height: 18,
@@ -344,11 +383,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  productQtyText: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 9,
-    color: '#3A7A2A',
-  },
+  productQtyText: { fontFamily: 'Tajawal_700Bold', fontSize: 9, color: '#3A7A2A' },
   productImageWrap: {
     width: 36,
     height: 36,
@@ -358,24 +393,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  productImage: {
-    width: 26,
-    height: 26,
-  },
-  productMeta: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  productName: {
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 14,
-    color: '#252724',
-  },
-  productSize: {
-    fontFamily: 'Tajawal_500Medium',
-    fontSize: 11,
-    color: '#7F847D',
-  },
+  productImage: { width: 26, height: 26 },
+  productMeta: { flex: 1, alignItems: 'flex-end' },
+  productName: { fontFamily: 'Tajawal_700Bold', fontSize: 14, color: '#252724' },
+  productSize: { fontFamily: 'Tajawal_500Medium', fontSize: 11, color: '#7F847D' },
   noteBox: {
     marginTop: 4,
     height: 52,
@@ -384,11 +405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  noteText: {
-    fontFamily: 'Tajawal_500Medium',
-    fontSize: 11,
-    color: '#7B7D79',
-  },
+  noteText: { fontFamily: 'Tajawal_500Medium', fontSize: 11, color: '#7B7D79' },
   actionsRow: {
     marginTop: 12,
     flexDirection: 'row-reverse',
@@ -403,11 +420,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  successBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 14,
-  },
+  successBtnText: { color: '#FFFFFF', fontFamily: 'Tajawal_700Bold', fontSize: 14 },
   failBtn: {
     flex: 1,
     height: 46,
@@ -418,54 +431,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  failBtnText: {
-    color: '#C93206',
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 14,
+  failBtnText: { color: '#C93206', fontFamily: 'Tajawal_700Bold', fontSize: 14 },
+  disabledBtn: {
+    opacity: 0.55,
   },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 78,
-    backgroundColor: SURFACE,
-    borderTopWidth: 1,
-    borderTopColor: '#E9E4D9',
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  bottomItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomItemCenter: {
-    marginTop: -22,
-  },
-  centerTabCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: PRIMARY,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  bottomItemActive: {
-    marginTop: 2,
-    color: PRIMARY,
-    fontFamily: 'Tajawal_700Bold',
-    fontSize: 12,
-  },
-  bottomItemText: {
-    marginTop: 2,
-    color: '#5C605A',
+  statusHintText: {
+    marginTop: 8,
+    textAlign: 'center',
+    color: '#6E716A',
     fontFamily: 'Tajawal_500Medium',
     fontSize: 12,
   },
