@@ -180,7 +180,9 @@ export function CategoriesScreen() {
                   onPress={() => {
                     if (!user?.id) return;
                 
-                    addItem(user.id, product.id);
+                    addItem(user.id, product.id, {
+                      onGoToCart: () => router.push('/cart'),
+                    });
                   }}
                 >
                   <Feather name="plus" size={28} color="white" />

@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import {
     CatalogProduct,
     getFavoriteProductIds,
@@ -20,6 +21,7 @@ const DEFAULT_WEIGHTS = ['250 جرام', '500 جرام', '1 كيلو'];
 export function ProductDetailsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { addItem } = useCartActions();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const productId = Array.isArray(id) ? id[0] : id;
   const [product, setProduct] = useState<CatalogProduct | null>(null);
@@ -277,7 +279,20 @@ export function ProductDetailsScreen() {
           </View>
 
           {/* Add to Cart Button */}
-          <TouchableOpacity className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm">
+          <TouchableOpacity
+            className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm"
+            onPress={() => {
+              if (!user?.id || !productId) {
+                router.push('/(auth)/login');
+                return;
+              }
+
+              addItem(user.id, productId, {
+                quantity,
+                onGoToCart: () => router.push('/cart'),
+              });
+            }}
+          >
             <Text className="font-tajawal-bold text-[16px] text-white mr-3">إضافة إلى السلة</Text>
             <Ionicons name="cart-outline" size={24} color="#fff" />
           </TouchableOpacity>

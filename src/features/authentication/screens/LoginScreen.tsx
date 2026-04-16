@@ -1,16 +1,20 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { Button, CARD_BASE_CLASS, FormField } from '@/src/shared/ui';
 import { useLogin } from '../hooks/useLogin';
+import { authService } from '../services/auth.service';
 
 export function LoginScreen() {
     const router = useRouter();
     const { login, isLoading, error } = useLogin();
+    const { isAuthenticated, role, isInitializing } = useAuth();
 
     const { control, handleSubmit, formState: { errors } } = useForm({
         defaultValues: { email: '', password: '' }
@@ -18,18 +22,38 @@ export function LoginScreen() {
 
     const onSubmit = async (data: any) => {
         try {
-            await login(data);
+            const authData = await login(data);
+            const userId = authData.user?.id;
+
+            if (userId) {
+              const role = await authService.getUserRole(userId);
+              router.replace(getHomeRouteForRole(role));
+              return;
+            }
+
             router.replace('/home');
         } catch {
             // Error is handled by hook and displayed below
         }
     };
 
+        useEffect(() => {
+            if (!isInitializing && isAuthenticated) {
+                router.replace(getHomeRouteForRole(role));
+            }
+        }, [isAuthenticated, isInitializing, role, router]);
+
     return (
         <SafeAreaView className="flex-1 bg-brand-surface">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-                    <View className="flex-1 items-center px-6 pt-16 pb-8">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0} className="flex-1">
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    automaticallyAdjustKeyboardInsets
+                >
+                    <View className="items-center px-6 pt-16 pb-8">
 
                         {/* Logo */}
                         <View className="w-[100px] h-[100px] mb-4 rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">

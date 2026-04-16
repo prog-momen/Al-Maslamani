@@ -5,4 +5,5 @@ export * from './Card';
 export * from './FormField';
 export * from './ScreenWrapper';
 export * from './SidebarDrawer';
+export * from './StaffBottomNavbar';
 

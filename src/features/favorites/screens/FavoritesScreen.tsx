@@ -1,12 +1,4 @@
-import { AppHeader, BottomNavbar } from '@/src/shared/ui';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { useRouter } from 'expo-router';
-import { addToCart } from '@/src/features/cart/services/cart.service';
 import {
     CatalogProduct,
     getCatalogProducts,
@@ -14,6 +6,13 @@ import {
     setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
+import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FavoriteProduct, FavoriteProductCard } from '../components/FavoriteProductCard';
 import { SuggestedProduct, SuggestedProductCard } from '../components/SuggestedProductCard';
 
@@ -140,10 +139,12 @@ export function FavoritesScreen() {
   };
 
   const handleAddToCart = async (productId: string) => {
-  if (!user?.id) return;
+    if (!user?.id) return;
 
-  await addToCart(user.id, productId);
-};
+    await addItem(user.id, productId, {
+      onGoToCart: () => router.push('/cart'),
+    });
+  };
   return (
     <SafeAreaView className="flex-1 bg-brand-surface" edges={['top']}>
       {/* Top Header */}

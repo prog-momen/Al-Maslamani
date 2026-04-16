@@ -10,7 +10,8 @@ export function useRegister() {
         setIsLoading(true);
         setError(null);
         try {
-            await authService.signUp(credentials, fullName);
+            const data = await authService.signUp(credentials, fullName);
+            return data;
         } catch (err: any) {
             setError(err.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.');
             throw err;

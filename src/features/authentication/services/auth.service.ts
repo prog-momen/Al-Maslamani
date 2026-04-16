@@ -1,3 +1,4 @@
+import { AppRole } from '@/src/features/orders/services/orders.service';
 import { supabase } from '@/src/lib/supabase/client';
 
 export const authService = {
@@ -54,5 +55,19 @@ export const authService = {
         }
         
         return { success: true, message: 'Code verified successfully', data };
-    }
+    },
+
+    async getUserRole(userId: string): Promise<AppRole> {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (error) {
+            throw error;
+        }
+
+        return data?.role ?? 'member';
+    },
 };

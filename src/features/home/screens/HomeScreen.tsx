@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Product = {
@@ -163,21 +163,22 @@ export function HomeScreen() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         <View className="px-6 mt-2">
-          <View className="h-12 rounded-full bg-[#ECEBE9] px-4 flex-row-reverse items-center justify-between">
+          <TouchableOpacity
+            className="h-12 rounded-full bg-[#ECEBE9] px-4 flex-row-reverse items-center justify-between"
+            activeOpacity={0.8}
+            onPress={() => router.push('/search')}
+          >
             <Feather name="search" size={22} color="#8B948D" />
-            <TextInput
-              placeholder="ابحث عن المكسرات، البزورات، أو الوجبات الخفيفة..."
-              placeholderTextColor="#8B948D"
-              textAlign="right"
-              className="flex-1 font-tajawal-medium text-[14px] text-brand-text pr-2"
-            />
-          </View>
+            <Text className="flex-1 font-tajawal-medium text-[14px] text-[#8B948D] pr-2 text-right">
+              ابحث عن المكسرات، البزورات، أو الوجبات الخفيفة...
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View className="px-6 mt-8 flex-row-reverse items-center justify-between">
-          <Text className="font-tajawal-bold text-[32px] text-brand-title">التصنيفات</Text>
+        <View className="px-6 mt-8 flex-row-reverse items-center justify-between gap-3">
+          <Text className="font-tajawal-bold text-[30px] text-brand-title flex-1 text-right">التصنيفات</Text>
           <Pressable onPress={() => router.push('/categories')}>
-            <Text className="font-tajawal-bold text-[22px] text-brand-primary">عرض الكل</Text>
+            <Text className="font-tajawal-bold text-[18px] text-brand-primary">عرض الكل</Text>
           </Pressable>
         </View>
 
@@ -226,10 +227,10 @@ export function HomeScreen() {
           </View>
         </View>
 
-        <View className="px-6 mt-8 flex-row-reverse items-center justify-between">
-          <Text className="font-tajawal-bold text-[32px] text-brand-title">المنتجات الأكثر طلباً</Text>
-          <TouchableOpacity className="bg-brand-primary px-5 py-2 rounded-full">
-            <Text className="font-tajawal-bold text-[17px] text-white">مشاهدة الكل</Text>
+        <View className="px-6 mt-8 flex-row-reverse items-center justify-between gap-3">
+          <Text className="font-tajawal-bold text-[30px] text-brand-title flex-1 text-right">المنتجات الأكثر طلباً</Text>
+          <TouchableOpacity className="bg-brand-primary px-4 py-2 rounded-full self-center">
+            <Text className="font-tajawal-bold text-[15px] text-white">مشاهدة الكل</Text>
           </TouchableOpacity>
         </View>
 
@@ -247,11 +248,11 @@ export function HomeScreen() {
           </View>
         ) : null}
 
-        <View className="px-6 mt-6 flex-row flex-wrap justify-between">
+        <View className="px-5 mt-6 flex-row flex-wrap justify-between">
           {visibleProducts.map((product) => (
             <Pressable
               key={product.id}
-              className={`w-[48%] mb-4 p-3 relative overflow-hidden ${CARD_BASE_CLASS}`}
+              className={`w-[48.5%] mb-4 p-3 relative overflow-hidden ${CARD_BASE_CLASS}`}
               onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
             >
               <View className="items-center">
@@ -285,7 +286,9 @@ export function HomeScreen() {
   onPress={() => {
     if (!user?.id) return;
 
-    addItem(user.id, product.id);
+    addItem(user.id, product.id, {
+      onGoToCart: () => router.push('/cart'),
+    });
   }}
 >
   <Feather name="plus" size={28} color="white" />

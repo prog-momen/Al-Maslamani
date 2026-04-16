@@ -1,103 +1,69 @@
+import { getMyOrders, OrderHistoryItem } from '@/src/features/orders/services/orders.service';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-    FlatList,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
   const PRIMARY_GREEN = '#67BB28';
   const PAGE_BG = '#F5F4F0';
 
-  type OrderStatus = 'completed' | 'cancelled' | 'processing';
-
-type OrderItem = {
-  id: string;
-  orderNumber: string;
-  status: OrderStatus;
-  weight: string;
-  name: string;
-  subtitle: string;
-  total: string;
-  image: any;
-};
-
-const MOCK_ORDERS: OrderItem[] = [
-  {
-    id: '1',
-      orderNumber: '#100245',
-      status: 'completed' as OrderStatus,
-      weight: '250 غرام',
-      name: 'بزر بطيخ محمص',
-      subtitle: 'بطعم الباربكيو',
-      total: '0.00',
-      image: require('@/assets/images/corn.png'),
-  },
-  {
-    id: '2',
-      orderNumber: '#100198',
-      status: 'cancelled' as OrderStatus,
-      weight: '250 غرام',
-      name: 'كاشو بقشرة',
-      subtitle: '',
-      total: '15.00',
-      image: require('@/assets/images/chickpeas.png'),
-  },
-  {
-    id: '3',
-      orderNumber: '#100150',
-      status: 'completed' as OrderStatus,
-      weight: '250 غرام',
-      name: 'لوز',
-      subtitle: '',
-      total: '0.00',
-      image: require('@/assets/images/mixed_nuts.png'),
-  },
-  {
-    id: '4',
-      orderNumber: '#100099',
-      status: 'completed' as OrderStatus,
-      weight: '400 غرام',
-      name: 'مكسرات اكسترا',
-      subtitle: '',
-      total: '0.00',
-      image: require('@/assets/images/pecan.png'),
-  },
-];
-
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bgColor: string }> = {
-    completed: {
-      label: 'مكتمل',
-      color: '#2F6D34',
-      bgColor: '#B8E8BE',
+const STATUS_CONFIG = {
+  delivered: {
+    label: 'مكتمل',
+    color: '#2F6D34',
+    bgColor: '#B8E8BE',
   },
   cancelled: {
-      label: 'ملغي',
-      color: '#A61E23',
-      bgColor: '#F7CCCA',
-    },
-    processing: {
-      label: 'جاري',
-      color: '#1565C0',
-      bgColor: '#E3F2FD',
+    label: 'ملغي',
+    color: '#A61E23',
+    bgColor: '#F7CCCA',
   },
-};
+  preparing: {
+    label: 'قيد التحضير',
+    color: '#1565C0',
+    bgColor: '#E3F2FD',
+  },
+  pending: {
+    label: 'قيد الانتظار',
+    color: '#6A5A10',
+    bgColor: '#F4E8BE',
+  },
+  confirmed: {
+    label: 'مؤكد',
+    color: '#3D6F9A',
+    bgColor: '#DCEEFF',
+  },
+  shipped: {
+    label: 'تم الشحن',
+    color: '#296A2E',
+    bgColor: '#D8F1D8',
+  },
+} as const;
 
 type OrderCardProps = {
-  order: OrderItem;
-  onPress: (order: OrderItem) => void;
+  order: OrderHistoryItem;
+  onPress: (order: OrderHistoryItem) => void;
 };
 
   function OrderCard({ order, onPress }: OrderCardProps) {
-  const statusInfo = STATUS_CONFIG[order.status];
+  const statusInfo = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
+  const imageSource = order.productImageUrl
+    ? { uri: order.productImageUrl }
+    : require('@/assets/images/mixed_nuts.png');
 
   return (
       <TouchableOpacity style={styles.orderCard} onPress={() => onPress(order)} activeOpacity={0.9}>
@@ -108,12 +74,12 @@ type OrderCardProps = {
 
           <View style={styles.productInfoRow}>
             <View style={styles.productImageWrap}>
-              <Image source={order.image} style={styles.productImage} contentFit="contain" />
+              <Image source={imageSource} style={styles.productImage} contentFit="contain" />
             </View>
             <View style={styles.productTextWrap}>
-              <Text style={styles.productWeight}>{order.weight}</Text>
-              <Text style={styles.productName}>{order.name}</Text>
-              {order.subtitle ? <Text style={styles.productSubtitle}>{order.subtitle}</Text> : null}
+              <Text style={styles.productWeight}>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</Text>
+              <Text style={styles.productName}>{order.productName}</Text>
+              {order.productSubtitle ? <Text style={styles.productSubtitle}>{order.productSubtitle}</Text> : null}
             </View>
         </View>
       </View>
@@ -128,7 +94,7 @@ type OrderCardProps = {
 
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>الإجمالي</Text>
-            <Text style={styles.totalValue}>{order.total}</Text>
+            <Text style={styles.totalValue}>{order.total.toFixed(2)}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -137,27 +103,63 @@ type OrderCardProps = {
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<OrderHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleOrderPress = (order: OrderItem) => {
-    const statusStepMap: Record<OrderStatus, number> = {
-      processing: 2,
-      completed: 3,
+  const loadOrders = useCallback(async () => {
+    if (!user?.id) {
+      setOrders([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = await getMyOrders(user.id);
+      setOrders(data);
+    } catch (error) {
+      console.error('Failed to load order history:', error);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders])
+  );
+
+  const statusStepMap = useMemo(
+    () => ({
+      pending: 0,
+      confirmed: 1,
+      preparing: 1,
+      shipped: 2,
+      delivered: 3,
       cancelled: 1,
-    };
+    }),
+    []
+  );
 
-    const isPreviousOrder = order.status !== 'processing';
+  const handleOrderPress = (order: OrderHistoryItem) => {
+    const currentStep = statusStepMap[order.status] ?? 0;
+    const isPreviousOrder = order.status !== 'pending' && order.status !== 'confirmed' && order.status !== 'preparing';
 
     router.push({
       pathname: '/order-tracking',
       params: {
+        orderId: order.id,
         orderNumber: order.orderNumber,
-        currentStep: statusStepMap[order.status],
+        currentStep,
         previous: isPreviousOrder ? '1' : '0',
         allowReorder: isPreviousOrder ? '1' : '0',
-        productName: order.name,
-        productSubtitle: order.subtitle || '-',
-        productWeight: order.weight,
-        total: order.total,
+        productName: order.productName,
+        productSubtitle: order.productSubtitle || '-',
+        productWeight: '-',
+        total: order.total.toFixed(2),
       },
     });
   };
@@ -166,7 +168,7 @@ export default function OrderHistoryScreen() {
     <View style={styles.container}>
         <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <AppHeader
           logo="transparent"
           withSidebar
@@ -186,13 +188,20 @@ export default function OrderHistoryScreen() {
             <Text style={styles.pageSubtitle}>المنسق</Text>
         </View>
 
-          <FlatList
-            data={MOCK_ORDERS}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <OrderCard order={item} onPress={handleOrderPress} />}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+          {isLoading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator color={PRIMARY_GREEN} size="large" />
+            </View>
+          ) : (
+            <FlatList
+              data={orders}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <OrderCard order={item} onPress={handleOrderPress} />}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={<Text style={styles.emptyText}>لا توجد طلبات حالياً.</Text>}
+            />
+          )}
       </SafeAreaView>
 
       <BottomNavbar activeTab="profile" />
@@ -238,6 +247,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingTop: 6,
     paddingBottom: 150,
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#6E6D6A',
+    fontFamily: 'Tajawal_500Medium',
+    marginTop: 24,
   },
   orderCard: {
     backgroundColor: '#F9F7F2',

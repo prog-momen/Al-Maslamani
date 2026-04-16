@@ -1,10 +1,12 @@
 import { useCart } from '@/src/shared/contexts/CartContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { formatOrderNumber, placeOrderFromCart } from '../../orders/services/orders.service';
 import { CheckoutSteps } from '../components/CheckoutSteps';
 
 export const CheckoutScreen = () => {
@@ -19,7 +21,9 @@ export const CheckoutScreen = () => {
   const [tempAddress, setTempAddress] = useState(address);
 
   const [payment, setPayment] = useState('cash');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { items, clearCart } = useCart();
+  const { user } = useAuth();
   const vatRate = 0.15;
 
   const parseNumberParam = (value: string | string[] | undefined) => {
@@ -45,40 +49,55 @@ export const CheckoutScreen = () => {
 
   const finalTotal = total;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
   if (!address.title || !address.details) {
-    alert('يرجى إدخال عنوان التوصيل');
+    Alert.alert('تنبيه', 'يرجى إدخال عنوان التوصيل');
     return;
   }
 
   if (payment === 'card') {
-    alert('سيتم تحويلك لصفحة الدفع بالبطاقة (غير مفعلة حالياً)');
+    Alert.alert('تنبيه', 'سيتم تحويلك لصفحة الدفع بالبطاقة (غير مفعلة حالياً)');
     return;
   }
 
   if (payment === 'ios') {
-    alert('Apple Pay غير مفعّل حالياً');
+    Alert.alert('تنبيه', 'Apple Pay غير مفعّل حالياً');
     return;
   }
 
-  const generatedOrderNumber = `#${Date.now().toString().slice(-6)}`;
+  if (!user?.id) {
+    router.replace('/(auth)/login');
+    return;
+  }
 
-  console.log({
-    address,
-    payment,
-    total: finalTotal,
-    orderNumber: generatedOrderNumber,
-  });
+  setIsSubmitting(true);
 
-  clearCart?.();
+  try {
+    const { orderId } = await placeOrderFromCart({
+      addressLabel: address.title,
+      addressDetails: address.details,
+      paymentMethod: payment === 'card' ? 'card' : 'cash_on_delivery',
+      deliveryFee: shipping,
+    });
 
-  router.replace({
-    pathname: '/order-confirmation',
-    params: {
-      orderNumber: generatedOrderNumber,
-      total: finalTotal.toFixed(2),
-    },
-  });
+    clearCart?.();
+
+    router.replace({
+      pathname: '/order-confirmation',
+      params: {
+        orderId,
+        orderNumber: formatOrderNumber(orderId),
+        orderStatus: 'pending',
+        currentStep: '0',
+        total: finalTotal.toFixed(2),
+      },
+    });
+  } catch (error) {
+    console.error('Failed to place order:', error);
+    Alert.alert('فشل إرسال الطلب', 'حاول مرة أخرى.');
+  } finally {
+    setIsSubmitting(false);
+  }
 };
 
 
@@ -223,8 +242,8 @@ return (
       </ScrollView>
 
       <View style={styles.bottom}>
-        <TouchableOpacity style={styles.button} onPress={handleCheckout}>
-          <Text style={styles.buttonText}>تأكيد الطلب</Text>
+        <TouchableOpacity style={[styles.button, isSubmitting && styles.buttonDisabled]} onPress={handleCheckout} disabled={isSubmitting}>
+          <Text style={styles.buttonText}>{isSubmitting ? 'جاري إرسال الطلب...' : 'تأكيد الطلب'}</Text>
         </TouchableOpacity>
         <Text style={styles.agreementText}> بالمتابعة، أنت توافق على شروط و أحكام سعد المسلماني</Text>
       </View>
@@ -448,6 +467,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 999,
     alignItems: 'center',
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
   },
 
   buttonText: { color: '#fff', fontWeight: 'bold' },

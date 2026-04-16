@@ -1,18 +1,22 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { Button, FormField } from '@/src/shared/ui';
 import { useRegister } from '../hooks/useRegister';
+import { authService } from '../services/auth.service';
 
 export function SignUpScreen() {
     const router = useRouter();
     const { register, isLoading, error } = useRegister();
     const [agreed, setAgreed] = useState(false);
+    const { isAuthenticated, role, isInitializing } = useAuth();
 
     const { control, handleSubmit, watch, formState: { errors } } = useForm({
         defaultValues: { fullName: '', email: '', phone: '', password: '', confirmPassword: '' }
@@ -22,23 +26,42 @@ export function SignUpScreen() {
 
     const onSubmit = async (data: any) => {
         if (!agreed) {
-            alert("الرجاء الموافقة على شروط الخدمة وسياسة الخصوصية");
+            Alert.alert('تنبيه', 'الرجاء الموافقة على شروط الخدمة وسياسة الخصوصية');
             return;
         }
         try {
-            await register({ email: data.email, password: data.password }, data.fullName);
-            // Navigate to login after successful registration
+            const authData = await register({ email: data.email, password: data.password }, data.fullName);
+
+            const userId = authData.user?.id;
+            if (userId && authData.session?.user) {
+                const role = await authService.getUserRole(userId);
+                router.replace(getHomeRouteForRole(role));
+                return;
+            }
+
             router.push('/(auth)/login');
         } catch {
             // Error is handled by hook
         }
     };
 
+        useEffect(() => {
+            if (!isInitializing && isAuthenticated) {
+                router.replace(getHomeRouteForRole(role));
+            }
+        }, [isAuthenticated, isInitializing, role, router]);
+
     return (
         <SafeAreaView className="flex-1 bg-brand-surface">
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-                    <View className="flex-1 px-6 pt-8 pb-8">
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0} className="flex-1">
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    automaticallyAdjustKeyboardInsets
+                >
+                    <View className="px-6 pt-8 pb-8">
                         <View className="items-center mb-8 mt-2">
                             <View className="w-[100px] h-[100px] rounded-full overflow-hidden items-center justify-center bg-white shadow-sm border border-gray-100">
                                 <Image

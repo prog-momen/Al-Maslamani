@@ -1,10 +1,14 @@
+import { getOrderTrackingDetails, OrderTrackingDetails } from '@/src/features/orders/services/orders.service';
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    SafeAreaView,
+    ActivityIndicator,
+    RefreshControl,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -12,6 +16,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY_GREEN = '#67BB28';
 const PAGE_BG = '#F5F4F0';
@@ -27,32 +32,102 @@ const getParamString = (value: string | string[] | undefined, fallback: string) 
 export default function OrderTrackingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [tracking, setTracking] = useState<OrderTrackingDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [palestineNowTime, setPalestineNowTime] = useState(() =>
+    new Intl.DateTimeFormat('ar-PS', {
+      timeZone: 'Asia/Hebron',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date())
+  );
+
+  const orderId = getParamString(params.orderId as string | string[] | undefined, '');
+
+  const formatPalestineTime = (date: Date) =>
+    new Intl.DateTimeFormat('ar-PS', {
+      timeZone: 'Asia/Hebron',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+
+  const statusToStep = (status: string) => {
+    if (status === 'pending') return 0;
+    if (status === 'confirmed' || status === 'preparing' || status === 'cancelled') return 1;
+    if (status === 'shipped') return 2;
+    if (status === 'delivered') return 3;
+    return 0;
+  };
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setPalestineNowTime(formatPalestineTime(new Date()));
+    }, 30000);
+
+    return () => clearInterval(timerId);
+  }, []);
+
+  const loadTracking = useCallback(async () => {
+    if (!orderId) {
+      setTracking(null);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = await getOrderTrackingDetails(orderId);
+      setTracking(data);
+    } catch (error) {
+      console.error('Failed to load order tracking data:', error);
+      setTracking(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [orderId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTracking();
+    }, [loadTracking])
+  );
 
   const currentStepRaw = parseInt(getParamString(params.currentStep as string | string[] | undefined, '2'), 10);
-  const currentStep = Number.isNaN(currentStepRaw) ? 2 : Math.max(0, Math.min(3, currentStepRaw));
+  const currentStepFromParams = Number.isNaN(currentStepRaw) ? 2 : Math.max(0, Math.min(3, currentStepRaw));
+  const currentStep = tracking ? statusToStep(tracking.status) : currentStepFromParams;
 
-  const orderNumber = getParamString(params.orderNumber as string | string[] | undefined, '#123456');
-  const eta = getParamString(params.eta as string | string[] | undefined, '12:45 مساء');
-  const total = getParamString(params.total as string | string[] | undefined, '0.00');
-  const productName = getParamString(params.productName as string | string[] | undefined, 'شوكلاته مشكّلة');
-  const productSubtitle = getParamString(params.productSubtitle as string | string[] | undefined, 'يا نسون نجمي');
-  const productWeight = getParamString(params.productWeight as string | string[] | undefined, '1x');
+  const orderNumber = tracking?.orderNumber ?? getParamString(params.orderNumber as string | string[] | undefined, '#123456');
+  const eta = palestineNowTime;
+  const total = tracking ? tracking.total.toFixed(2) : getParamString(params.total as string | string[] | undefined, '0.00');
+  const productName = tracking?.productName ?? getParamString(params.productName as string | string[] | undefined, 'شوكلاته مشكّلة');
+  const productSubtitle = getParamString(params.productSubtitle as string | string[] | undefined, '-');
+  const productWeight = tracking ? `${tracking.productQuantity}x` : getParamString(params.productWeight as string | string[] | undefined, '1x');
 
   const allowReorder = getParamString(params.allowReorder as string | string[] | undefined, '0') === '1';
+  const deliveryName = tracking?.deliveryName ?? 'لم يتم تعيين مندوب بعد';
+  const deliveryPhone = tracking?.deliveryPhone ?? '-';
+  const createdAtTime = useMemo(() => {
+    if (!tracking?.createdAt) {
+      return palestineNowTime;
+    }
+
+    return formatPalestineTime(new Date(tracking.createdAt));
+  }, [tracking?.createdAt, palestineNowTime]);
 
   const ORDER_STEPS = [
     {
       id: 0,
       title: 'تم الطلب',
       subtitle: `استلمنا طلبك رقم ${orderNumber}`,
-      time: '12:10 مساء',
+      time: createdAtTime,
       icon: 'checkmark',
     },
     {
       id: 1,
       title: 'قيد المعالجة',
       subtitle: 'يتم الآن تحضير وتغليف طلبك بعناية',
-      time: '12:25 مساء',
+      time: currentStep >= 1 ? palestineNowTime : '',
       icon: 'checkmark',
     },
     {
@@ -71,7 +146,21 @@ export default function OrderTrackingScreen() {
     },
   ];
 
-  const statusBanner = currentStep >= 3 ? 'تم توصيل الطلب بنجاح' : 'الطلب يتحرك بسرعة';
+  const statusBanner = currentStep >= 3 ? 'تم توصيل الطلب بنجاح' : 'آخر تحديث الآن';
+
+  const callDelivery = async () => {
+    if (!tracking?.deliveryPhone) {
+      return;
+    }
+
+    const phoneUrl = `tel:${tracking.deliveryPhone}`;
+    const canOpen = await Linking.canOpenURL(phoneUrl);
+    if (!canOpen) {
+      return;
+    }
+
+    await Linking.openURL(phoneUrl);
+  };
 
   const renderStep = (step: (typeof ORDER_STEPS)[number], index: number) => {
     const isCompleted = index < currentStep;
@@ -116,7 +205,7 @@ export default function OrderTrackingScreen() {
     <View style={styles.container}>
       <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <AppHeader
           logo="transparent"
           withSidebar
@@ -130,7 +219,16 @@ export default function OrderTrackingScreen() {
           }
         />
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={PRIMARY_GREEN} />
+          </View>
+        ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTracking} tintColor={PRIMARY_GREEN} />}
+        >
           <View style={styles.etaCard}>
             <View style={styles.etaShape} />
             <Text style={styles.etaLabel}>وقت التوصيل المتوقع</Text>
@@ -147,18 +245,18 @@ export default function OrderTrackingScreen() {
               <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
             </View>
             <View style={styles.riderTag}>
-              <Text style={styles.riderTagText}>(أحمد المندوب)</Text>
+              <Text style={styles.riderTagText}>({deliveryName})</Text>
             </View>
           </View>
 
           <View style={styles.driverRow}>
-            <TouchableOpacity style={styles.callCircle} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.callCircle} activeOpacity={0.8} onPress={callDelivery}>
               <Ionicons name="call-outline" size={18} color="#FFFFFF" />
             </TouchableOpacity>
 
             <View style={styles.driverInfo}>
-              <Text style={styles.driverName}>أحمد محمود</Text>
-              <Text style={styles.driverPhone}>رقم التواصل: 05xxxxxxx</Text>
+              <Text style={styles.driverName}>{deliveryName}</Text>
+              <Text style={styles.driverPhone}>رقم التواصل: {deliveryPhone}</Text>
             </View>
 
             <View style={styles.driverAvatar}>
@@ -192,6 +290,7 @@ export default function OrderTrackingScreen() {
             ) : null}
           </View>
         </ScrollView>
+        )}
       </SafeAreaView>
 
       <BottomNavbar activeTab="profile" />
@@ -206,6 +305,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerAction: {
     width: 36,

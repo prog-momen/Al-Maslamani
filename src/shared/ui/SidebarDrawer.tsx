@@ -1,4 +1,5 @@
 import { supabase } from '@/src/lib/supabase/client';
+import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,6 +8,7 @@ import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SidebarItemKey =
+  | 'dashboard'
   | 'home'
   | 'categories'
   | 'cart'
@@ -22,7 +24,7 @@ type SidebarDrawerProps = {
   activeItem?: SidebarItemKey;
 };
 
-const items: {
+const memberItems: {
   key: SidebarItemKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -38,10 +40,29 @@ const items: {
   { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
 ];
 
+const staffItems: {
+  key: SidebarItemKey;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+}[] = [
+  { key: 'dashboard', label: 'لوحة التحكم', icon: 'speedometer-outline', route: '/home' },
+  { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
+  { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
+  { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
+  { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
+];
+
 export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const insets = useSafeAreaInsets();
+
+  const isStaff = role === 'admin' || role === 'delivery';
+  const dashboardRoute = getHomeRouteForRole(role);
+  const items = isStaff
+    ? staffItems.map((item) => (item.key === 'dashboard' ? { ...item, route: dashboardRoute } : item))
+    : memberItems;
 
   const handleNavigate = (route: string) => {
     onClose();

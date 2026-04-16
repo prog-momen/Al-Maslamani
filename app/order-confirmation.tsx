@@ -4,13 +4,13 @@ import React from 'react';
 import {
   Animated,
   Easing,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY_GREEN = '#67BB28';
 const PAGE_BG = '#F2EFE9';
@@ -23,8 +23,30 @@ export default function OrderConfirmationScreen() {
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
+  const getParamString = (value: string | string[] | undefined, fallback: string) => {
+    if (Array.isArray(value)) {
+      return value[0] ?? fallback;
+    }
+    return value ?? fallback;
+  };
+
+  const statusToStep = (status: string) => {
+    if (status === 'pending') return 0;
+    if (status === 'confirmed' || status === 'preparing') return 1;
+    if (status === 'shipped') return 2;
+    if (status === 'delivered') return 3;
+    if (status === 'cancelled') return 1;
+    return 0;
+  };
+
   // استخراج رقم الطلب من الـ params أو تعيين قيمة افتراضية
-  const orderNumber = params?.orderNumber || '#123456';
+  const orderNumber = getParamString(params.orderNumber as string | string[] | undefined, '#123456');
+  const orderId = getParamString(params.orderId as string | string[] | undefined, '');
+  const orderStatus = getParamString(params.orderStatus as string | string[] | undefined, 'pending');
+  const total = getParamString(params.total as string | string[] | undefined, '0.00');
+
+  const currentStepFromParams = parseInt(getParamString(params.currentStep as string | string[] | undefined, ''), 10);
+  const currentStep = Number.isNaN(currentStepFromParams) ? statusToStep(orderStatus) : Math.max(0, Math.min(3, currentStepFromParams));
 
   React.useEffect(() => {
     // أنيميشن لأيقونة الصح
@@ -42,7 +64,7 @@ export default function OrderConfirmationScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, scaleAnim]);
 
   const handleContinueShopping = () => {
     // الرجوع للشاشة الرئيسية
@@ -51,11 +73,21 @@ export default function OrderConfirmationScreen() {
 
   const handleTrackOrder = () => {
     // الانتقال لشاشة تتبع الطلب
-    router.push({ pathname: '/order-tracking', params: { orderNumber } });
+    router.push({
+      pathname: '/order-tracking',
+      params: {
+        orderId,
+        orderNumber,
+        total,
+        currentStep: String(currentStep),
+        previous: '0',
+        allowReorder: '0',
+      },
+    });
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
       <View style={styles.content}>
