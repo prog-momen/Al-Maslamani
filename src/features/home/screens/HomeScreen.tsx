@@ -1,4 +1,8 @@
-import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
+import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, setFavoriteProduct } from '@/src/features/products/services/products.service';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
@@ -6,10 +10,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, setFavoriteProduct } from '@/src/features/products/services/products.service';
-import { addToCart } from '@/src/features/cart/services/cart.service';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 
 type Product = {
   id: string;
@@ -295,7 +295,7 @@ export function HomeScreen() {
         </View>
       </ScrollView>
 
-      <BottomNavbar activeTab="home" cartCount={2} />
+      <BottomNavbar activeTab="home" />
     </SafeAreaView>
   );
 }

@@ -146,8 +146,21 @@ export const CartScreen = () => {
             <Text style={styles.totalValue}>{finalTotal} ₪</Text>
           </View>
 
-          <TouchableOpacity style={styles.orderBtn} onPress={() => router.push({ pathname: '/checkout', params: {
-            discount: discount.toString(), coupon: coupon,},})}>
+          <TouchableOpacity
+            style={styles.orderBtn}
+            onPress={() =>
+              router.push({
+                pathname: '/checkout',
+                params: {
+                  subtotal: subtotal.toString(),
+                  shipping: shipping.toString(),
+                  discount: discount.toString(),
+                  coupon: coupon,
+                  finalTotal: finalTotal.toString(),
+                },
+              })
+            }
+          >
 
             <Text style={styles.orderText}>إتمام الطلب</Text>
           </TouchableOpacity>

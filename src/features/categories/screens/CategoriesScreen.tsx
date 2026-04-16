@@ -1,6 +1,7 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, BottomNavbar, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -197,7 +198,7 @@ export function CategoriesScreen() {
         </View>
       </ScrollView>
 
-      <BottomNavbar activeTab="categories" cartCount={2} />
+      <BottomNavbar activeTab="categories" />
     </SafeAreaView>
   );
 }

@@ -1,19 +1,21 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
   Animated,
   Easing,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
-const PRIMARY_GREEN = '#2E7D32';
-const LIGHT_GREEN = '#E8F5E9';
+const PRIMARY_GREEN = '#67BB28';
+const PAGE_BG = '#F2EFE9';
+const CARD_BG = '#FFFFFF';
+const LIGHT_GREEN = '#CFF3D2';
 
 export default function OrderConfirmationScreen() {
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function OrderConfirmationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={PRIMARY_GREEN} barStyle="light-content" />
+      <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
       <View style={styles.content}>
         {/* أيقونة الصح المتحركة */}
@@ -69,7 +71,7 @@ export default function OrderConfirmationScreen() {
 
         {/* النصوص */}
         <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-          <Text style={styles.successTitle}>تم الطلب بنجاح!</Text>
+          <Text style={styles.successTitle}>تم تأكيد الطلب بنجاح!</Text>
           <Text style={styles.successMessage}>
             تم استلام طلبك بنجاح وسوف يتم{'\n'}توصيله في أقرب وقت ممكن
           </Text>
@@ -105,13 +107,17 @@ export default function OrderConfirmationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: PAGE_BG,
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 30,
+    marginHorizontal: 24,
+    marginVertical: 20,
+    paddingHorizontal: 24,
+    borderRadius: 28,
+    backgroundColor: CARD_BG,
   },
   checkCircle: {
     width: 140,
@@ -131,14 +137,14 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#1A1A1A',
+    color: '#1B1C1C',
     textAlign: 'center',
     marginBottom: 12,
     writingDirection: 'rtl',
   },
   successMessage: {
     fontSize: 15,
-    color: '#666666',
+    color: '#4E554F',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 28,
@@ -146,13 +152,13 @@ const styles = StyleSheet.create({
   },
   orderNumberBox: {
     backgroundColor: LIGHT_GREEN,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 32,
     alignItems: 'center',
     marginBottom: 48,
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: '#A5D9A6',
   },
   orderNumberLabel: {
     fontSize: 13,

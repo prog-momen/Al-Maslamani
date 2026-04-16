@@ -7,12 +7,12 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { AuthProvider } from '@/src/shared/contexts/AuthContext';
+import { CartProvider } from '@/src/shared/contexts/CartContext';
 import { useColorScheme } from '@/src/shared/hooks/use-color-scheme';
 import { queryClient } from '@/src/shared/services/query-client';
 import { Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, useFonts } from '@expo-google-fonts/tajawal';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
-import { CartProvider } from '@/src/shared/contexts/CartContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +45,8 @@ export default function RootLayout() {
             <Stack.Screen name="categories" />
             <Stack.Screen name="cart" />
             <Stack.Screen name="checkout" />
+            <Stack.Screen name="order-confirmation" />
+            <Stack.Screen name="order-tracking" />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />

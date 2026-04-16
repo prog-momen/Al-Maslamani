@@ -1,3 +1,4 @@
+import { useCart } from '@/src/shared/contexts/CartContext';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -11,9 +12,13 @@ type BottomNavbarProps = {
   cartCount?: number;
 };
 
-export function BottomNavbar({ activeTab, cartCount = 0 }: BottomNavbarProps) {
+export function BottomNavbar({ activeTab, cartCount }: BottomNavbarProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { items } = useCart();
+
+  const cartItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const displayedCartCount = typeof cartCount === 'number' ? cartCount : cartItemsCount;
 
   const iconColor = (tab: BottomTabKey) => (activeTab === tab ? '#FFFFFF' : '#4E5D50');
   const textWeight = (tab: BottomTabKey) => (activeTab === tab ? 'font-tajawal-bold' : 'font-tajawal-medium');
@@ -23,21 +28,24 @@ export function BottomNavbar({ activeTab, cartCount = 0 }: BottomNavbarProps) {
       router.replace('/home');
       return;
     }
+
     if (tab === 'categories') {
       router.replace('/categories' as never);
       return;
     }
+
     if (tab === 'favorites') {
       router.replace('/favorites');
       return;
     }
+
     if (tab === 'profile') {
       router.replace('/profile');
       return;
     }
+
     if (tab === 'cart') {
       router.replace('/cart');
-      return;
     }
   };
 
@@ -61,9 +69,9 @@ export function BottomNavbar({ activeTab, cartCount = 0 }: BottomNavbarProps) {
       >
         <View className="relative">
           {icon}
-          {showBadge && cartCount > 0 ? (
+          {showBadge && displayedCartCount > 0 ? (
             <View className="absolute -top-2 -left-3 min-w-[18px] h-[18px] rounded-full bg-[#C53673] items-center justify-center px-1">
-              <Text className="text-white text-[10px] font-tajawal-bold">{cartCount}</Text>
+              <Text className="text-white text-[10px] font-tajawal-bold">{displayedCartCount}</Text>
             </View>
           ) : null}
         </View>
