@@ -80,15 +80,12 @@ return (
 
       <ScrollView contentContainerStyle={styles.scroll}>
 
-        {/* TITLE */}
         <View style={styles.headerTitleBox}>
           <Text style={styles.headerTitle}>إتمام الشراء</Text>
         </View>
 
-        {/* STEPS */}
         <CheckoutSteps />
 
-        {/* ADDRESS HEADER */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>عنوان التوصيل</Text>
 
@@ -102,7 +99,6 @@ return (
           </TouchableOpacity>
         </View>
 
-        {/* ADDRESS CARD */}
         <View style={styles.addressCard}>
           <View style={styles.addressIcon}>
             <Feather name="map-pin" size={18} color="#fff" />
@@ -116,7 +112,6 @@ return (
           </View>
         </View>
 
-        {/* PAYMENT */}
         <Text style={styles.paymentTitle}>وسيلة الدفع</Text>
 
         <TouchableOpacity
@@ -171,7 +166,6 @@ return (
         </TouchableOpacity>
 
 
-        {/* ================= NEW CUSTOM ORDER SUMMARY ================= */}
         <View style={styles.customSummaryCard}>
 
           <View style={styles.summaryRow}>
@@ -204,7 +198,6 @@ return (
 
       </ScrollView>
 
-      {/* BUTTON */}
       <View style={styles.bottom}>
         <TouchableOpacity style={styles.button} onPress={handleCheckout}>
           <Text style={styles.buttonText}>تأكيد الطلب</Text>
@@ -212,7 +205,6 @@ return (
         <Text style={styles.agreementText}> بالمتابعة، أنت توافق على شروط و أحكام سعد المسلماني</Text>
       </View>
 
-      {/* EDIT ADDRESS MODAL */}
       {isEditingAddress && (
         <View style={styles.modal}>
           <View style={styles.modalBox}>
