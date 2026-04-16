@@ -12,6 +12,7 @@ import { queryClient } from '@/src/shared/services/query-client';
 import { Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, useFonts } from '@expo-google-fonts/tajawal';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
+import { CartProvider } from '@/src/shared/contexts/CartContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,16 +37,19 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <CartProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="home" />
             <Stack.Screen name="categories" />
             <Stack.Screen name="cart" />
+            <Stack.Screen name="checkout" />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>
+        </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
