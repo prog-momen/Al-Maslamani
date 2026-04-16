@@ -1,14 +1,14 @@
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
-import { useMemo, useState, useCallback } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, TextInput, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { CartItemCard } from '../components/CartItemCard';
-import { getCartItems, updateQuantity, removeItem } from '../services/cart.service';
+import { getCartItems, removeItem, updateQuantity } from '../services/cart.service';
 
 export const CartScreen = () => {
   const { user } = useAuth();
