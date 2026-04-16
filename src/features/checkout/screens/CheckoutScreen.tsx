@@ -20,7 +20,12 @@ export const CheckoutScreen = () => {
   const [tempAddress, setTempAddress] = useState(address);
 
   const [payment, setPayment] = useState('cash');
-  const subtotal = 80;
+  const { clearCart, items } = useCart();
+  const subtotal = useMemo(() => {
+  return items.reduce((sum, item) => {
+    return sum + item.price * item.quantity;
+  }, 0);
+}, [items]);
   const shipping = subtotal > 50 ? 0 : 5;
   const vatRate = 0.15;
 
@@ -31,7 +36,6 @@ export const CheckoutScreen = () => {
 }, [subtotal, shipping]);
 
   const finalTotal = subtotal + shipping + vat;
-  const { clearCart } = useCart();
 
   const handleCheckout = () => {
   if (!address.title || !address.details) {
