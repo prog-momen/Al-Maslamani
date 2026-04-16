@@ -1,16 +1,15 @@
+import { useCart } from '@/src/shared/contexts/CartContext';
 import { AppHeader } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckoutSteps } from '../components/CheckoutSteps';
-import { PaymentMethod } from '../components/PaymentMethod';
-import { OrderSummary } from '../components/OrderSummary';
-import { useCart } from '@/src/shared/contexts/CartContext';
 
 export const CheckoutScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [address, setAddress] = useState({
     title: 'المنزل (العمل الحالي)',
     details: 'شارع رفيديا طلعة الاتصالات',
@@ -20,22 +19,31 @@ export const CheckoutScreen = () => {
   const [tempAddress, setTempAddress] = useState(address);
 
   const [payment, setPayment] = useState('cash');
-  const { clearCart, items } = useCart();
-  const subtotal = useMemo(() => {
-  return items.reduce((sum, item) => {
-    return sum + item.price * item.quantity;
-  }, 0);
-}, [items]);
-  const shipping = subtotal > 50 ? 0 : 5;
+  const { items, clearCart } = useCart();
   const vatRate = 0.15;
 
-  const { vat, total } = useMemo(() => {
-  const vat = subtotal * vatRate;
-  const total = subtotal + shipping + vat;
-  return { vat, total };
-}, [subtotal, shipping]);
+  const parseNumberParam = (value: string | string[] | undefined) => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
 
-  const finalTotal = subtotal + shipping + vat;
+  const subtotalFromContext = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [items]);
+
+  const subtotal = parseNumberParam(params.subtotal) ?? subtotalFromContext;
+  const shipping = parseNumberParam(params.shipping) ?? (subtotal > 50 ? 0 : 5);
+  const discountRate = parseNumberParam(params.discount) ?? 0;
+  const discountedSubtotal = Math.max(0, subtotal - subtotal * discountRate);
+
+  const { vat, total } = useMemo(() => {
+    const vat = discountedSubtotal * vatRate;
+    const total = discountedSubtotal + shipping + vat;
+    return { vat, total };
+  }, [discountedSubtotal, shipping]);
+
+  const finalTotal = total;
 
   const handleCheckout = () => {
   if (!address.title || !address.details) {
@@ -53,15 +61,24 @@ export const CheckoutScreen = () => {
     return;
   }
 
-  alert('تم تأكيد الطلب بنجاح');
+  const generatedOrderNumber = `#${Date.now().toString().slice(-6)}`;
 
   console.log({
     address,
     payment,
     total: finalTotal,
+    orderNumber: generatedOrderNumber,
   });
+
   clearCart?.();
-  router.replace('/home');
+
+  router.replace({
+    pathname: '/order-confirmation',
+    params: {
+      orderNumber: generatedOrderNumber,
+      total: finalTotal.toFixed(2),
+    },
+  });
 };
 
 
@@ -170,8 +187,15 @@ return (
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>قيمة المشتريات</Text>
-            <Text style={styles.summaryValue}>₪ {subtotal}</Text>
+            <Text style={styles.summaryValue}>₪ {subtotal.toFixed(2)}</Text>
           </View>
+
+          {discountRate > 0 ? (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>الخصم</Text>
+              <Text style={styles.summaryValue}>- ₪ {(subtotal * discountRate).toFixed(2)}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>رسوم التوصيل</Text>

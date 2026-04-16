@@ -1,4 +1,5 @@
-import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import { AppHeader } from '@/src/shared/ui';
+import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -18,7 +19,18 @@ import {
 
   type OrderStatus = 'completed' | 'cancelled' | 'processing';
 
-const MOCK_ORDERS = [
+type OrderItem = {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  weight: string;
+  name: string;
+  subtitle: string;
+  total: string;
+  image: any;
+};
+
+const MOCK_ORDERS: OrderItem[] = [
   {
     id: '1',
       orderNumber: '#100245',
@@ -36,7 +48,7 @@ const MOCK_ORDERS = [
       weight: '250 غرام',
       name: 'كاشو بقشرة',
       subtitle: '',
-      total: '0.00',
+      total: '15.00',
       image: require('@/assets/images/chickpeas.png'),
   },
   {
@@ -61,7 +73,7 @@ const MOCK_ORDERS = [
   },
 ];
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bgColor: string }> = {
     completed: {
       label: 'مكتمل',
       color: '#2F6D34',
@@ -79,7 +91,12 @@ const STATUS_CONFIG = {
   },
 };
 
-  function OrderCard({ order, onPress }) {
+type OrderCardProps = {
+  order: OrderItem;
+  onPress: (order: OrderItem) => void;
+};
+
+  function OrderCard({ order, onPress }: OrderCardProps) {
   const statusInfo = STATUS_CONFIG[order.status];
 
   return (
@@ -121,8 +138,8 @@ const STATUS_CONFIG = {
 export default function OrderHistoryScreen() {
   const router = useRouter();
 
-  const handleOrderPress = (order) => {
-    const statusStepMap = {
+  const handleOrderPress = (order: OrderItem) => {
+    const statusStepMap: Record<OrderStatus, number> = {
       processing: 2,
       completed: 3,
       cancelled: 1,
