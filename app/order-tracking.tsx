@@ -15,8 +15,11 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Dimensions,
+    Platform
 } from 'react-native';
+import MapView, { Marker, Polyline } from '@/src/shared/ui/Maps/MapViewCustom';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY_GREEN = '#67BB28';
@@ -29,6 +32,95 @@ const getParamString = (value: string | string[] | undefined, fallback: string) 
   }
   return value ?? fallback;
 };
+
+const googleMapStyle = [
+  {
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f5f5f5" }]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#616161" }]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [{ "color": "#f5f5f5" }]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#bdbdbd" }]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#eeeeee" }]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#757575" }]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e5e5e5" }]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#9e9e9e" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#ffffff" }]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#757575" }]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#dadada" }]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#616161" }]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#9e9e9e" }]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e5e5e5" }]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#eeeeee" }]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#c9c9c9" }]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#9e9e9e" }]
+  }
+];
 
 export default function OrderTrackingScreen() {
   const router = useRouter();
@@ -257,11 +349,47 @@ export default function OrderTrackingScreen() {
           </View>
 
           <View style={styles.mapCard}>
-            <Image source={require('@/assets/images/about2.png')} style={styles.mapImage} contentFit="cover" />
-            <View style={styles.mapOverlay} />
-            <View style={styles.riderPin}>
-              <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
-            </View>
+            <MapView
+              style={styles.mapView}
+              initialRegion={{
+                latitude: 31.9029, // Ramallah coordinate
+                longitude: 35.2062,
+                latitudeDelta: 0.015,
+                longitudeDelta: 0.015,
+              }}
+              customMapStyle={googleMapStyle}
+            >
+              {/* Delivery Rider Marker */}
+              <Marker
+                coordinate={{ latitude: 31.9029, longitude: 35.2062 }}
+                title={deliveryName || 'المندوب'}
+              >
+                <View style={styles.riderPin}>
+                  <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
+                </View>
+              </Marker>
+
+              {/* Customer Destination Marker */}
+              <Marker
+                coordinate={{ latitude: 31.9050, longitude: 35.2100 }}
+                pinColor="#000"
+              >
+                <View style={styles.destinationPin}>
+                  <Ionicons name="home" size={18} color="#FFFFFF" />
+                </View>
+              </Marker>
+
+              {/* Path */}
+              <Polyline
+                coordinates={[
+                  { latitude: 31.9029, longitude: 35.2062 },
+                  { latitude: 31.9050, longitude: 35.2100 },
+                ]}
+                strokeColor={PRIMARY_GREEN}
+                strokeWidth={3}
+              />
+            </MapView>
+
             <View style={styles.riderTag}>
               <Text style={styles.riderTagText}>({deliveryName})</Text>
             </View>
@@ -396,41 +524,50 @@ const styles = StyleSheet.create({
     fontFamily: 'Tajawal_700Bold',
   },
   mapCard: {
-    height: 170,
+    height: 220,
     borderRadius: 20,
     overflow: 'hidden',
     marginTop: 12,
     marginBottom: 10,
+    backgroundColor: '#EBEBEB',
   },
-  mapImage: {
+  mapView: {
     width: '100%',
     height: '100%',
   },
-  mapOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(78, 129, 121, 0.26)',
-  },
   riderPin: {
-    position: 'absolute',
-    top: 50,
-    alignSelf: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: PRIMARY_GREEN,
-    borderWidth: 4,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  destinationPin: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#000000',
+    borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   riderTag: {
     position: 'absolute',
-    top: 104,
+    bottom: 12,
     alignSelf: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
     paddingHorizontal: 9,
     paddingVertical: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   riderTagText: {
     fontSize: 10,

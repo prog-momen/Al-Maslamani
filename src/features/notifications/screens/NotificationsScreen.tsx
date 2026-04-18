@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,6 +16,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import { getNotificationPermissionStatus, registerForPushNotificationsAsync } from '../services/push-notifications.service';
 import type { Notification, NotificationType } from '../types/notification.types';
 
 // ─── Filter Tabs ──────────────────────────────────────────────────
@@ -256,6 +259,7 @@ function EmptyState({ filter }: { filter: FilterTab }) {
 // ─── Main Screen ─────────────────────────────────────────────────
 export function NotificationsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -267,10 +271,38 @@ export function NotificationsScreen() {
 
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<string>('granted');
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    checkPermission();
+  }, []);
+
+  const checkPermission = async () => {
+    const status = await getNotificationPermissionStatus();
+    setPermissionStatus(status);
+  };
+
+  const requestPermission = async () => {
+    if (!user?.id) return;
+    try {
+      const token = await registerForPushNotificationsAsync(user.id);
+      // Once they interact, we consider it "done" for this session's UI
+      setIsBannerDismissed(true);
+      
+      if (token) {
+        setPermissionStatus('granted');
+      }
+    } catch (e) {
+      console.error('Permission request failed:', e);
+      setIsBannerDismissed(true);
+    }
+  };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refresh();
+    await checkPermission();
     setRefreshing(false);
   }, [refresh]);
 
@@ -313,6 +345,32 @@ export function NotificationsScreen() {
           ) : undefined
         }
       />
+
+      {/* Permission Banner */}
+      {Platform.OS !== 'web' && permissionStatus !== 'granted' && !isBannerDismissed && (
+        <View className="mx-5 mb-4 bg-brand-primary/10 p-4 rounded-2xl flex-row-reverse items-center justify-between border border-brand-primary/20">
+          <TouchableOpacity 
+            onPress={requestPermission}
+            activeOpacity={0.8}
+            className="flex-row-reverse items-center flex-1"
+          >
+            <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center ml-3">
+              <Ionicons name="notifications" size={20} color="#FFFFFF" />
+            </View>
+            <View className="flex-1">
+              <Text className="font-tajawal-bold text-[14px] text-brand-title text-right">فعّل التنبيهات</Text>
+              <Text className="font-tajawal-regular text-[12px] text-brand-muted text-right">لتبقى على اطلاع بآخر العروض وحالة طلباتك</Text>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => setIsBannerDismissed(true)}
+            className="w-8 h-8 items-center justify-center"
+          >
+            <Ionicons name="close" size={20} color="#9E9E9E" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Title Row */}
       <View className="px-6 flex-row-reverse items-center justify-between">

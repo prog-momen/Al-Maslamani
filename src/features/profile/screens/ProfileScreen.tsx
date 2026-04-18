@@ -213,17 +213,6 @@ export function ProfileScreen() {
                 <Icons.ChevronLeft color="#A1A1AA" />
               </Pressable>
 
-              {/* My Addresses */}
-              <Pressable className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
-                    <Icons.MapPin color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">عناويني</Text>
-                </View>
-                <Icons.ChevronLeft color="#A1A1AA" />
-              </Pressable>
-
               {/* Notifications */}
               <Pressable 
                 onPress={() => router.push('/notifications')}
