@@ -2,6 +2,7 @@ import { supabase } from '@/src/lib/supabase/client';
 import { Database } from '@/src/lib/supabase/database.types';
 import { sendNotification } from '@/src/features/notifications/services/notifications.service';
 import { formatOrderNumber } from '@/src/shared/utils/order-utils';
+export { formatOrderNumber };
 
 const sb = supabase as any;
 

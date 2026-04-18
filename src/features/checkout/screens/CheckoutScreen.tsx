@@ -1,29 +1,43 @@
 import { useCart } from '@/src/shared/contexts/CartContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { 
+  Alert, 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  View,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatOrderNumber, placeOrderFromCart } from '../../orders/services/orders.service';
 import { CheckoutSteps } from '../components/CheckoutSteps';
 
+const PRIMARY_GREEN = '#67BB28';
+const CARD_BG = '#F7F3EA';
+
 export const CheckoutScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [address, setAddress] = useState({
-    title: 'المنزل (العمل الحالي)',
-    details: 'شارع رفيديا طلعة الاتصالات',
+  const { items, clearCart } = useCart();
+  const { user } = useAuth();
+  
+  // Detailed Address State
+  const [addressDetails, setAddressDetails] = useState({
+    city: '',
+    street: '',
+    building: '',
+    notes: '',
   });
-
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
-  const [tempAddress, setTempAddress] = useState(address);
 
   const [payment, setPayment] = useState('cash');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { items, clearCart } = useCart();
-  const { user } = useAuth();
   const vatRate = 0.15;
 
   const parseNumberParam = (value: string | string[] | undefined) => {
@@ -47,63 +61,60 @@ export const CheckoutScreen = () => {
     return { vat, total };
   }, [discountedSubtotal, shipping]);
 
-  const finalTotal = total;
-
   const handleCheckout = async () => {
-  if (!address.title || !address.details) {
-    Alert.alert('تنبيه', 'يرجى إدخال عنوان التوصيل');
-    return;
-  }
+    if (!addressDetails.city || !addressDetails.street) {
+      Alert.alert('تنبيه', 'يرجى إدخال تفاصيل العنوان (المدينة والشارع على الأقل)');
+      return;
+    }
 
-  if (payment === 'card') {
-    Alert.alert('تنبيه', 'سيتم تحويلك لصفحة الدفع بالبطاقة (غير مفعلة حالياً)');
-    return;
-  }
+    if (payment === 'card') {
+      Alert.alert('تنبيه', 'الدفع بالبطاقة غير متوفر حالياً، يرجى اختيار الدفع عند الاستلام');
+      return;
+    }
 
-  if (payment === 'ios') {
-    Alert.alert('تنبيه', 'Apple Pay غير مفعّل حالياً');
-    return;
-  }
+    if (!user?.id) {
+      router.replace('/(auth)/login');
+      return;
+    }
 
-  if (!user?.id) {
-    router.replace('/(auth)/login');
-    return;
-  }
+    setIsSubmitting(true);
 
-  setIsSubmitting(true);
+    try {
+      // Format the detailed address for the database
+      const formattedAddress = `المدينة: ${addressDetails.city}, شارع: ${addressDetails.street}${addressDetails.building ? `, بناية: ${addressDetails.building}` : ''}`;
+      
+      const { orderId } = await placeOrderFromCart({
+        addressLabel: 'طلب جديد',
+        addressDetails: formattedAddress,
+        paymentMethod: 'cash_on_delivery',
+        deliveryFee: shipping,
+        note: addressDetails.notes || undefined
+      });
 
-  try {
-    const { orderId } = await placeOrderFromCart({
-      addressLabel: address.title,
-      addressDetails: address.details,
-      paymentMethod: payment === 'card' ? 'card' : 'cash_on_delivery',
-      deliveryFee: shipping,
-    });
+      clearCart?.();
 
-    clearCart?.();
+      router.replace({
+        pathname: '/order-confirmation',
+        params: {
+          orderId,
+          orderNumber: formatOrderNumber(orderId),
+          orderStatus: 'pending',
+          currentStep: '0',
+          total: total.toFixed(2),
+        },
+      });
+    } catch (error: any) {
+      console.error('Failed to place order:', error);
+      Alert.alert('فشل إرسال الطلب', error.message || 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    router.replace({
-      pathname: '/order-confirmation',
-      params: {
-        orderId,
-        orderNumber: formatOrderNumber(orderId),
-        orderStatus: 'pending',
-        currentStep: '0',
-        total: finalTotal.toFixed(2),
-      },
-    });
-  } catch (error) {
-    console.error('Failed to place order:', error);
-    Alert.alert('فشل إرسال الطلب', 'حاول مرة أخرى.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
-return (
-   <SafeAreaView style={styles.container}>
-    <AppHeader logo="transparent"
+  return (
+    <SafeAreaView style={styles.container}>
+      <AppHeader 
+        logo="transparent"
         left={
           <TouchableOpacity
             style={styles.closeBtn}
@@ -114,414 +125,282 @@ return (
         }
       />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.headerTitleBox}>
+            <Text style={styles.headerTitle}>إتمام الشراء</Text>
+          </View>
 
-        <View style={styles.headerTitleBox}>
-          <Text style={styles.headerTitle}>إتمام الشراء</Text>
-        </View>
+          <CheckoutSteps />
 
-        <CheckoutSteps />
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>بيانات العنوان</Text>
+          </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>عنوان التوصيل</Text>
+          <View style={styles.formCard}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>المدينة / المنطقة</Text>
+              <TextInput 
+                style={styles.input}
+                value={addressDetails.city}
+                onChangeText={(val) => setAddressDetails(prev => ({ ...prev, city: val }))}
+                placeholder="مثال: نابلس، رفيديا"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>اسم الشارع</Text>
+              <TextInput 
+                style={styles.input}
+                value={addressDetails.street}
+                onChangeText={(val) => setAddressDetails(prev => ({ ...prev, street: val }))}
+                placeholder="مثال: شارع تونس"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>رقم البناية / العلامة المميزة</Text>
+              <TextInput 
+                style={styles.input}
+                value={addressDetails.building}
+                onChangeText={(val) => setAddressDetails(prev => ({ ...prev, building: val }))}
+                placeholder="مثال: عمارة الشروق أو بالقرب من.."
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>ملاحظات إضافية (اختياري)</Text>
+              <TextInput 
+                style={[styles.input, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]}
+                value={addressDetails.notes}
+                onChangeText={(val) => setAddressDetails(prev => ({ ...prev, notes: val }))}
+                placeholder="أي تفاصيل أخرى تسهل الوصول إليك"
+                placeholderTextColor="#999"
+                multiline
+              />
+            </View>
+          </View>
+
+          <Text style={styles.paymentTitle}>خيار الدفع</Text>
 
           <TouchableOpacity
-            onPress={() => {
-              setTempAddress(address);
-              setIsEditingAddress(true);
-            }}
+            style={[styles.paymentItem, payment === 'cash' && styles.paymentItemActive]}
+            onPress={() => setPayment('cash')}
           >
-            <Text style={styles.editBtn}>تعديل</Text>
+            <View style={styles.paymentRight}>
+              <View style={[styles.paymentIcon, { backgroundColor: '#2E7D32' }]}>
+                <Feather name="dollar-sign" size={16} color="#fff" />
+              </View>
+              <Text style={styles.paymentText}>الدفع عند الاستلام</Text>
+            </View>
+            <View style={[styles.radio, payment === 'cash' && styles.radioActive]} />
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.addressCard}>
-          <View style={styles.addressIcon}>
-            <Feather name="map-pin" size={18} color="#fff" />
-          </View>
-
-          <View style={styles.addressInfo}>
-            <Text style={styles.addressTitle}>{address.title}</Text>
-            <Text style={styles.addressSubtitle}>
-              {address.details}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.paymentTitle}>وسيلة الدفع</Text>
-
-        <TouchableOpacity
-          style={styles.paymentItem}
-          onPress={() => setPayment('ios')}
-        >
-          <View style={styles.paymentRight}>
-            <View style={styles.iconCircleIOS}>
-              <Text style={styles.iosText}>IOS</Text>
+          <TouchableOpacity
+            style={styles.paymentItem}
+            onPress={() => setPayment('card')}
+          >
+            <View style={styles.paymentRight}>
+              <View style={[styles.paymentIcon, { backgroundColor: '#C2185B' }]}>
+                <Feather name="credit-card" size={16} color="#fff" />
+              </View>
+              <Text style={styles.paymentText}>بطاقة ائتمان (قريباً)</Text>
             </View>
-            <Text style={styles.paymentText}>Apple Pay</Text>
-          </View>
+            <View style={styles.radio} />
+          </TouchableOpacity>
 
-          <View style={[
-            styles.radio,
-            payment === 'ios' && styles.radioActive
-          ]} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.paymentItem}
-          onPress={() => setPayment('card')}
-        >
-          <View style={styles.paymentRight}>
-            <View style={styles.iconCircleCard}>
-              <Feather name="credit-card" size={16} color="#fff" />
-            </View>
-            <Text style={styles.paymentText}>بطاقة ائتمان</Text>
-          </View>
-
-          <View style={[
-            styles.radio,
-            payment === 'card' && styles.radioActive
-          ]} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.paymentItem}
-          onPress={() => setPayment('cash')}
-        >
-          <View style={styles.paymentRight}>
-            <View style={styles.iconCircleCash}>
-              <Feather name="credit-card" size={16} color="#fff" />
-            </View>
-            <Text style={styles.paymentText}>الدفع عند الاستلام</Text>
-          </View>
-
-          <View style={[
-            styles.radio,
-            payment === 'cash' && styles.radioActive
-          ]} />
-        </TouchableOpacity>
-
-
-        <View style={styles.customSummaryCard}>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>قيمة المشتريات</Text>
-            <Text style={styles.summaryValue}>₪ {subtotal.toFixed(2)}</Text>
-          </View>
-
-          {discountRate > 0 ? (
+          <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>الخصم</Text>
-              <Text style={styles.summaryValue}>- ₪ {(subtotal * discountRate).toFixed(2)}</Text>
+              <Text style={styles.summaryLabel}>قيمة المشتريات</Text>
+              <Text style={styles.summaryValue}>₪ {subtotal.toFixed(2)}</Text>
             </View>
-          ) : null}
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
-            <Text style={styles.summaryValue}>
-              {shipping === 0 ? 'مجانا' : `₪ ${shipping}`}
-            </Text>
+            {discountRate > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>الخصم</Text>
+                <Text style={styles.summaryValue}>- ₪ {(subtotal * discountRate).toFixed(2)}</Text>
+              </View>
+            )}
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
+              <Text style={styles.summaryValue}>{shipping === 0 ? 'مجاناً' : `₪ ${shipping}`}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>الضريبة (15%)</Text>
+              <Text style={styles.summaryValue}>₪ {vat.toFixed(2)}</Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.totalLabel}>الإجمالي الكلي</Text>
+              <Text style={styles.totalValue}>₪ {total.toFixed(2)}</Text>
+            </View>
           </View>
+          
+          <View style={{ height: 120 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>
-              ضريبة القيمة المضافة (15%)
-            </Text>
-            <Text style={styles.summaryValue}>₪ {vat.toFixed(2)}</Text>
-          </View>
-
-          <View style={[styles.summaryRow, styles.summaryDivider]}>
-            <Text style={styles.summaryTotalLabel}>الإجمالي</Text>
-            <Text style={styles.summaryTotalValue}>
-              ₪ {finalTotal.toFixed(2)}
-            </Text>
-          </View>
-
-        </View>
-
-      </ScrollView>
-
-      <View style={styles.bottom}>
-        <TouchableOpacity style={[styles.button, isSubmitting && styles.buttonDisabled]} onPress={handleCheckout} disabled={isSubmitting}>
-          <Text style={styles.buttonText}>{isSubmitting ? 'جاري إرسال الطلب...' : 'تأكيد الطلب'}</Text>
+      <View style={styles.footer}>
+        <TouchableOpacity 
+          style={[styles.confirmBtn, isSubmitting && styles.btnDisabled]} 
+          onPress={handleCheckout} 
+          disabled={isSubmitting}
+        >
+          <Text style={styles.confirmBtnText}>
+            {isSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.agreementText}> بالمتابعة، أنت توافق على شروط و أحكام سعد المسلماني</Text>
+        <Text style={styles.legalText}>بالضغط على تأكيد، أنت توافق على شروط استهلاك سعد المسلماني</Text>
       </View>
-
-      {isEditingAddress && (
-        <View style={styles.modal}>
-          <View style={styles.modalBox}>
-
-            <Text style={styles.modalTitle}>تعديل العنوان</Text>
-
-            <TextInput
-              style={styles.input}
-              value={tempAddress.title}
-              onChangeText={(t) =>
-                setTempAddress({ ...tempAddress, title: t })
-              }
-            />
-
-            <TextInput
-              style={styles.input}
-              value={tempAddress.details}
-              onChangeText={(t) =>
-                setTempAddress({ ...tempAddress, details: t })
-              }
-            />
-
-            <TouchableOpacity
-              style={styles.saveBtn}
-              onPress={() => {
-                setAddress(tempAddress);
-                setIsEditingAddress(false);
-              }}
-            >
-              <Text style={{ color: '#fff' }}>حفظ</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setIsEditingAddress(false)}>
-              <Text style={styles.cancelText}>إلغاء</Text>
-            </TouchableOpacity>
-
-          </View>
-        </View>
-      )}
-
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2EFE9' },
-  scroll: { padding: 24, paddingBottom: 120 },
-
-  headerTitleBox: { alignItems: 'center', marginBottom: 10 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#67BB28' },
-
+  scroll: { padding: 20 },
+  headerTitleBox: { alignItems: 'center', marginBottom: 15 },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: PRIMARY_GREEN, fontFamily: 'Tajawal_700Bold' },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2EFE9',
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-
-  sectionHeader: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 10,
+  sectionHeader: { marginBottom: 15, marginTop: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1B1C1C', textAlign: 'right', fontFamily: 'Tajawal_700Bold' },
+  
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
-
-  sectionTitle: { fontSize: 16, fontWeight: 'bold' },
-  editBtn: { color: '#67BB28', fontWeight: '600' },
-
-  addressCard: {
-    flexDirection: 'row-reverse',
-    backgroundColor: '#F7F3EA',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
+  inputGroup: { marginBottom: 15 },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4B5563',
+    textAlign: 'right',
+    marginBottom: 8,
+    fontFamily: 'Tajawal_500Medium',
   },
-
-  addressIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: '#67BB28',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    height: 50,
+    paddingHorizontal: 15,
+    textAlign: 'right',
+    fontSize: 14,
+    fontFamily: 'Tajawal_500Medium',
   },
-
-  addressInfo: { flex: 1, alignItems: 'flex-end' },
-  addressTitle: { fontSize: 14, fontWeight: 'bold' },
-  addressSubtitle: { fontSize: 12, color: '#6B6B6B', marginTop: 4 },
 
   paymentTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
+    color: '#1B1C1C',
     textAlign: 'right',
+    marginBottom: 15,
+    fontFamily: 'Tajawal_700Bold',
   },
-
   paymentItem: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F7F3EA',
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 12,
   },
-
-  paymentRight: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
+  paymentItemActive: {
+    borderColor: PRIMARY_GREEN,
+    borderWidth: 1.5,
   },
-
-  paymentText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 10,
-  },
-
-  iconCircleIOS: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: '#3B2A86',
+  paymentRight: { flexDirection: 'row-reverse', alignItems: 'center' },
+  paymentIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 12,
   },
-
-  iosText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-
-  iconCircleCard: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: '#C2185B',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  iconCircleCash: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: '#2E7D32',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
+  paymentText: { fontSize: 14, fontWeight: '700', color: '#1B1C1C', fontFamily: 'Tajawal_700Bold' },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 999,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#B5B5B5',
+    borderColor: '#D1D5DB',
   },
-
   radioActive: {
-    borderColor: '#67BB28',
-    backgroundColor: '#67BB28',
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: PRIMARY_GREEN,
+    borderWidth: 6,
   },
 
-  customSummaryCard: {
-    backgroundColor: '#F7F3EA',
-    borderRadius: 32,
-    padding: 24,
-    marginTop: 16,
-    gap: 12,
+  summaryCard: {
+    backgroundColor: PRIMARY_GREEN + '10',
+    borderRadius: 24,
+    padding: 20,
+    marginTop: 10,
   },
+  summaryRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', marginBottom: 10 },
+  summaryLabel: { fontSize: 14, color: '#4B5563', fontFamily: 'Tajawal_500Medium' },
+  summaryValue: { fontSize: 14, fontWeight: '700', color: '#1B1C1C' },
+  divider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 12 },
+  totalLabel: { fontSize: 16, fontWeight: 'bold', color: '#111827', fontFamily: 'Tajawal_700Bold' },
+  totalValue: { fontSize: 18, fontWeight: 'bold', color: PRIMARY_GREEN, fontFamily: 'Tajawal_700Bold' },
 
-  summaryRow: {
-    flexDirection: 'row-reverse',
-    justifyContent: 'space-between',
-  },
-
-  summaryLabel: {
-    fontSize: 13,
-    fontWeight: '300',
-  },
-
-  summaryValue: {
-    fontSize: 13,
-  },
-
-  summaryDivider: {
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    paddingTop: 10,
-    marginTop: 6,
-  },
-
-  summaryTotalLabel: {
-    fontWeight: 'bold',
-  },
-
-  summaryTotalValue: {
-    fontWeight: 'bold',
-    color: '#67BB28',
-  },
-
-  bottom: {
+  footer: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
     backgroundColor: '#fff',
     padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
   },
-
-  button: {
-    backgroundColor: '#67BB28',
-    padding: 16,
-    borderRadius: 999,
+  confirmBtn: {
+    backgroundColor: PRIMARY_GREEN,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
-  },
-
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-
-  modalBox: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-  },
-
-  modalTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-    textAlign: 'right',
-  },
-
-  saveBtn: {
-    backgroundColor: '#67BB28',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-
-  cancelText: {
+  btnDisabled: { opacity: 0.6 },
+  confirmBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', fontFamily: 'Tajawal_700Bold' },
+  legalText: {
     textAlign: 'center',
-    marginTop: 10,
-    color: 'red',
+    fontSize: 10,
+    color: '#6B7280',
+    marginTop: 12,
+    fontFamily: 'Tajawal_500Medium',
   },
-  agreementText: {
-  textAlign: 'center',
-  color: '#333333',
-  fontSize: 12,
-  marginTop: 10,
-  paddingHorizontal: 10,
-  lineHeight: 18,
-},
 });

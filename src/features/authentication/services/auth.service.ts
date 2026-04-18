@@ -1,7 +1,13 @@
 import { AppRole } from '@/src/features/orders/services/orders.service';
 import { supabase } from '@/src/lib/supabase/client';
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+
+let AuthSession: any;
+try {
+  AuthSession = require('expo-auth-session');
+} catch (e) {
+  console.warn('AuthSession is not available in this environment');
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,46 +27,44 @@ export const authService = {
         return data;
     },
 
-    async signUp(credentials: { email: string; password: string }, fullName?: string) {
+    async signUp(credentials: { email: string; password: string; fullName: string; phone: string }) {
         const { data, error } = await supabase.auth.signUp({
             email: credentials.email,
             password: credentials.password,
             options: {
                 data: {
-                    full_name: fullName,
-                }
-            }
+                    full_name: credentials.fullName,
+                    phone: credentials.phone,
+                },
+            },
         });
 
         if (error) {
             throw error;
+        }
+
+        // Create profile
+        if (data.user) {
+            const { error: profileError } = await sb.from('profiles').insert({
+                id: data.user.id,
+                full_name: credentials.fullName,
+                phone: credentials.phone,
+                role: 'member',
+            });
+
+            if (profileError) {
+                console.error('Error creating profile:', profileError);
+            }
         }
 
         return data;
     },
 
-    async forgotPassword(emailOrPhone: string) {
-        const { data, error } = await supabase.auth.resetPasswordForEmail(emailOrPhone);
-        
+    async signOut() {
+        const { error } = await supabase.auth.signOut();
         if (error) {
             throw error;
         }
-        
-        return { success: true, message: 'Password reset link sent' };
-    },
-
-    async verifyOtp(email: string, code: string) {
-        const { data, error } = await supabase.auth.verifyOtp({
-            email,
-            token: code,
-            type: 'recovery',
-        });
-        
-        if (error) {
-            throw error;
-        }
-        
-        return { success: true, message: 'Code verified successfully', data };
     },
 
     async getUserRole(userId: string): Promise<AppRole> {
@@ -78,6 +82,9 @@ export const authService = {
     },
 
     async signInWithOAuth(provider: 'google' | 'apple') {
+        if (!AuthSession) {
+          throw new Error('OAuth is not available in this environment. Use a development build.');
+        }
         const redirectUrl = AuthSession.makeRedirectUri();
         
         const { data, error } = await supabase.auth.signInWithOAuth({

@@ -1,66 +1,47 @@
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/src/shared/hooks/useAuth';
+import { useCart } from '@/src/shared/contexts/CartContext';
 import { CartItemCard } from '../components/CartItemCard';
-import { getCartItems, removeItem, updateQuantity } from '../services/cart.service';
 
 export const CartScreen = () => {
   const { user } = useAuth();
   const router = useRouter();
-  const [items, setItems] = useState<any[]>([]);
+  const { 
+    items, 
+    isLoading, 
+    updateQuantity, 
+    removeFromCart, 
+    subtotal, 
+    shipping, 
+    total 
+  } = useCart();
+
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);
   const [isCouponValid, setIsCouponValid] = useState(false);
   const [couponError, setCouponError] = useState('');
-  const loadCart = async () => {
-    if (!user?.id) return;
-    const data = await getCartItems(user.id);
-    const formatted = data.map((i: any) => ({
-      id: i.id, title: i.product.name, price: i.product.price, image: i.product.image_url ? { uri: i.product.image_url } : require('@/assets/images/mixed_nuts.png'), quantity: i.quantity,
-    }));
 
-    setItems(formatted);
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadCart();
-    }, [user?.id])
-  );
-
-  const handleIncrease = async (id: string) => {
-    const item = items.find((i: any) => i.id === id);
+  const handleIncrease = async (cartItemId: string) => {
+    const item = items.find((i) => i.id === cartItemId);
     if (!item) return;
-
-    await updateQuantity(id, item.quantity + 1);
-    loadCart();
+    await updateQuantity(cartItemId, item.quantity + 1);
   };
 
-  const handleDecrease = async (id: string) => {
-    const item = items.find((i: any) => i.id === id);
+  const handleDecrease = async (cartItemId: string) => {
+    const item = items.find((i) => i.id === cartItemId);
     if (!item || item.quantity <= 1) return;
-
-    await updateQuantity(id, item.quantity - 1);
-    loadCart();
+    await updateQuantity(cartItemId, item.quantity - 1);
   };
 
-  const handleRemove = async (id: string) => {
-    await removeItem(id);
-    loadCart();
+  const handleRemove = async (cartItemId: string) => {
+    await removeFromCart(cartItemId);
   };
-
-  const subtotal = useMemo(() => {
-    return items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0
-    );
-  }, [items]);
-
-  const shipping = subtotal > 50 ? 0 : 5;
 
   const finalTotal = useMemo(() => {
     return subtotal - subtotal * discount + shipping;
@@ -85,6 +66,18 @@ export const CartScreen = () => {
     }
   };
 
+  if (isLoading && items.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <AppHeader logo="transparent" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#67BB28" />
+        </View>
+        <BottomNavbar activeTab="cart" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <AppHeader logo="transparent" withSidebar sidebarActiveItem="cart" sidebarSide="left" left={<Feather name="menu" size={26} color="#67BB28" />}/>
@@ -100,13 +93,16 @@ export const CartScreen = () => {
               <Text style={styles.emptyText}>السلة فارغة حالياً</Text>
             </View>
           ) : (
-            items.map((item: any) => (
+            items.map((item) => (
               <CartItemCard
                 key={item.id}
-                item={item}
-                onIncrease={handleIncrease}
-                onDecrease={handleDecrease}
-                onRemove={handleRemove}
+                item={{
+                    ...item,
+                    image: item.image || require('@/assets/images/mixed_nuts.png')
+                }}
+                onIncrease={() => handleIncrease(item.id)}
+                onDecrease={() => handleDecrease(item.id)}
+                onRemove={() => handleRemove(item.id)}
               />
             ))
           )}
@@ -132,7 +128,7 @@ export const CartScreen = () => {
         <View style={styles.summaryBox}>
           <View style={styles.row}>
             <Text style={styles.label}>المجموع الفرعي</Text>
-            <Text style={styles.value}>{subtotal} ₪</Text>
+            <Text style={styles.value}>{subtotal.toFixed(0)} ₪</Text>
           </View>
 
           <View style={styles.row}>
@@ -143,7 +139,7 @@ export const CartScreen = () => {
           <View style={styles.divider} />
           <View style={styles.row}>
             <Text style={styles.totalLabel}>الإجمالي الكلي</Text>
-            <Text style={styles.totalValue}>{finalTotal} ₪</Text>
+            <Text style={styles.totalValue}>{finalTotal.toFixed(0)} ₪</Text>
           </View>
 
           <TouchableOpacity
@@ -193,11 +189,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    fontFamily: 'Tajawal_700Bold',
   },
 
   subtitle: {
     fontSize: 16,
     color: '#333',
+    fontFamily: 'Tajawal_500Medium',
   },
 
   itemsBox: {
@@ -213,6 +211,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#8B948D',
+    fontFamily: 'Tajawal_500Medium',
   },
 
   couponBox: {
@@ -225,6 +224,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'right',
     marginBottom: 10,
+    fontFamily: 'Tajawal_700Bold',
   },
 
   couponInputContainer: {
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     paddingHorizontal: 16,
+    fontFamily: 'Tajawal_400Regular',
   },
 
   couponButton: {
@@ -254,18 +255,21 @@ const styles = StyleSheet.create({
   couponButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontFamily: 'Tajawal_700Bold',
   },
 
   successText: {
     color: 'green',
     marginTop: 8,
     textAlign: 'right',
+    fontFamily: 'Tajawal_500Medium',
   },
 
   errorText: {
     color: 'red',
     marginTop: 8,
     textAlign: 'right',
+    fontFamily: 'Tajawal_500Medium',
   },
 
   summaryBox: {
@@ -285,10 +289,12 @@ const styles = StyleSheet.create({
 
   label: {
     color: '#6B6B6B',
+    fontFamily: 'Tajawal_400Regular',
   },
 
   value: {
     color: '#000',
+    fontFamily: 'Tajawal_700Bold',
   },
 
   divider: {
@@ -299,11 +305,14 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: 'Tajawal_700Bold',
   },
 
   totalValue: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#67BB28',
+    fontFamily: 'Tajawal_700Bold',
   },
 
   orderBtn: {
@@ -318,5 +327,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'Tajawal_700Bold',
   },
 });

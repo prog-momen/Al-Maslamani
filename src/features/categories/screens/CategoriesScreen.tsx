@@ -9,7 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CatalogProduct, getCatalogProducts } from '@/src/features/products/services/products.service';
+import { CatalogProduct, getCatalogProducts, getGroupedProducts, GroupedProduct, ProductVariant } from '@/src/features/products/services/products.service';
 
 type CategoryProduct = {
   id: string;
@@ -36,29 +36,91 @@ function toCategoryProduct(product: CatalogProduct): CategoryProduct {
 
 export function CategoriesScreen() {
   const router = useRouter();
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const tabs = useMemo(() => {
-    const names = Array.from(new Set(products.map((p) => p.category_name).filter(Boolean) as string[]));
+    const names = Array.from(new Set(groupedProducts.map((p) => p.category_name?.trim()).filter(Boolean) as string[]));
     return ['الكل', ...names];
-  }, [products]);
+  }, [groupedProducts]);
   const [activeTab, setActiveTab] = useState('الكل');
   const { user } = useAuth();
   const { addItem } = useCartActions();
   const [showCartModal, setShowCartModal] = useState(false);
   const [cartProductName, setCartProductName] = useState<string | undefined>();
+  const [cartVariantSize, setCartVariantSize] = useState<string | undefined>();
+  const [cartProductPrice, setCartProductPrice] = useState<number | undefined>();
+
+  // --- New ProductCard for Categories ---
+  const CategoryProductCard = ({ group }: { group: GroupedProduct }) => {
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(group.variants[0]);
+    const displayPrice = `${Number.isFinite(selectedVariant.price) ? selectedVariant.price.toFixed(0) : '0'} ₪`;
+    const displayImage = selectedVariant.image_url ? { uri: selectedVariant.image_url } : fallbackProductImage;
+
+    return (
+      <Pressable
+        onPress={() => router.push({ pathname: '/product-details', params: { id: selectedVariant.id } })}
+        className={`w-[48%] p-3.5 mb-4 ${CARD_BASE_CLASS} min-h-[300px]`}
+      >
+        <View className="items-center mt-1 h-[110px] justify-center">
+          <Image source={displayImage} className="w-[104px] h-[104px]" contentFit="contain" transition={200} />
+        </View>
+
+        <View className="flex-1">
+          <Text className="font-tajawal-bold text-[18px] text-brand-title text-right leading-[22px] min-h-[44px] mt-2" numberOfLines={2}>
+            {group.name}
+          </Text>
+
+          {/* Mini Variant Selector */}
+          <View className="flex-row items-center justify-end flex-wrap gap-1 mt-2 mb-2">
+            {group.variants.map((v) => (
+              <TouchableOpacity
+                key={v.id}
+                onPress={() => setSelectedVariant(v)}
+                className={`px-1.5 py-0.5 rounded border ${v.id === selectedVariant.id ? 'bg-brand-primary border-brand-primary' : 'bg-transparent border-gray-200'}`}
+              >
+                <Text className={`font-tajawal-bold text-[9px] ${v.id === selectedVariant.id ? 'text-white' : 'text-gray-500'}`}>
+                  {v.size}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View className="flex-row-reverse items-center justify-between mt-auto">
+            <Text className="font-tajawal-bold text-[18px] text-brand-primary">{displayPrice}</Text>
+            <TouchableOpacity
+              className="w-10 h-10 rounded-full bg-brand-primary items-center justify-center"
+              onPress={() => {
+                if (!user?.id) return;
+                addItem(user.id, selectedVariant.id, {
+                  onSuccess: () => {
+                    setCartProductName(group.name);
+                    setCartVariantSize(selectedVariant.size);
+                    setCartProductPrice(selectedVariant.price);
+                    setShowCartModal(true);
+                  },
+                });
+              }}
+            >
+              <Feather name="plus" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+  // ------------------------------------
 
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
       try {
-        const data = await getCatalogProducts();
+        const data = await getGroupedProducts();
         if (mounted) {
-          setProducts(data);
+          setGroupedProducts(data);
         }
       } catch (error) {
-        console.error('Failed to load products for categories:', error);
+        console.error('Failed to load grouped products for categories:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -72,15 +134,14 @@ export function CategoriesScreen() {
     };
   }, []);
 
-  const visibleProducts = useMemo(() => {
-    if (activeTab === 'الكل') {
-      return products.map(toCategoryProduct);
+  const visibleGrouped = useMemo(() => {
+    const trimmedActiveTab = activeTab.trim();
+    if (trimmedActiveTab === 'الكل') {
+      return groupedProducts;
     }
 
-    return products
-      .filter((p) => p.category_name === activeTab)
-      .map(toCategoryProduct);
-  }, [activeTab, products]);
+    return groupedProducts.filter((p) => p.category_name?.trim() === trimmedActiveTab);
+  }, [activeTab, groupedProducts]);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
@@ -142,56 +203,20 @@ export function CategoriesScreen() {
           </View>
         ) : null}
 
-        {!isLoading && visibleProducts.length === 0 ? (
+        {!isLoading && visibleGrouped.length === 0 ? (
           <View className="px-6 mt-8">
             <Text className="font-tajawal-medium text-brand-text text-right">
-              لا توجد منتجات حالياً. قم باستيراد المنتجات إلى قاعدة البيانات أولاً.
+              لا توجد منتجات حالياً.
             </Text>
           </View>
         ) : null}
 
         <View className="px-6 mt-6 flex-row flex-wrap justify-between">
-          {visibleProducts.map((product) => (
-            <Pressable
-              key={product.id}
-              onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
-              className={`w-[48%] p-3.5 mb-4 ${CARD_BASE_CLASS}`}
-            >
-              {product.tag ? (
-                <View className={`${product.tag.bgClass} self-end px-3 py-1 rounded-full mb-2`}>
-                  <Text className={`${product.tag.textClass} font-tajawal-bold text-[11px]`}>{product.tag.text}</Text>
-                </View>
-              ) : (
-                <View className="h-8" />
-              )}
-
-              <View className="items-center mt-1">
-                <Image source={product.image} className="w-[104px] h-[104px]" contentFit="contain" transition={200} />
-              </View>
-
-              <Text className="font-tajawal-bold text-[20px] text-brand-title text-right leading-[24px] min-h-[48px] mt-2">
-                {product.title}
-              </Text>
-
-              <View className="flex-row-reverse items-center justify-between mt-3">
-                <Text className="font-tajawal-bold text-[20px] text-brand-primary">{product.price}</Text>
-                <TouchableOpacity
-                  className="absolute bottom-1 left-1 w-12 h-12 rounded-full bg-brand-primary items-center justify-center"
-                  onPress={() => {
-                    if (!user?.id) return;
-                
-                    addItem(user.id, product.id, {
-                      onSuccess: () => {
-                        setCartProductName(product.title);
-                        setShowCartModal(true);
-                      },
-                    });
-                  }}
-                >
-                  <Feather name="plus" size={28} color="white" />
-                </TouchableOpacity>
-              </View>
-            </Pressable>
+          {visibleGrouped.map((group) => (
+            <CategoryProductCard 
+              key={group.name} 
+              group={group}
+            />
           ))}
         </View>
 
@@ -208,6 +233,8 @@ export function CategoriesScreen() {
       <AddToCartModal
         visible={showCartModal}
         productName={cartProductName}
+        variantSize={cartVariantSize}
+        price={cartProductPrice}
         onContinueShopping={() => setShowCartModal(false)}
         onGoToCart={() => {
           setShowCartModal(false);

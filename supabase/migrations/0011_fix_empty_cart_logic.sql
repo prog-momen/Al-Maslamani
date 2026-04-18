@@ -1,5 +1,3 @@
--- Order placement + delivery assignment flow helpers.
-
 create or replace function public.place_order_from_cart(
   address_label text,
   address_details text,
@@ -19,6 +17,7 @@ declare
   order_total numeric(10, 2);
   created_address_id uuid;
   created_order_id uuid;
+  items_count int;
 begin
   actor_id := auth.uid();
 
@@ -26,23 +25,29 @@ begin
     raise exception 'Not authenticated';
   end if;
 
+  -- 1. Check if there are ANY items in the cart (regardless of price)
+  select count(*) into items_count from public.cart_items where user_id = actor_id;
+
+  if items_count = 0 then
+    raise exception 'Cart is empty for user %', actor_id;
+  end if;
+
+  -- 2. Fetch profile
   select p.*
   into profile_row
   from public.profiles p
   where p.id = actor_id;
 
+  -- 3. Calculate subtotal
   select coalesce(sum(ci.quantity * p.price), 0)::numeric(10, 2)
   into subtotal_value
   from public.cart_items ci
   join public.products p on p.id = ci.product_id
   where ci.user_id = actor_id;
 
-  if subtotal_value <= 0 then
-    raise exception 'Cart is empty for user %', actor_id;
-  end if;
-
   order_total := subtotal_value + coalesce(delivery_fee_input, 0);
 
+  -- 4. Create address
   insert into public.addresses (
     user_id,
     label,
@@ -66,6 +71,7 @@ begin
   )
   returning id into created_address_id;
 
+  -- 5. Create order
   insert into public.orders (
     user_id,
     address_id,
@@ -87,6 +93,7 @@ begin
   )
   returning id into created_order_id;
 
+  -- 6. Move items from cart to order items
   insert into public.order_items (
     order_id,
     product_id,
@@ -106,66 +113,13 @@ begin
   join public.products p on p.id = ci.product_id
   where ci.user_id = actor_id;
 
+  -- 7. Log history
   insert into public.order_status_history (order_id, status, note)
   values (created_order_id, 'pending', 'تم إنشاء الطلب');
 
+  -- 8. Final clear
   delete from public.cart_items where user_id = actor_id;
 
   return created_order_id;
 end;
 $$;
-
-grant execute on function public.place_order_from_cart(text, text, public.payment_method, numeric, text) to authenticated;
-
-create or replace function public.admin_assign_delivery_to_order(
-  target_order_id uuid,
-  delivery_user_id uuid
-)
-returns public.orders
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  actor_id uuid;
-  delivery_role public.app_role;
-  updated_order public.orders;
-begin
-  actor_id := auth.uid();
-
-  if actor_id is null then
-    raise exception 'Not authenticated';
-  end if;
-
-  if not public.is_admin() then
-    raise exception 'Only admins can assign delivery users';
-  end if;
-
-  select p.role
-  into delivery_role
-  from public.profiles p
-  where p.id = delivery_user_id;
-
-  if delivery_role is distinct from 'delivery'::public.app_role then
-    raise exception 'Target user is not a delivery account';
-  end if;
-
-  update public.orders o
-  set assigned_delivery_user_id = delivery_user_id,
-      status = case when o.status = 'pending' then 'confirmed' else o.status end,
-      updated_at = now()
-  where o.id = target_order_id
-  returning o.* into updated_order;
-
-  if updated_order.id is null then
-    raise exception 'Order not found';
-  end if;
-
-  insert into public.order_status_history (order_id, status, note)
-  values (target_order_id, updated_order.status, 'تم تعيين مندوب توصيل بواسطة الادمن');
-
-  return updated_order;
-end;
-$$;
-
-grant execute on function public.admin_assign_delivery_to_order(uuid, uuid) to authenticated;

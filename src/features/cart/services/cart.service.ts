@@ -1,49 +1,79 @@
 import { supabase } from '@/src/lib/supabase/client';
 
+const sb = supabase as any;
+
 export const getCartItems = async (userId: string) => {
-  const { data, error } = await supabase.from('cart_items').select(`
-    id,
-    quantity,
-    product:products (
-    id,
-    name,
-    price,
-    image_url
-    )
-    `).eq('user_id', userId);
-    if (error) {
-      console.error('getCartItems error:', error);
-      return [];
-    }
-    return data || [];
-  };
+  const { data, error } = await sb
+    .from('cart_items')
+    .select(`
+      id,
+      quantity,
+      product:products (
+        id,
+        name,
+        price,
+        image_url,
+        description
+      )
+    `)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('getCartItems error:', error);
+    throw error;
+  }
+  return data || [];
+};
 
 export const updateQuantity = async (id: string, quantity: number) => {
-  const { error } = await supabase.from('cart_items').update({ quantity }).eq('id', id);
-  
+  const { error } = await sb.from('cart_items').update({ quantity }).eq('id', id);
   if (error) {
     console.error('updateQuantity error:', error);
+    throw error;
   }
 };
 
 export const removeItem = async (id: string) => {
-  const { error } = await supabase.from('cart_items').delete().eq('id', id);
-  
+  const { error } = await sb.from('cart_items').delete().eq('id', id);
   if (error) {
     console.error('removeItem error:', error);
+    throw error;
   }
 };
 
-export const addToCart = async (userId: string, productId: string) => {
-  const { data } = await supabase.from('cart_items').select('*').eq('user_id', userId).eq('product_id', productId).maybeSingle();
+export const addToCart = async (userId: string, productId: string, quantity: number = 1) => {
+  const { data, error: selectError } = await sb
+    .from('cart_items')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .maybeSingle();
   
+  if (selectError) {
+    console.error('addToCart select error:', selectError);
+    throw selectError;
+  }
+
   if (data) {
-    return await supabase.from('cart_items').update({ quantity: data.quantity + 1 }).eq('id', data.id);
+    const { error: updateError } = await sb
+        .from('cart_items')
+        .update({ quantity: data.quantity + quantity })
+        .eq('id', data.id);
+    if (updateError) {
+        console.error('addToCart update error:', updateError);
+        throw updateError;
+    }
+    return;
   }
   
-  return await supabase.from('cart_items').insert({
+  const { error: insertError } = await sb.from('cart_items').insert({
     user_id: userId,
     product_id: productId,
-    quantity: 1,
+    quantity: quantity,
   });
+
+  if (insertError) {
+      console.error('addToCart insert error:', insertError);
+      throw insertError;
+  }
 };

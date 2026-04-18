@@ -12,6 +12,9 @@ import {
     CatalogProduct,
     getFavoriteProductIds,
     getProductById,
+    getProductGroupByProductId,
+    GroupedProduct,
+    ProductVariant,
     setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
@@ -25,11 +28,13 @@ export function ProductDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const productId = Array.isArray(id) ? id[0] : id;
   const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [productGroup, setProductGroup] = useState<GroupedProduct | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedWeight, setSelectedWeight] = useState('250 جرام');
   const [quantity, setQuantity] = useState(1);
   const [showCartModal, setShowCartModal] = useState(false);
+  const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
@@ -53,19 +58,21 @@ export function ProductDetailsScreen() {
         return;
       }
 
-      setIsLoading(true);
-      setProduct(null);
       try {
-        const [data, favoriteIds] = await Promise.all([
+        const [data, group, favoriteIds] = await Promise.all([
           getProductById(productId),
+          getProductGroupByProductId(productId),
           user?.id ? getFavoriteProductIds(user.id) : Promise.resolve([]),
         ]);
 
         if (mounted) {
           setProduct(data);
+          setProductGroup(group);
           setIsFavorite(favoriteIds.includes(productId));
-          if (data?.description) {
-            setSelectedWeight(data.description);
+          
+          if (group) {
+            const initialVariant = group.variants.find(v => v.id === productId) || group.variants[0];
+            setSelectedVariant(initialVariant);
           }
         }
       } catch (error) {
@@ -129,11 +136,11 @@ export function ProductDetailsScreen() {
     return DEFAULT_WEIGHTS;
   }, [product?.description]);
 
-  const unitPrice = Number.isFinite(product?.price) ? Number(product?.price) : 0;
+  const unitPrice = selectedVariant?.price ?? 0;
   const displayPrice = `${unitPrice.toFixed(0)} ₪`;
-  const displayImage = product?.image_url ? { uri: product.image_url } : fallbackProductImage;
-  const displayName = product?.name ?? 'منتج';
-  const displayDescription = product?.description ?? 'وصف المنتج غير متوفر حالياً.';
+  const displayImage = selectedVariant?.image_url ? { uri: selectedVariant.image_url } : fallbackProductImage;
+  const displayName = productGroup?.name ?? 'منتج';
+  const displayDescription = productGroup?.description ?? 'وصف المنتج غير متوفر حالياً.';
 
   return (
     <SafeAreaView className="flex-1 bg-[#F6F5F2]" edges={['top']}>
@@ -205,29 +212,31 @@ export function ProductDetailsScreen() {
           </View>
 
           {/* Weight Selector */}
-          <View className="mb-8">
-            <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-4">اختر الوزن</Text>
-            <View className="flex-row items-center justify-end flex-wrap gap-x-3">
-              {shownWeights.map((weight) => {
-                const isSelected = selectedWeight === weight;
-                return (
-                  <TouchableOpacity
-                    key={weight}
-                    onPress={() => setSelectedWeight(weight)}
-                    className={`px-6 py-3 rounded-[20px] ${isSelected ? 'bg-brand-primary' : 'bg-[#EAE8E3]'
-                      }`}
-                  >
-                    <Text
-                      className={`font-tajawal-bold text-[15px] ${isSelected ? 'text-white' : 'text-[#666666]'
+          {productGroup && productGroup.variants.length > 1 && (
+            <View className="mb-8">
+              <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-4">اختر الوزن</Text>
+              <View className="flex-row items-center justify-end flex-wrap gap-x-3">
+                {productGroup.variants.map((v) => {
+                  const isSelected = selectedVariant?.id === v.id;
+                  return (
+                    <TouchableOpacity
+                      key={v.id}
+                      onPress={() => setSelectedVariant(v)}
+                      className={`px-6 py-3 rounded-[20px] ${isSelected ? 'bg-brand-primary' : 'bg-[#EAE8E3]'
                         }`}
                     >
-                      {weight}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                      <Text
+                        className={`font-tajawal-bold text-[15px] ${isSelected ? 'text-white' : 'text-[#666666]'
+                          }`}
+                      >
+                        {v.size}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Quantity Selector */}
           <View className="flex-row items-center justify-between mb-10">
@@ -283,14 +292,17 @@ export function ProductDetailsScreen() {
           <TouchableOpacity
             className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm"
             onPress={() => {
-              if (!user?.id || !productId) {
+              if (!user?.id || !selectedVariant) {
                 router.push('/(auth)/login');
                 return;
               }
 
-              addItem(user.id, productId, {
+              addItem(user.id, selectedVariant.id, {
                 quantity,
-                onSuccess: () => setShowCartModal(true),
+                onSuccess: () => {
+                  setCartProductName(`${displayName} - ${selectedVariant.size}`);
+                  setShowCartModal(true);
+                },
               });
             }}
           >

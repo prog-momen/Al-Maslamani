@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '@/src/lib/storage';
 import { supabase } from '@/src/lib/supabase/client';
 import { formatOrderNumber } from '@/src/shared/utils/order-utils';
 import { getTargetPushTokens, sendPushNotification } from './push-notifications.service';
@@ -66,7 +66,7 @@ async function fetchDbNotifications(userId: string): Promise<Notification[]> {
  */
 export async function getNotifications(userId: string): Promise<Notification[]> {
   // 1. Get locally persisted read-state
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await storage.getItem(STORAGE_KEY);
   const readMap: Record<string, boolean> = raw ? JSON.parse(raw) : {};
 
   // 2. Build notifications from database
@@ -145,22 +145,22 @@ export async function sendNotification(payload: {
 
 /** Mark a single notification as read (persisted). */
 export async function markAsRead(notificationId: string): Promise<void> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await storage.getItem(STORAGE_KEY);
   const readMap: Record<string, boolean> = raw ? JSON.parse(raw) : {};
   readMap[notificationId] = true;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(readMap));
+  await storage.setItem(STORAGE_KEY, JSON.stringify(readMap));
 }
 
 /** Mark all notifications as read (persisted). */
 export async function markAllAsRead(notificationIds: string[]): Promise<void> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await storage.getItem(STORAGE_KEY);
   const readMap: Record<string, boolean> = raw ? JSON.parse(raw) : {};
 
   for (const id of notificationIds) {
     readMap[id] = true;
   }
 
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(readMap));
+  await storage.setItem(STORAGE_KEY, JSON.stringify(readMap));
 }
 
 /** Count unread notifications. */

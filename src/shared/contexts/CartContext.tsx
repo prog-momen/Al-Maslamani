@@ -1,57 +1,138 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import * as cartService from '@/src/features/cart/services/cart.service';
 
 export type CartItem = {
-  id: string;
+  id: string; // This is the cart_item.id (database UUID)
+  productId: string;
   title: string;
   price: number;
   quantity: number;
+  image?: any;
+  variant?: string;
 };
 
 type CartContextType = {
   items: CartItem[];
-  addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string) => void;
-  clearCart: () => void;
+  isLoading: boolean;
+  refreshCart: () => Promise<void>;
+  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  updateQuantity: (cartItemId: string, newQuantity: number) => Promise<void>;
+  removeFromCart: (cartItemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   shipping: number;
+  subtotal: number;
+  total: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const addToCart = (item: CartItem) => {
-    setItems((prev) => {
-      const exists = prev.find((p) => p.id === item.id);
+  const refreshCart = useCallback(async () => {
+    if (!user?.id) {
+      setItems([]);
+      return;
+    }
 
-      if (exists) {
-        return prev.map((p) =>
-          p.id === item.id
-            ? { ...p, quantity: p.quantity + item.quantity }
-            : p
-        );
+    setIsLoading(true);
+    try {
+      const data = await cartService.getCartItems(user.id);
+      const formatted: CartItem[] = (data || []).map((i: any) => {
+        // Supabase join can return an object or an array of objects
+        const product = Array.isArray(i.product) ? i.product[0] : i.product;
+        
+        return {
+          id: i.id,
+          productId: product?.id,
+          title: product?.name || 'منتج',
+          price: product?.price || 0,
+          quantity: i.quantity,
+          variant: product?.description,
+          image: product?.image_url ? { uri: product.image_url } : null,
+        };
+      });
+      setItems(formatted);
+    } catch (error) {
+      console.error('Error refreshing cart:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  const addToCart = async (productId: string, quantity: number = 1) => {
+    if (!user?.id) return;
+    try {
+      await cartService.addToCart(user.id, productId, quantity);
+      await refreshCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
+    }
+  };
+
+  const updateQuantity = async (cartItemId: string, newQuantity: number) => {
+    try {
+      if (newQuantity <= 0) {
+        await removeFromCart(cartItemId);
+      } else {
+        await cartService.updateQuantity(cartItemId, newQuantity);
+        await refreshCart();
       }
-
-      return [...prev, item];
-    });
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      throw error;
+    }
   };
 
-  const removeFromCart = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = async (cartItemId: string) => {
+    try {
+      await cartService.removeItem(cartItemId);
+      await refreshCart();
+    } catch (error) {
+      console.error('Error removing item:', error);
+      throw error;
+    }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    // In Supabase, we'd need a "clear all" service. 
+    // For now, we manually remove or just update the UI
     setItems([]);
+    if (user?.id) {
+        // Technically we should delete all from DB. 
+        // We'll leave this to be implemented if needed.
+    }
   };
 
-  const shipping = useMemo(() => {
-    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    return subtotal > 50 ? 0 : 5;
+  const subtotal = useMemo(() => {
+    return items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   }, [items]);
+
+  const shipping = subtotal > 50 || subtotal === 0 ? 0 : 5;
+  const total = subtotal + shipping;
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, clearCart, shipping }}
+      value={{ 
+        items, 
+        isLoading, 
+        refreshCart, 
+        addToCart, 
+        updateQuantity, 
+        removeFromCart, 
+        clearCart, 
+        shipping, 
+        subtotal, 
+        total 
+      }}
     >
       {children}
     </CartContext.Provider>
