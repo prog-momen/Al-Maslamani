@@ -6,7 +6,7 @@ import {
     setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import { AppHeader, AddToCartModal, BottomNavbar } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -47,6 +47,8 @@ export function FavoritesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { addItem } = useCartActions();
   const router = useRouter();
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   useEffect(() => {
     let mounted = true;
@@ -138,11 +140,14 @@ export function FavoritesScreen() {
     setFavoriteProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleAddToCart = async (productId: string) => {
+  const handleAddToCart = async (productId: string, productName?: string) => {
     if (!user?.id) return;
 
     await addItem(user.id, productId, {
-      onGoToCart: () => router.push('/cart'),
+      onSuccess: () => {
+        setCartProductName(productName);
+        setShowCartModal(true);
+      },
     });
   };
   return (
@@ -193,7 +198,7 @@ export function FavoritesScreen() {
               key={product.id}
               product={product}
               onToggleFavorite={handleToggleFavorite}
-              onAddToCart={handleAddToCart}
+              onAddToCart={(id) => handleAddToCart(id, product.title)}
             />
           ))}
         </View>
@@ -217,6 +222,16 @@ export function FavoritesScreen() {
       </ScrollView>
 
       <BottomNavbar activeTab="favorites" />
+
+      <AddToCartModal
+        visible={showCartModal}
+        productName={cartProductName}
+        onContinueShopping={() => setShowCartModal(false)}
+        onGoToCart={() => {
+          setShowCartModal(false);
+          router.push('/cart');
+        }}
+      />
     </SafeAreaView>
   );
 }

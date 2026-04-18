@@ -1,7 +1,7 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, setFavoriteProduct } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { AddToCartModal, AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,6 +41,8 @@ export function HomeScreen() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { addItem } = useCartActions();
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   const categoryTabs = useMemo(() => {
     const names = Array.from(new Set(products.map((p) => p.category_name).filter(Boolean) as string[]));
@@ -287,7 +289,10 @@ export function HomeScreen() {
     if (!user?.id) return;
 
     addItem(user.id, product.id, {
-      onGoToCart: () => router.push('/cart'),
+      onSuccess: () => {
+        setCartProductName(product.title);
+        setShowCartModal(true);
+      },
     });
   }}
 >
@@ -299,6 +304,16 @@ export function HomeScreen() {
       </ScrollView>
 
       <BottomNavbar activeTab="home" />
+
+      <AddToCartModal
+        visible={showCartModal}
+        productName={cartProductName}
+        onContinueShopping={() => setShowCartModal(false)}
+        onGoToCart={() => {
+          setShowCartModal(false);
+          router.push('/cart');
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -1,4 +1,4 @@
-import { AppHeader } from '@/src/shared/ui';
+import { AddToCartModal, AppHeader } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
@@ -29,6 +29,7 @@ export function ProductDetailsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedWeight, setSelectedWeight] = useState('250 جرام');
   const [quantity, setQuantity] = useState(1);
+  const [showCartModal, setShowCartModal] = useState(false);
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
@@ -289,7 +290,7 @@ export function ProductDetailsScreen() {
 
               addItem(user.id, productId, {
                 quantity,
-                onGoToCart: () => router.push('/cart'),
+                onSuccess: () => setShowCartModal(true),
               });
             }}
           >
@@ -298,6 +299,18 @@ export function ProductDetailsScreen() {
           </TouchableOpacity>
         </View>
       ) : null}
+
+      {/* Add to Cart Success Modal */}
+      <AddToCartModal
+        visible={showCartModal}
+        productName={displayName}
+        quantity={quantity}
+        onContinueShopping={() => setShowCartModal(false)}
+        onGoToCart={() => {
+          setShowCartModal(false);
+          router.push('/cart');
+        }}
+      />
     </SafeAreaView>
   );
 }
