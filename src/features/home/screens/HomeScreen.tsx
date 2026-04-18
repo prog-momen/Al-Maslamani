@@ -1,5 +1,5 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, setFavoriteProduct } from '@/src/features/products/services/products.service';
+import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, getGroupedProducts, GroupedProduct, ProductVariant, setFavoriteProduct } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AddToCartModal, AppHeader, CARD_BASE_CLASS, NotificationBell } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
@@ -34,18 +34,94 @@ function toUiProduct(product: CatalogProduct): Product {
   };
 }
 
+// --- New ProductCard Component ---
+type ProductCardProps = {
+  group: GroupedProduct;
+  favoriteIds: Set<string>;
+  onToggleFavorite: (id: string) => void;
+  onAddToCart: (id: string, name: string, size: string, price: number) => void;
+};
+
+function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: ProductCardProps) {
+  const router = useRouter();
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(group.variants[0]);
+
+  const displayPrice = `${Number.isFinite(selectedVariant.price) ? selectedVariant.price.toFixed(0) : '0'} ₪`;
+  const displayImage = selectedVariant.image_url ? { uri: selectedVariant.image_url } : fallbackProductImage;
+  const isFavorite = favoriteIds.has(selectedVariant.id);
+
+  return (
+    <Pressable
+      className={`w-[48.5%] mb-6 p-3 relative overflow-hidden ${CARD_BASE_CLASS} min-h-[300px]`}
+      onPress={() => router.push({ pathname: '/product-details', params: { id: selectedVariant.id } })}
+    >
+      <View className="items-center h-[110px] justify-center">
+        <Image source={displayImage} className="w-[104px] h-[104px]" contentFit="contain" transition={200} />
+      </View>
+
+      <Pressable
+        className="absolute top-2 left-2 w-9 h-9 bg-white/80 rounded-full items-center justify-center shadow-sm z-10"
+        onPress={(event) => {
+          event.stopPropagation();
+          onToggleFavorite(selectedVariant.id);
+        }}
+      >
+        <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#E53935' : '#67BB28'} />
+      </Pressable>
+
+      <View className="mt-3 items-end flex-1">
+        <Text className="font-tajawal-bold text-[18px] text-brand-title text-right leading-[22px] min-h-[44px]" numberOfLines={2}>
+          {group.name}
+        </Text>
+        
+        {/* Variant Selector */}
+        <View className="flex-row items-center justify-end flex-wrap gap-1.5 mt-2 mb-3 w-full">
+          {group.variants.map((v) => {
+            const isSel = v.id === selectedVariant.id;
+            return (
+              <TouchableOpacity
+                key={v.id}
+                onPress={() => setSelectedVariant(v)}
+                className={`px-2 py-1 rounded-md border ${isSel ? 'bg-brand-primary border-brand-primary' : 'bg-transparent border-gray-200'}`}
+              >
+                <Text className={`font-tajawal-bold text-[10px] ${isSel ? 'text-white' : 'text-gray-500'}`}>
+                  {v.size}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View className="flex-row items-center justify-between w-full mt-auto">
+           <TouchableOpacity
+            className="w-10 h-10 rounded-full bg-brand-primary items-center justify-center"
+            onPress={() => onAddToCart(selectedVariant.id, group.name, selectedVariant.size, selectedVariant.price)}
+          >
+            <Feather name="plus" size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="font-tajawal-bold text-[18px] text-brand-primary">{displayPrice}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+// ---------------------------------
+
 export function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { addItem } = useCartActions();
   const [showCartModal, setShowCartModal] = useState(false);
   const [cartProductName, setCartProductName] = useState<string | undefined>();
+  const [cartVariantSize, setCartVariantSize] = useState<string | undefined>();
+  const [cartProductPrice, setCartProductPrice] = useState<number | undefined>();
 
   const categoryTabs = useMemo(() => {
-    const names = Array.from(new Set(products.map((p) => p.category_name).filter(Boolean) as string[]));
+    const names = Array.from(new Set(products.map((p) => p.category_name?.trim()).filter(Boolean) as string[]));
     return ['الكل', ...names];
   }, [products]);
 
@@ -56,13 +132,15 @@ export function HomeScreen() {
 
     const load = async () => {
       try {
-        const [data, userFavoriteIds] = await Promise.all([
+        const [data, grouped, userFavoriteIds] = await Promise.all([
           getCatalogProducts(),
+          getGroupedProducts(),
           user?.id ? getFavoriteProductIds(user.id) : Promise.resolve([]),
         ]);
 
         if (mounted) {
           setProducts(data);
+          setGroupedProducts(grouped);
           setFavoriteIds(new Set(userFavoriteIds));
         }
       } catch (error) {
@@ -132,15 +210,13 @@ export function HomeScreen() {
     });
   };
 
-  const visibleProducts = useMemo(() => {
+  const visibleGrouped = useMemo(() => {
     if (activeCategory === 'الكل') {
-      return products.map(toUiProduct);
+      return groupedProducts;
     }
 
-    return products
-      .filter((product) => product.category_name === activeCategory)
-      .map(toUiProduct);
-  }, [activeCategory, products]);
+    return groupedProducts.filter((p) => p.category_name === activeCategory);
+  }, [activeCategory, groupedProducts]);
 
   useEffect(() => {
     if (!categoryTabs.includes(activeCategory)) {
@@ -240,63 +316,33 @@ export function HomeScreen() {
           </View>
         ) : null}
 
-        {!isLoading && visibleProducts.length === 0 ? (
+        {!isLoading && visibleGrouped.length === 0 ? (
           <View className="px-6 mt-8">
             <Text className="font-tajawal-medium text-brand-text text-right">
-              لا توجد منتجات حالياً. قم باستيراد المنتجات إلى قاعدة البيانات أولاً.
+              لا توجد منتجات حالياً.
             </Text>
           </View>
         ) : null}
 
         <View className="px-5 mt-6 flex-row flex-wrap justify-between">
-          {visibleProducts.map((product) => (
-            <Pressable
-              key={product.id}
-              className={`w-[48.5%] mb-4 p-3 relative overflow-hidden ${CARD_BASE_CLASS}`}
-              onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
-            >
-              <View className="items-center">
-                <Image source={product.image} className="w-[104px] h-[104px]" contentFit="contain" transition={200} />
-              </View>
-
-              <Pressable
-                className="absolute top-1 left-1 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-                onPress={(event) => {
-                  event.stopPropagation();
-                  handleToggleFavorite(product.id);
-                }}
-              >
-                <Ionicons name={favoriteIds.has(product.id) ? 'heart' : 'heart-outline'} size={24} color={favoriteIds.has(product.id) ? '#E53935' : '#67BB28'} />
-              </Pressable>
-
-              <View className="mt-2 items-end">
-                {product.badge ? (
-                  <View className={`${product.badge.bgClass} px-3 py-1 rounded-full self-end mb-2`}>
-                    <Text className={`${product.badge.textClass} font-tajawal-bold text-[11px]`}>{product.badge.text}</Text>
-                  </View>
-                ) : null}
-                <Text className="font-tajawal-bold text-[20px] text-brand-title text-right leading-[24px] min-h-[48px]">
-                  {product.title}
-                </Text>
-                <Text className="font-tajawal-bold text-[20px] text-brand-primary mt-1">{product.price}</Text>
-              </View>
-
-              <TouchableOpacity
-  className="absolute bottom-1 left-1 w-12 h-12 rounded-full bg-brand-primary items-center justify-center"
-  onPress={() => {
-    if (!user?.id) return;
-
-    addItem(user.id, product.id, {
-      onSuccess: () => {
-        setCartProductName(product.title);
-        setShowCartModal(true);
-      },
-    });
-  }}
->
-  <Feather name="plus" size={28} color="white" />
-</TouchableOpacity>
-            </Pressable>
+          {visibleGrouped.map((group) => (
+            <ProductCard 
+              key={group.name} 
+              group={group}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={handleToggleFavorite}
+              onAddToCart={(id, name, size, price) => {
+                if (!user?.id) return;
+                addItem(user.id, id, {
+                  onSuccess: () => {
+                    setCartProductName(name);
+                    setCartVariantSize(size);
+                    setCartProductPrice(price);
+                    setShowCartModal(true);
+                  }
+                });
+              }}
+            />
           ))}
         </View>
       </ScrollView>
@@ -306,6 +352,8 @@ export function HomeScreen() {
       <AddToCartModal
         visible={showCartModal}
         productName={cartProductName}
+        variantSize={cartVariantSize}
+        price={cartProductPrice}
         onContinueShopping={() => setShowCartModal(false)}
         onGoToCart={() => {
           setShowCartModal(false);

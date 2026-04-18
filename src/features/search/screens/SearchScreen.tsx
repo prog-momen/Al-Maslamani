@@ -1,5 +1,5 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { CatalogProduct, getCatalogProducts } from '@/src/features/products/services/products.service';
+import { CatalogProduct, getCatalogProducts, getGroupedProducts, GroupedProduct, ProductVariant } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AddToCartModal } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,58 @@ function toSearchCard(product: CatalogProduct): SearchCard {
   };
 }
 
+// --- Dynamic Search Product Card ---
+function SearchProductCard({ group, user, onAddToCart }: { group: GroupedProduct, user: any, onAddToCart: (id: string, name: string, size: string, price: number) => void }) {
+    const router = useRouter();
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(group.variants[0]);
+    const displayPrice = `${Number.isFinite(selectedVariant.price) ? selectedVariant.price.toFixed(0) : '0'} ₪`;
+    const displayImage = selectedVariant.image_url ? { uri: selectedVariant.image_url } : fallbackProductImage;
+
+    return (
+      <Pressable
+        key={selectedVariant.id}
+        className="w-[48.5%] mb-4 p-3 rounded-[24px] border border-[#E5E3DD] bg-[#FCFBF8] min-h-[300px]"
+        onPress={() => router.push({ pathname: '/product-details', params: { id: selectedVariant.id } })}
+      >
+        <View className="items-center mt-1 h-[100px] justify-center">
+          <Image source={displayImage} className="w-[100px] h-[100px]" contentFit="contain" transition={200} />
+        </View>
+
+        <View className="flex-1">
+          <Text className="font-tajawal-bold text-[18px] text-brand-title text-right leading-[22px] min-h-[44px] mt-2" numberOfLines={2}>
+            {group.name}
+          </Text>
+
+          {/* Variants */}
+          <View className="flex-row items-center justify-end flex-wrap gap-1 mt-2 mb-2">
+            {group.variants.map((v) => (
+              <TouchableOpacity
+                key={v.id}
+                onPress={() => setSelectedVariant(v)}
+                className={`px-1.5 py-0.5 rounded border ${v.id === selectedVariant.id ? 'bg-brand-primary border-brand-primary' : 'bg-transparent border-gray-200'}`}
+              >
+                <Text className={`font-tajawal-bold text-[9px] ${v.id === selectedVariant.id ? 'text-white' : 'text-gray-500'}`}>
+                  {v.size}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View className="flex-row-reverse items-center justify-between mt-auto">
+            <Text className="font-tajawal-bold text-[18px] text-brand-primary">{displayPrice}</Text>
+            <TouchableOpacity
+              className="w-10 h-10 rounded-full bg-brand-primary items-center justify-center"
+              onPress={() => onAddToCart(selectedVariant.id, group.name, selectedVariant.size, selectedVariant.price)}
+            >
+              <Feather name="plus" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Pressable>
+    );
+}
+// ------------------------------------
+
 export function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -38,7 +90,7 @@ export function SearchScreen() {
   const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   const [query, setQuery] = useState(initialQuery);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,9 +98,9 @@ export function SearchScreen() {
 
     const load = async () => {
       try {
-        const data = await getCatalogProducts();
+        const data = await getGroupedProducts();
         if (mounted) {
-          setProducts(data);
+          setGroupedProducts(data);
         }
       } catch (error) {
         console.error('Failed to load search products:', error);
@@ -66,13 +118,13 @@ export function SearchScreen() {
     };
   }, []);
 
-  const visibleProducts = useMemo(() => {
+  const visibleGrouped = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
-    return products
-      .filter((product) => (normalized ? product.name.toLowerCase().includes(normalized) : true))
-      .map(toSearchCard);
-  }, [products, query]);
+    return groupedProducts.filter((p) => 
+        normalized ? p.name.toLowerCase().includes(normalized) : true
+    );
+  }, [groupedProducts, query]);
 
   return (
     <>
@@ -105,7 +157,7 @@ export function SearchScreen() {
           </View>
         ) : null}
 
-        {!isLoading && visibleProducts.length === 0 ? (
+        {!isLoading && visibleGrouped.length === 0 ? (
           <View className="mt-16 items-center">
             <Ionicons name="search-outline" size={42} color="#A8ACA4" />
             <Text className="font-tajawal-bold text-[18px] text-[#4D514A] mt-3">لا توجد نتائج</Text>
@@ -116,41 +168,21 @@ export function SearchScreen() {
         ) : null}
 
         <View className="flex-row flex-wrap justify-between">
-          {visibleProducts.map((product) => (
-            <Pressable
-              key={product.id}
-              className="w-[48.5%] mb-4 p-3 rounded-[24px] border border-[#E5E3DD] bg-[#FCFBF8]"
-              onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
-            >
-              <View className="items-center mt-1">
-                <Image source={product.image} className="w-[100px] h-[100px]" contentFit="contain" transition={200} />
-              </View>
-
-              <Text className="font-tajawal-bold text-[20px] text-brand-title text-right leading-[24px] min-h-[48px] mt-2">
-                {product.title}
-              </Text>
-
-              <View className="flex-row-reverse items-center justify-between mt-3">
-                <Text className="font-tajawal-bold text-[20px] text-brand-primary">{product.price}</Text>
-                <TouchableOpacity
-                  className="w-11 h-11 rounded-full bg-brand-primary items-center justify-center"
-                  onPress={() => {
-                    if (!user?.id) {
-                      return;
-                    }
-
-                    addItem(user.id, product.id, {
-                      onSuccess: () => {
-                        setCartProductName(product.title);
-                        setShowCartModal(true);
-                      },
+          {visibleGrouped.map((group) => (
+            <SearchProductCard 
+                key={group.name} 
+                group={group} 
+                user={user} 
+                onAddToCart={(id, name) => {
+                    if (!user?.id) return;
+                    addItem(user.id, id, {
+                        onSuccess: () => {
+                            setCartProductName(name);
+                            setShowCartModal(true);
+                        },
                     });
-                  }}
-                >
-                  <Feather name="plus" size={24} color="white" />
-                </TouchableOpacity>
-              </View>
-            </Pressable>
+                }}
+            />
           ))}
         </View>
       </ScrollView>
