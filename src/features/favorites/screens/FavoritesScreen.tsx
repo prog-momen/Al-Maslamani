@@ -6,7 +6,7 @@ import {
     setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, AddToCartModal, BottomNavbar } from '@/src/shared/ui';
+import { AppHeader, AddToCartModal, BottomNavbar, NotificationBell } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -160,9 +160,7 @@ export function FavoritesScreen() {
         sidebarSide="left"
         left={<Feather name="menu" size={26} color="#67BB28" />}
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
-            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
-          </TouchableOpacity>
+          <NotificationBell />
         }
       />
 

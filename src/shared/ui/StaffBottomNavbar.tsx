@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type StaffRole = 'admin' | 'delivery';
-type StaffTab = 'roleHome' | 'storeHome' | 'profile';
+type StaffTab = 'roleHome' | 'notifications' | 'storeHome' | 'profile';
 
 type StaffBottomNavbarProps = {
   role: StaffRole;
@@ -22,6 +22,11 @@ export function StaffBottomNavbar({ role, activeTab }: StaffBottomNavbarProps) {
   const navigate = (tab: StaffTab) => {
     if (tab === 'roleHome') {
       router.replace(getHomeRouteForRole(role));
+      return;
+    }
+
+    if (tab === 'notifications') {
+      router.replace('/admin-notifications');
       return;
     }
 
@@ -56,6 +61,16 @@ export function StaffBottomNavbar({ role, activeTab }: StaffBottomNavbarProps) {
         />
       )}
 
+      {role === 'admin' && renderItem(
+        'notifications',
+        'التنبيهات',
+        <Ionicons
+          name={activeTab === 'notifications' ? 'notifications' : 'notifications-outline'}
+          size={20}
+          color={activeTab === 'notifications' ? '#FFFFFF' : '#5C605A'}
+        />
+      )}
+
       {renderItem(
         'storeHome',
         'الرئيسية',
@@ -84,15 +99,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingTop: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
   item: {
-    minWidth: 84,
+    minWidth: 70,
     height: 44,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   itemActive: {
     backgroundColor: '#67BB28',

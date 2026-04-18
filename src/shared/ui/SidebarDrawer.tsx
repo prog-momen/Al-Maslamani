@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
 import { useAuth } from '@/src/shared/hooks/useAuth';
+import { useNotifications } from '@/src/shared/contexts/NotificationContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -13,6 +14,7 @@ export type SidebarItemKey =
   | 'categories'
   | 'cart'
   | 'favorites'
+  | 'notifications'
   | 'orders'
   | 'profile'
   | 'about'
@@ -31,6 +33,7 @@ const memberItems: {
   route: string;
 }[] = [
   { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
+  { key: 'notifications', label: 'الإشعارات', icon: 'notifications-outline', route: '/notifications' },
   { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
   { key: 'categories', label: 'التصنيفات', icon: 'apps-outline', route: '/categories' },
   { key: 'cart', label: 'السلة', icon: 'cart-outline', route: '/home' },
@@ -56,6 +59,7 @@ const staffItems: {
 export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerProps) {
   const router = useRouter();
   const { user, role } = useAuth();
+  const { unreadCount } = useNotifications();
   const insets = useSafeAreaInsets();
 
   const isStaff = role === 'admin' || role === 'delivery';
@@ -111,9 +115,16 @@ export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerPro
                   onPress={() => handleNavigate(item.route)}
                   activeOpacity={0.85}
                 >
-                  <Text className={`font-tajawal-medium text-[20px] ${isActive ? 'text-white' : 'text-[#2E3133]'}`}>
-                    {item.label}
-                  </Text>
+                  <View className="flex-row-reverse items-center gap-2">
+                    <Text className={`font-tajawal-medium text-[20px] ${isActive ? 'text-white' : 'text-[#2E3133]'}`}>
+                      {item.label}
+                    </Text>
+                    {item.key === 'notifications' && unreadCount > 0 && (
+                      <View className="bg-[#C53673] px-1.5 min-w-[18px] h-[18px] rounded-full items-center justify-center">
+                        <Text className="text-white text-[10px] font-tajawal-bold">{unreadCount}</Text>
+                      </View>
+                    )}
+                  </View>
                   <Ionicons name={item.icon} size={20} color={isActive ? '#FFFFFF' : '#2E3133'} />
                 </TouchableOpacity>
               );

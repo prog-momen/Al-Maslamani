@@ -1,4 +1,5 @@
-import { getOrderTrackingDetails, OrderTrackingDetails } from '@/src/features/orders/services/orders.service';
+import { getOrderTrackingDetails, OrderTrackingDetails, reorderOrder } from '@/src/features/orders/services/orders.service';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -32,7 +33,9 @@ const getParamString = (value: string | string[] | undefined, fallback: string) 
 export default function OrderTrackingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { user } = useAuth();
   const [tracking, setTracking] = useState<OrderTrackingDetails | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [palestineNowTime, setPalestineNowTime] = useState(() =>
     new Intl.DateTimeFormat('ar-PS', {
@@ -161,6 +164,21 @@ export default function OrderTrackingScreen() {
 
     await Linking.openURL(phoneUrl);
   };
+  
+  const handleReorder = async () => {
+    if (!user?.id || !orderId) return;
+    
+    setIsReordering(true);
+    try {
+      await reorderOrder(orderId, user.id);
+      router.push('/cart');
+    } catch (error) {
+      console.error('Reorder failed from tracking:', error);
+      alert('فشلت عملية إعادة الطلب، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsReordering(false);
+    }
+  };
 
   const renderStep = (step: (typeof ORDER_STEPS)[number], index: number) => {
     const isCompleted = index < currentStep;
@@ -283,9 +301,18 @@ export default function OrderTrackingScreen() {
             </View>
 
             {allowReorder ? (
-              <TouchableOpacity style={styles.reorderButton} activeOpacity={0.85}>
-                <Ionicons name="refresh" size={16} color="#FFFFFF" />
-                <Text style={styles.reorderText}>إعادة الطلب</Text>
+              <TouchableOpacity 
+                style={[styles.reorderButton, isReordering && { opacity: 0.7 }]} 
+                activeOpacity={0.85}
+                onPress={handleReorder}
+                disabled={isReordering}
+              >
+                {isReordering ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                )}
+                <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
               </TouchableOpacity>
             ) : null}
           </View>

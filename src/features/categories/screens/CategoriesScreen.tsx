@@ -1,6 +1,6 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, AddToCartModal, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { AppHeader, AddToCartModal, CARD_BASE_CLASS, NotificationBell } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -97,9 +97,7 @@ export function CategoriesScreen() {
         sidebarSide="left"
         left={<Feather name="menu" size={27} color="#67BB28" />}
         right={
-          <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
-            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
-          </TouchableOpacity>
+          <NotificationBell />
         }
       />
 
