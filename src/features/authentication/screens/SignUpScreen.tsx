@@ -31,7 +31,12 @@ export function SignUpScreen() {
             return;
         }
         try {
-            const authData = await register({ email: data.email, password: data.password }, data.fullName);
+            const authData = await register({ 
+                email: data.email, 
+                password: data.password, 
+                fullName: data.fullName, 
+                phone: data.phone 
+            });
 
             const userId = authData.user?.id;
             if (userId && authData.session?.user) {

@@ -352,42 +352,54 @@ export default function OrderTrackingScreen() {
             <MapView
               style={styles.mapView}
               initialRegion={{
-                latitude: 31.9029, // Ramallah coordinate
-                longitude: 35.2062,
+                latitude: tracking?.deliveryLat || 31.9029, 
+                longitude: tracking?.deliveryLng || 35.2062,
                 latitudeDelta: 0.015,
                 longitudeDelta: 0.015,
               }}
+              region={tracking?.deliveryLat ? {
+                latitude: (tracking.deliveryLat + (tracking.customerLat || tracking.deliveryLat)) / 2,
+                longitude: (tracking.deliveryLng + (tracking.customerLng || tracking.deliveryLng)) / 2,
+                latitudeDelta: Math.abs(tracking.deliveryLat - (tracking.customerLat || tracking.deliveryLat)) * 2 + 0.01,
+                longitudeDelta: Math.abs(tracking.deliveryLng - (tracking.customerLng || tracking.deliveryLng)) * 2 + 0.01,
+              } : undefined}
               customMapStyle={googleMapStyle}
             >
               {/* Delivery Rider Marker */}
-              <Marker
-                coordinate={{ latitude: 31.9029, longitude: 35.2062 }}
-                title={deliveryName || 'المندوب'}
-              >
-                <View style={styles.riderPin}>
-                  <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
-                </View>
-              </Marker>
+              {tracking?.deliveryLat && (
+                <Marker
+                  coordinate={{ latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! }}
+                  title={deliveryName || 'المندوب'}
+                >
+                  <View style={styles.riderPin}>
+                    <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
+                  </View>
+                </Marker>
+              )}
 
               {/* Customer Destination Marker */}
-              <Marker
-                coordinate={{ latitude: 31.9050, longitude: 35.2100 }}
-                pinColor="#000"
-              >
-                <View style={styles.destinationPin}>
-                  <Ionicons name="home" size={18} color="#FFFFFF" />
-                </View>
-              </Marker>
+              {tracking?.customerLat && (
+                <Marker
+                  coordinate={{ latitude: tracking.customerLat, longitude: tracking.customerLng! }}
+                  pinColor="#000"
+                >
+                  <View style={styles.destinationPin}>
+                    <Ionicons name="home" size={18} color="#FFFFFF" />
+                  </View>
+                </Marker>
+              )}
 
               {/* Path */}
-              <Polyline
-                coordinates={[
-                  { latitude: 31.9029, longitude: 35.2062 },
-                  { latitude: 31.9050, longitude: 35.2100 },
-                ]}
-                strokeColor={PRIMARY_GREEN}
-                strokeWidth={3}
-              />
+              {tracking?.deliveryLat && tracking?.customerLat && (
+                <Polyline
+                  coordinates={[
+                    { latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! },
+                    { latitude: tracking.customerLat, longitude: tracking.customerLng! },
+                  ]}
+                  strokeColor={PRIMARY_GREEN}
+                  strokeWidth={3}
+                />
+              )}
             </MapView>
 
             <View style={styles.riderTag}>
@@ -395,20 +407,26 @@ export default function OrderTrackingScreen() {
             </View>
           </View>
 
-          <View style={styles.driverRow}>
-            <TouchableOpacity style={styles.callCircle} activeOpacity={0.8} onPress={callDelivery}>
-              <Ionicons name="call-outline" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
+          {tracking?.deliveryName ? (
+            <View style={styles.driverRow}>
+              <TouchableOpacity style={styles.callCircle} activeOpacity={0.8} onPress={callDelivery}>
+                <Ionicons name="call-outline" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
 
-            <View style={styles.driverInfo}>
-              <Text style={styles.driverName}>{deliveryName}</Text>
-              <Text style={styles.driverPhone}>رقم التواصل: {deliveryPhone}</Text>
-            </View>
+              <View style={styles.driverInfo}>
+                <Text style={styles.driverName}>{deliveryName}</Text>
+                <Text style={styles.driverPhone}>رقم مندوب التوصيل: {deliveryPhone}</Text>
+              </View>
 
-            <View style={styles.driverAvatar}>
-              <Ionicons name="person" size={18} color="#5B5B5B" />
+              <View style={styles.driverAvatar}>
+                <Ionicons name="person" size={18} color="#5B5B5B" />
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={styles.driverRowPlaceholder}>
+              <Text style={styles.driverPlaceholderText}>جاري تعيين مندوب لتوصيل طلبك...</Text>
+            </View>
+          )}
 
           <View style={styles.timelineCard}>{ORDER_STEPS.map(renderStep)}</View>
 
@@ -613,6 +631,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#D9DBD8',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  driverRowPlaceholder: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E6EAE4',
+    borderStyle: 'dashed',
+  },
+  driverPlaceholderText: {
+    fontFamily: 'Tajawal_500Medium',
+    fontSize: 13,
+    color: '#8A8D85',
   },
   timelineCard: {
     paddingTop: 2,

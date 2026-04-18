@@ -54,6 +54,7 @@ export type AdminOrderItem = {
   status: OrderStatus;
   total: number;
   customerName: string;
+  customerPhone: string | null;
   userId: string;
   createdAt: string;
   assignedDeliveryUserId: string | null;
@@ -65,6 +66,21 @@ export type AdminUserItem = {
   fullName: string;
   email: string;
   role: AppRole;
+};
+
+export type DeliveryReportItem = {
+  id: string;
+  orderNumber: string;
+  total: number;
+  status: OrderStatus;
+  createdAt: string;
+  customerName: string;
+};
+
+export type DeliveryReportSummary = {
+  totalDelivered: number;
+  totalAmount: number;
+  orders: DeliveryReportItem[];
 };
 
 type PlaceOrderFromCartPayload = {
@@ -106,6 +122,10 @@ export type OrderTrackingDetails = {
   deliveryPhone: string | null;
   productName: string;
   productQuantity: number;
+  customerLat: number | null;
+  customerLng: number | null;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
 };
 
 
@@ -208,7 +228,7 @@ export async function getAdminOrders(): Promise<AdminOrderItem[]> {
 
   const { data: profilesData, error: profilesError } = await sb
     .from('profiles')
-    .select('id,full_name,email')
+    .select('id,full_name,email,phone')
     .in('id', profileIds);
 
   if (profilesError) {
@@ -229,6 +249,7 @@ export async function getAdminOrders(): Promise<AdminOrderItem[]> {
       status: order.status,
       total: order.total,
       customerName: toDisplayName(profile?.full_name, profile?.email, 'عميل'),
+      customerPhone: profile?.phone ?? null,
       userId: order.user_id,
       createdAt: order.created_at,
       assignedDeliveryUserId: order.assigned_delivery_user_id ?? null,
@@ -377,6 +398,7 @@ export async function getDeliveryOrderDetails(params: {
     .from('orders')
     .select('id,status,total,notes,user_id,address:addresses(label,city,street,building,notes)')
     .eq('assigned_delivery_user_id', params.deliveryUserId)
+    .not('status', 'in', '("delivered","cancelled")') // Added: Hide finished orders
     .order('created_at', { ascending: false })
     .limit(1);
 
@@ -428,8 +450,17 @@ export async function getDeliveryOrderDetails(params: {
   }));
 
   const address = Array.isArray(order.address) ? order.address[0] : order.address;
-  const line1 = [address?.city, address?.street].filter(Boolean).join('، ');
-  const line2 = [address?.building, address?.notes].filter(Boolean).join('، ');
+  
+  // Clean up address formatting: if city is "غير محدد", it means we are using the manual address string in street
+  let finalAddressDetails = '';
+  if (address?.city && address.city !== 'غير محدد') {
+    const line1 = [address.city, address.street].filter(Boolean).join('، ');
+    const line2 = [address.building, address.notes].filter(Boolean).join('، ');
+    finalAddressDetails = [line1, line2].filter(Boolean).join(' | ');
+  } else {
+    // If it's manual, street has the full info
+    finalAddressDetails = address?.street || 'لا يوجد عنوان متوفر';
+  }
 
   return {
     id: order.id,
@@ -439,7 +470,7 @@ export async function getDeliveryOrderDetails(params: {
     customerName: toDisplayName(profile?.full_name, undefined, 'عميل'),
     customerPhone: profile?.phone ?? null,
     addressTitle: address?.label || 'عنوان التوصيل',
-    addressDetails: line1 || line2 || 'لا يوجد عنوان متوفر',
+    addressDetails: finalAddressDetails,
     notes: order.notes,
     items: mappedItems,
   };
@@ -448,7 +479,7 @@ export async function getDeliveryOrderDetails(params: {
 export async function getOrderTrackingDetails(orderId: string): Promise<OrderTrackingDetails | null> {
   const { data: order, error: orderError } = await sb
     .from('orders')
-    .select('id,status,total,created_at,assigned_delivery_user_id')
+    .select('id,status,total,created_at,assigned_delivery_user_id,delivery_lat,delivery_lng,address:addresses(latitude,longitude)')
     .eq('id', orderId)
     .maybeSingle();
 
@@ -499,5 +530,39 @@ export async function getOrderTrackingDetails(orderId: string): Promise<OrderTra
     deliveryPhone,
     productName: firstItem?.product_name_snapshot ?? 'طلب بدون عناصر',
     productQuantity: firstItem?.quantity ?? 1,
+    customerLat: (order.address as any)?.latitude ?? null,
+    customerLng: (order.address as any)?.longitude ?? null,
+    deliveryLat: order.delivery_lat ?? null,
+    deliveryLng: order.delivery_lng ?? null,
+  };
+}
+
+export async function getDeliveryReport(deliveryUserId: string): Promise<DeliveryReportSummary> {
+  const { data: orders, error } = await sb
+    .from('orders')
+    .select('id,total,status,created_at,user_id,profiles!orders_user_id_fkey(full_name,email)')
+    .eq('assigned_delivery_user_id', deliveryUserId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const deliveredOrders = (orders ?? []).filter((o: any) => o.status === 'delivered');
+  const totalAmount = deliveredOrders.reduce((sum: number, o: any) => sum + Number(o.total), 0);
+
+  const mappedOrders: DeliveryReportItem[] = (orders ?? []).map((o: any) => ({
+    id: o.id,
+    orderNumber: formatOrderNumber(o.id),
+    total: Number(o.total),
+    status: o.status,
+    createdAt: o.created_at,
+    customerName: toDisplayName(o.profiles?.full_name, o.profiles?.email, 'عميل'),
+  }));
+
+  return {
+    totalDelivered: deliveredOrders.length,
+    totalAmount,
+    orders: mappedOrders,
   };
 }

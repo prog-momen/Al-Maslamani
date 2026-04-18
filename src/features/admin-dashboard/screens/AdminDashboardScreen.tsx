@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    Linking,
     Modal,
     StatusBar,
     StyleSheet,
@@ -299,11 +300,20 @@ export function AdminDashboardScreen() {
 
                     <View style={styles.customerMeta}>
                       <Text style={styles.customerName}>{item.customerName}</Text>
-                      <Text style={styles.totalText}>₪ {item.total.toFixed(2)}</Text>
+                      <Text style={styles.totalText}>₪ {item.total.toFixed(2)} {item.customerPhone ? ` • ${item.customerPhone}` : ''}</Text>
                       <Text style={styles.deliveryAssignedText}>
                         {item.assignedDeliveryName ? `المندوب: ${item.assignedDeliveryName}` : 'المندوب: غير معين'}
                       </Text>
                     </View>
+
+                    {item.customerPhone && (
+                      <TouchableOpacity 
+                        style={styles.customerPhoneBtn} 
+                        onPress={() => Linking.openURL(`tel:${item.customerPhone}`)}
+                      >
+                        <Feather name="phone" size={16} color={BRAND_GREEN} />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   <View style={styles.actionsRow}>
@@ -517,8 +527,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  customerMeta: { marginRight: 10, alignItems: 'flex-end' },
+  customerMeta: { marginRight: 10, alignItems: 'flex-end', flex: 1 },
   customerName: { fontFamily: 'Tajawal_700Bold', color: '#2F302F', fontSize: 16, lineHeight: 22 },
+  customerPhoneBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EEF6E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
   totalText: {
     color: '#6E716D',
     fontFamily: 'Tajawal_500Medium',

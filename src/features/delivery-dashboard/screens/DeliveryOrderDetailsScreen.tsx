@@ -102,6 +102,9 @@ export function DeliveryOrderDetailsScreen() {
     try {
       await setOrderStatus(order.id, 'delivered', 'تم التأكيد من المندوب');
       setOrder({ ...order, status: 'delivered' });
+      Alert.alert('نجاح', 'تم توصيل الطلب بنجاح!', [
+        { text: 'موافق', onPress: () => router.replace('/delivery-order-details') }
+      ]);
     } catch (error) {
       console.error('Failed to mark as delivered:', error);
     } finally {
@@ -118,6 +121,9 @@ export function DeliveryOrderDetailsScreen() {
     try {
       await setOrderStatus(order.id, 'cancelled', 'تعذر التوصيل');
       setOrder({ ...order, status: 'cancelled' });
+      Alert.alert('تم الإلغاء', 'تم تحديث حالة الطلب إلى ملغي بانتظار مراجعة الإدارة.', [
+        { text: 'موافق', onPress: () => router.replace('/delivery-order-details') }
+      ]);
     } catch (error) {
       console.error('Failed to mark as not delivered:', error);
     } finally {

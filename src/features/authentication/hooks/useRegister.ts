@@ -6,11 +6,11 @@ export function useRegister() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const register = async (credentials: { email: string; password: string }, fullName?: string) => {
+    const register = async (credentials: { email: string; password: string; fullName: string; phone: string }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await authService.signUp(credentials, fullName);
+            const data = await authService.signUp(credentials);
             return data;
         } catch (err: any) {
             setError(err.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.');
