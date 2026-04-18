@@ -1,6 +1,6 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
+import { AppHeader, AddToCartModal, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -45,6 +45,8 @@ export function CategoriesScreen() {
   const [activeTab, setActiveTab] = useState('الكل');
   const { user } = useAuth();
   const { addItem } = useCartActions();
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   useEffect(() => {
     let mounted = true;
@@ -181,7 +183,10 @@ export function CategoriesScreen() {
                     if (!user?.id) return;
                 
                     addItem(user.id, product.id, {
-                      onGoToCart: () => router.push('/cart'),
+                      onSuccess: () => {
+                        setCartProductName(product.title);
+                        setShowCartModal(true);
+                      },
                     });
                   }}
                 >
@@ -201,6 +206,16 @@ export function CategoriesScreen() {
       </ScrollView>
 
       <BottomNavbar activeTab="categories" />
+
+      <AddToCartModal
+        visible={showCartModal}
+        productName={cartProductName}
+        onContinueShopping={() => setShowCartModal(false)}
+        onGoToCart={() => {
+          setShowCartModal(false);
+          router.push('/cart');
+        }}
+      />
     </SafeAreaView>
   );
 }

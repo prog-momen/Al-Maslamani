@@ -1,3 +1,4 @@
+export * from './AddToCartModal';
 export * from './AppHeader';
 export * from './BottomNavbar';
 export * from './Button';

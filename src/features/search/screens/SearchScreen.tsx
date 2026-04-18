@@ -1,6 +1,7 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { CatalogProduct, getCatalogProducts } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
+import { AddToCartModal } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,6 +34,8 @@ export function SearchScreen() {
 
   const { user } = useAuth();
   const { addItem } = useCartActions();
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [cartProductName, setCartProductName] = useState<string | undefined>();
 
   const [query, setQuery] = useState(initialQuery);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -72,6 +75,7 @@ export function SearchScreen() {
   }, [products, query]);
 
   return (
+    <>
     <SafeAreaView className="flex-1 bg-[#F5F4F0]" edges={['top']}>
       <View className="px-4 pt-2 pb-3 border-b border-[#E5E2DB] bg-white">
         <View className="flex-row-reverse items-center gap-2">
@@ -136,7 +140,10 @@ export function SearchScreen() {
                     }
 
                     addItem(user.id, product.id, {
-                      onGoToCart: () => router.push('/cart'),
+                      onSuccess: () => {
+                        setCartProductName(product.title);
+                        setShowCartModal(true);
+                      },
                     });
                   }}
                 >
@@ -148,5 +155,16 @@ export function SearchScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+
+    <AddToCartModal
+      visible={showCartModal}
+      productName={cartProductName}
+      onContinueShopping={() => setShowCartModal(false)}
+      onGoToCart={() => {
+        setShowCartModal(false);
+        router.push('/cart');
+      }}
+    />
+    </>
   );
 }
