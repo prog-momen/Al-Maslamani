@@ -7,14 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { Button, CARD_BASE_CLASS, FormField } from '@/src/shared/ui';
+import { Button, CARD_BASE_CLASS, FormField, SocialLoginButtons } from '@/src/shared/ui';
 import { useLogin } from '../hooks/useLogin';
 import { authService } from '../services/auth.service';
+import { useState } from 'react';
 
 export function LoginScreen() {
     const router = useRouter();
     const { login, isLoading, error } = useLogin();
     const { isAuthenticated, role, isInitializing } = useAuth();
+    const [isSocialLoading, setIsSocialLoading] = useState(false);
 
     const { control, handleSubmit, formState: { errors } } = useForm({
         defaultValues: { email: '', password: '' }
@@ -34,6 +36,21 @@ export function LoginScreen() {
             router.replace('/home');
         } catch {
             // Error is handled by hook and displayed below
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsSocialLoading(true);
+        try {
+            const result = await authService.signInWithOAuth('google');
+            if (result.success) {
+                // Auth state will be handled by useAuth effect
+            }
+        } catch (e) {
+            console.error('Google login error:', e);
+            alert('فشل الدخول عبر Google. تأكد من تفعيل الخدمة في Supabase.');
+        } finally {
+            setIsSocialLoading(false);
         }
     };
 
@@ -132,10 +149,10 @@ export function LoginScreen() {
                                 className="w-full h-[54px] mt-6"
                             />
 
-                            <View className="items-center mt-8 space-y-2">
-                                <Text className="font-tajawal-bold text-brand-title text-[14px]">المتابعة عبر Google .</Text>
-                                <Text className="font-tajawal-bold text-brand-title text-[14px]">المتابعة عبر Apple .</Text>
-                            </View>
+                            <SocialLoginButtons 
+                                onGooglePress={handleGoogleLogin} 
+                                isLoading={isSocialLoading} 
+                            />
                         </View>
 
                         <View className="mt-12 flex-row-reverse items-center justify-center gap-2">

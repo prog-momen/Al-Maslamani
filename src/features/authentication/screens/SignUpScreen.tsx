@@ -8,7 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { Button, FormField } from '@/src/shared/ui';
+import { Button, FormField, SocialLoginButtons } from '@/src/shared/ui';
 import { useRegister } from '../hooks/useRegister';
 import { authService } from '../services/auth.service';
 
@@ -17,6 +17,7 @@ export function SignUpScreen() {
     const { register, isLoading, error } = useRegister();
     const [agreed, setAgreed] = useState(false);
     const { isAuthenticated, role, isInitializing } = useAuth();
+    const [isSocialLoading, setIsSocialLoading] = useState(false);
 
     const { control, handleSubmit, watch, formState: { errors } } = useForm({
         defaultValues: { fullName: '', email: '', phone: '', password: '', confirmPassword: '' }
@@ -42,6 +43,21 @@ export function SignUpScreen() {
             router.push('/(auth)/login');
         } catch {
             // Error is handled by hook
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsSocialLoading(true);
+        try {
+            const result = await authService.signInWithOAuth('google');
+            if (result.success) {
+                // Auth state handled by useAuth
+            }
+        } catch (e) {
+            console.error('Google login error:', e);
+            alert('فشل الدخول عبر Google.');
+        } finally {
+            setIsSocialLoading(false);
         }
     };
 
@@ -147,6 +163,11 @@ export function SignUpScreen() {
                             loading={isLoading}
                             label="إنشاء حساب"
                             className="w-full h-[54px]"
+                        />
+
+                        <SocialLoginButtons 
+                            onGooglePress={handleGoogleLogin} 
+                            isLoading={isSocialLoading} 
                         />
 
                         <View className="mt-8 flex-row-reverse items-center justify-center gap-2 mb-10">

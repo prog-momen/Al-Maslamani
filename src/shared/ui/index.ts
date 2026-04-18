@@ -9,4 +9,5 @@ export * from './ScreenWrapper';
 export * from './SidebarDrawer';
 export * from './StaffBottomNavbar';
 export * from './NotificationPermissionModal';
+export * from './SocialLoginButtons';
 
