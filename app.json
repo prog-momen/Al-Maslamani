@@ -8,15 +8,25 @@
     "scheme": "al-maslamani",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.almaslamani.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyC3aHQe8nGPsjiO2laPr9QZvEMNhCAeVWg"
+      }
     },
     "android": {
+      "package": "com.almaslamani.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/logo-transparent.png",
         "monochromeImage": "./assets/images/logo-transparent.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC3aHQe8nGPsjiO2laPr9QZvEMNhCAeVWg"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -40,6 +50,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+      }
     }
   }
 }

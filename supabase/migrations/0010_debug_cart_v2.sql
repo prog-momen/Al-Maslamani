@@ -1,5 +1,3 @@
--- Order placement + delivery assignment flow helpers.
-
 create or replace function public.place_order_from_cart(
   address_label text,
   address_details text,
@@ -19,12 +17,15 @@ declare
   order_total numeric(10, 2);
   created_address_id uuid;
   created_order_id uuid;
+  items_count int;
 begin
   actor_id := auth.uid();
 
   if actor_id is null then
     raise exception 'Not authenticated';
   end if;
+
+  select count(*) into items_count from public.cart_items where user_id = actor_id;
 
   select p.*
   into profile_row
@@ -38,7 +39,7 @@ begin
   where ci.user_id = actor_id;
 
   if subtotal_value <= 0 then
-    raise exception 'Cart is empty for user %', actor_id;
+    raise exception 'Cart check failed for user %. Found % items in cart_items table for this user ID. Total calculated value from join: %. auth.uid() is %', actor_id, items_count, subtotal_value, auth.uid();
   end if;
 
   order_total := subtotal_value + coalesce(delivery_fee_input, 0);
@@ -114,58 +115,3 @@ begin
   return created_order_id;
 end;
 $$;
-
-grant execute on function public.place_order_from_cart(text, text, public.payment_method, numeric, text) to authenticated;
-
-create or replace function public.admin_assign_delivery_to_order(
-  target_order_id uuid,
-  delivery_user_id uuid
-)
-returns public.orders
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  actor_id uuid;
-  delivery_role public.app_role;
-  updated_order public.orders;
-begin
-  actor_id := auth.uid();
-
-  if actor_id is null then
-    raise exception 'Not authenticated';
-  end if;
-
-  if not public.is_admin() then
-    raise exception 'Only admins can assign delivery users';
-  end if;
-
-  select p.role
-  into delivery_role
-  from public.profiles p
-  where p.id = delivery_user_id;
-
-  if delivery_role is distinct from 'delivery'::public.app_role then
-    raise exception 'Target user is not a delivery account';
-  end if;
-
-  update public.orders o
-  set assigned_delivery_user_id = delivery_user_id,
-      status = case when o.status = 'pending' then 'confirmed' else o.status end,
-      updated_at = now()
-  where o.id = target_order_id
-  returning o.* into updated_order;
-
-  if updated_order.id is null then
-    raise exception 'Order not found';
-  end if;
-
-  insert into public.order_status_history (order_id, status, note)
-  values (target_order_id, updated_order.status, 'تم تعيين مندوب توصيل بواسطة الادمن');
-
-  return updated_order;
-end;
-$$;
-
-grant execute on function public.admin_assign_delivery_to_order(uuid, uuid) to authenticated;

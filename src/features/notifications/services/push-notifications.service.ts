@@ -6,26 +6,35 @@ import { supabase } from '@/src/lib/supabase/client';
 let Notifications: any;
 let Device: any;
 
-if (Platform.OS !== 'web' || typeof window !== 'undefined') {
-  Notifications = require('expo-notifications');
-  Device = require('expo-device');
+// Detect Expo Go to avoid SDK 53+ push notification errors
+const isExpoGo = Constants.appOwnership === 'expo';
 
-  /** Configuration for how notifications should behave when the app is foregrounded. */
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+if (Platform.OS !== 'web' && !isExpoGo) {
+  try {
+    Notifications = require('expo-notifications');
+    Device = require('expo-device');
+
+    /** Configuration for how notifications should behave when the app is foregrounded. */
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (e) {
+    console.warn('Notifications module could not be loaded:', e);
+  }
 }
 
 /** Registers the device for push notifications and saves the token to Supabase for the given user. */
 export async function registerForPushNotificationsAsync(userId: string) {
-  if (Platform.OS === 'web' || !Device || !Device.isDevice) {
-    console.warn('Push notifications are only supported on physical Android/iOS devices');
+  if (Platform.OS === 'web' || !Notifications || !Device || !Device.isDevice) {
+    if (!isExpoGo) {
+       console.warn('Push notifications are only supported on physical Android/iOS devices');
+    }
     return null;
   }
 
@@ -45,6 +54,10 @@ export async function registerForPushNotificationsAsync(userId: string) {
   // Get the token
   try {
     const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+    if (!projectId) {
+      console.warn('Skipping push token registration: No projectId found in app.json. This is expected in local development without EAS.');
+      return null;
+    }
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId,
     });

@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { ReactNode, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SidebarDrawer, SidebarItemKey } from './SidebarDrawer';
 
 type AppHeaderProps = {
   left?: ReactNode;
   right?: ReactNode;
+  title?: string;
   logo?: 'logo2' | 'transparent' | 'none';
   className?: string;
   withSidebar?: boolean;
@@ -22,6 +23,7 @@ const logoSourceMap = {
 export function AppHeader({
   left,
   right,
+  title,
   logo = 'transparent',
   className = '',
   withSidebar = false,
@@ -53,7 +55,9 @@ export function AppHeader({
       <View className={`flex-row items-center justify-between px-6 pt-2 pb-2 min-h-[64px] ${className}`}>
         <View className="w-11 h-11 items-center justify-center">{leftNode}</View>
         <View className="flex-1 items-center justify-center">
-          {logo === 'none' ? null : (
+          {title ? (
+            <Text className="font-tajawal-bold text-[20px] text-brand-title">{title}</Text>
+          ) : logo === 'none' ? null : (
             <Image
               source={logoSourceMap[logo]}
               style={logo === 'transparent' ? { width: 170, height: 72 } : { width: 84, height: 34 }}

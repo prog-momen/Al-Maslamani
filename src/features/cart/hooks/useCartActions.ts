@@ -1,15 +1,15 @@
 import { Alert } from 'react-native';
-import { addToCart } from '../services/cart.service';
+import { useCart } from '@/src/shared/contexts/CartContext';
 
 type AddItemOptions = {
   quantity?: number;
   onGoToCart?: () => void;
   showSuccessPopup?: boolean;
-  /** Called when the item is added successfully — use this to show a custom modal */
   onSuccess?: () => void;
 };
 
 export const useCartActions = () => {
+  const { addToCart } = useCart();
 
   const addItem = async (userId: string, productId: string, options?: AddItemOptions) => {
     if (!userId || !productId) return false;
@@ -18,15 +18,11 @@ export const useCartActions = () => {
     const showSuccessPopup = options?.showSuccessPopup ?? true;
 
     try {
-      for (let i = 0; i < quantity; i += 1) {
-        await addToCart(userId, productId);
-      }
+      await addToCart(productId, quantity);
 
       if (options?.onSuccess) {
-        // Caller handles the success UI (custom modal)
         options.onSuccess();
       } else if (showSuccessPopup) {
-        // Fallback: native alert
         Alert.alert(
           'تمت الإضافة بنجاح',
           quantity > 1 ? `تمت إضافة ${quantity} قطعة إلى السلة.` : 'تمت إضافة المنتج إلى السلة بنجاح.',
@@ -46,7 +42,6 @@ export const useCartActions = () => {
       return true;
     } catch (error) {
       console.error('addItem error:', error);
-
       Alert.alert('تعذر الإضافة', 'حدث خطأ أثناء إضافة المنتج إلى السلة. حاول مرة أخرى.');
       return false;
     }

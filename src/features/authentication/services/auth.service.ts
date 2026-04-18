@@ -1,7 +1,13 @@
 import { AppRole } from '@/src/features/orders/services/orders.service';
 import { supabase } from '@/src/lib/supabase/client';
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+
+let AuthSession: any;
+try {
+  AuthSession = require('expo-auth-session');
+} catch (e) {
+  console.warn('AuthSession is not available in this environment');
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -76,6 +82,9 @@ export const authService = {
     },
 
     async signInWithOAuth(provider: 'google' | 'apple') {
+        if (!AuthSession) {
+          throw new Error('OAuth is not available in this environment. Use a development build.');
+        }
         const redirectUrl = AuthSession.makeRedirectUri();
         
         const { data, error } = await supabase.auth.signInWithOAuth({
