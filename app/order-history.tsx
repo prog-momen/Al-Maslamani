@@ -1,4 +1,4 @@
-import { getMyOrders, OrderHistoryItem } from '@/src/features/orders/services/orders.service';
+import { getMyOrders, OrderHistoryItem, reorderOrder } from '@/src/features/orders/services/orders.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
@@ -57,9 +57,11 @@ const STATUS_CONFIG = {
 type OrderCardProps = {
   order: OrderHistoryItem;
   onPress: (order: OrderHistoryItem) => void;
+  onReorder: (order: OrderHistoryItem) => void;
+  isReordering?: boolean;
 };
 
-  function OrderCard({ order, onPress }: OrderCardProps) {
+  function OrderCard({ order, onPress, onReorder, isReordering }: OrderCardProps) {
   const statusInfo = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
   const imageSource = order.productImageUrl
     ? { uri: order.productImageUrl }
@@ -87,9 +89,18 @@ type OrderCardProps = {
       <View style={styles.cardDivider} />
 
       <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.reorderButton} activeOpacity={0.85} onPress={() => {}}>
-            <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.reorderText}>إعادة الطلب</Text>
+          <TouchableOpacity 
+            style={[styles.reorderButton, isReordering && { opacity: 0.7 }]} 
+            activeOpacity={0.85} 
+            onPress={() => onReorder(order)}
+            disabled={isReordering}
+          >
+            {isReordering ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Ionicons name="refresh" size={18} color="#FFFFFF" />
+            )}
+          <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
         </TouchableOpacity>
 
         <View style={styles.totalRow}>
@@ -164,6 +175,23 @@ export default function OrderHistoryScreen() {
     });
   };
 
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+
+  const handleReorder = async (order: OrderHistoryItem) => {
+    if (!user?.id) return;
+    
+    setReorderingId(order.id);
+    try {
+      await reorderOrder(order.id, user.id);
+      router.push('/cart');
+    } catch (error) {
+      console.error('Reorder failed:', error);
+      alert('فشلت عملية إعادة الطلب، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setReorderingId(null);
+    }
+  };
+
   return (
     <View style={styles.container}>
         <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
@@ -196,7 +224,14 @@ export default function OrderHistoryScreen() {
             <FlatList
               data={orders}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <OrderCard order={item} onPress={handleOrderPress} />}
+              renderItem={({ item }) => (
+                <OrderCard 
+                  order={item} 
+                  onPress={handleOrderPress} 
+                  onReorder={handleReorder}
+                  isReordering={reorderingId === item.id}
+                />
+              )}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={<Text style={styles.emptyText}>لا توجد طلبات حالياً.</Text>}

@@ -147,7 +147,8 @@ export const CartScreen = () => {
           </View>
 
           <TouchableOpacity
-            style={styles.orderBtn}
+            style={[styles.orderBtn, items.length === 0 && { opacity: 0.5 }]}
+            disabled={items.length === 0}
             onPress={() =>
               router.push({
                 pathname: '/checkout',
@@ -161,7 +162,6 @@ export const CartScreen = () => {
               })
             }
           >
-
             <Text style={styles.orderText}>إتمام الطلب</Text>
           </TouchableOpacity>
         </View>

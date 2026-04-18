@@ -6,6 +6,7 @@ import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useNotifications } from '@/src/shared/contexts/NotificationContext';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -106,6 +107,7 @@ export function ProfileScreen() {
   const { user } = useAuth();
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [completedOrdersCount, setCompletedOrdersCount] = useState(0);
+  const { unreadCount } = useNotifications();
 
   const loadStats = useCallback(async () => {
     if (!user?.id) {
@@ -223,7 +225,10 @@ export function ProfileScreen() {
               </Pressable>
 
               {/* Notifications */}
-              <Pressable className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+              <Pressable 
+                onPress={() => router.push('/notifications')}
+                className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]"
+              >
                 <View className="flex-row-reverse items-center gap-4">
                   <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
                     <Icons.Bell color="white" />
@@ -231,9 +236,11 @@ export function ProfileScreen() {
                   <Text className="font-tajawal-bold text-[16px] text-brand-title">التنبيهات</Text>
                 </View>
                 <View className="flex-row-reverse items-center gap-2">
-                  <View className="bg-[#DC2626] rounded-full px-3 py-1">
-                    <Text className="font-tajawal-bold text-[12px] text-white">3 جديد</Text>
-                  </View>
+                  {unreadCount > 0 && (
+                    <View className="bg-[#DC2626] rounded-full px-3 py-1">
+                      <Text className="font-tajawal-bold text-[12px] text-white">{unreadCount} جديد</Text>
+                    </View>
+                  )}
                   <Icons.ChevronLeft color="#A1A1AA" />
                 </View>
               </Pressable>

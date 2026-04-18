@@ -1,5 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { Database } from '@/src/lib/supabase/database.types';
+import { sendNotification } from '@/src/features/notifications/services/notifications.service';
+import { formatOrderNumber } from '@/src/shared/utils/order-utils';
 
 const sb = supabase as any;
 
@@ -16,6 +18,34 @@ export type OrderHistoryItem = {
   productSubtitle: string;
   productImageUrl: string | null;
 };
+
+/** Re-orders an existing order by adding all its items to the current user's cart. */
+export async function reorderOrder(orderId: string, userId: string) {
+  // 1. Fetch all items from the old order
+  const { data: orderItems, error: fetchError } = await sb
+    .from('order_items')
+    .select('product_id, quantity')
+    .eq('order_id', orderId);
+
+  if (fetchError || !orderItems) {
+    throw fetchError || new Error('No items found in this order');
+  }
+
+  // 2. Add each item to the cart
+  const cartEntries = orderItems.map((item: any) => ({
+    user_id: userId,
+    product_id: item.product_id,
+    quantity: item.quantity,
+  }));
+
+  const { error: insertError } = await sb
+    .from('cart_items')
+    .insert(cartEntries);
+
+  if (insertError) {
+    throw insertError;
+  }
+}
 
 export type AdminOrderItem = {
   id: string;
@@ -77,10 +107,7 @@ export type OrderTrackingDetails = {
   productQuantity: number;
 };
 
-export function formatOrderNumber(orderId: string) {
-  const compact = orderId.replace(/-/g, '').slice(0, 6).toUpperCase();
-  return `#SAM-${compact}`;
-}
+
 
 function toDisplayName(fullName?: string | null, email?: string | null, fallback = 'مستخدم') {
   const normalizedFullName = fullName?.trim();
@@ -241,19 +268,46 @@ export async function adminAssignDeliveryToOrder(orderId: string, deliveryUserId
     throw error;
   }
 
+  // 1. Notify the Customer about delivery assignment
+  const { data: order } = await sb.from('orders').select('user_id').eq('id', orderId).single();
+  const orderNumber = formatOrderNumber(orderId);
+
+  if (order) {
+    await sendNotification({
+      type: 'order_update',
+      title: `🚚 تم تعيين مندوب لطلبك ${orderNumber}`,
+      body: 'تم تعيين مندوب توصيل لطلبك، سيتم التواصل معك قريباً.',
+      userId: order.user_id,
+      orderId: orderId,
+    });
+  }
+
+  // 2. Notify the Delivery Person about the new task
+  await sendNotification({
+    type: 'order_update',
+    title: `📋 مهمة توصيل جديدة: ${orderNumber}`,
+    body: 'تم تعيينك لتوصيل هذا الطلب، تحقق من التفاصيل الآن.',
+    userId: deliveryUserId,
+    orderId: orderId,
+  });
+
   return data;
 }
 
 export async function setOrderStatus(orderId: string, status: OrderStatus, note?: string) {
-  const { error: updateError } = await sb
+  // 1. Update order status
+  const { data: order, error: updateError } = await sb
     .from('orders')
     .update({ status })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .select('user_id')
+    .single();
 
   if (updateError) {
     throw updateError;
   }
 
+  // 2. Add to history
   const { error: historyError } = await sb
     .from('order_status_history')
     .insert({ order_id: orderId, status, note: note ?? null });
@@ -261,6 +315,26 @@ export async function setOrderStatus(orderId: string, status: OrderStatus, note?
   if (historyError) {
     throw historyError;
   }
+
+  // 3. Insert notification for building the order-update alert
+  const orderNumber = formatOrderNumber(orderId);
+  const statusLabels: Record<string, string> = {
+    pending: 'قيد الانتظار',
+    confirmed: 'تم التأكيد',
+    preparing: 'جاري التحضير',
+    shipped: 'تم الشحن',
+    delivered: 'تم التوصيل',
+    cancelled: 'تم الإلغاء',
+  };
+  const label = statusLabels[status] || status;
+
+  await sendNotification({
+    type: 'order_update',
+    title: `📦 تحديث الطلب ${orderNumber}`,
+    body: `حالة طلبك تغيّرت إلى: ${label}`,
+    userId: order.user_id,
+    orderId: orderId,
+  });
 }
 
 export async function getAdminUsers(): Promise<AdminUserItem[]> {
