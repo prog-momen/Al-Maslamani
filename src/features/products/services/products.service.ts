@@ -1,5 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 
+const sb = supabase as any;
+
 export type CatalogProduct = {
   id: string;
   name: string;
@@ -7,6 +9,20 @@ export type CatalogProduct = {
   price: number;
   image_url: string | null;
   category_name: string | null;
+};
+
+export type ProductVariant = {
+  id: string;
+  size: string;
+  price: number;
+  image_url: string | null;
+};
+
+export type GroupedProduct = {
+  name: string;
+  description: string | null;
+  category_name: string | null;
+  variants: ProductVariant[];
 };
 
 type ProductRow = {
@@ -67,8 +83,40 @@ export async function getCatalogProducts(): Promise<CatalogProduct[]> {
   }));
 }
 
+export async function getGroupedProducts(): Promise<GroupedProduct[]> {
+  const products = await getCatalogProducts();
+  const groups: Record<string, GroupedProduct> = {};
+
+  products.forEach(p => {
+    const trimmedName = p.name.trim();
+    if (!groups[trimmedName]) {
+      groups[trimmedName] = {
+        name: trimmedName,
+        description: p.description, // Can be improved to handle shared desc
+        category_name: p.category_name,
+        variants: []
+      };
+    }
+    
+    // We treat description as the 'size' if it matches a weight pattern, or just use it as is
+    groups[trimmedName].variants.push({
+      id: p.id,
+      size: p.description || 'قياسي',
+      price: p.price,
+      image_url: p.image_url
+    });
+  });
+
+  // Sort variants by price (usually represents size order)
+  Object.values(groups).forEach(group => {
+    group.variants.sort((a, b) => a.price - b.price);
+  });
+
+  return Object.values(groups);
+}
+
 export async function getFavoriteProducts(userId: string): Promise<CatalogProduct[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('favorites')
     .select('products!inner(id,name,description,price,image_url,categories(name))')
     .eq('user_id', userId);
@@ -96,14 +144,14 @@ export async function getFavoriteProducts(userId: string): Promise<CatalogProduc
 
 export async function setFavoriteProduct(userId: string, productId: string, favorite: boolean) {
   if (favorite) {
-    const { error } = await supabase.from('favorites').insert({ user_id: userId, product_id: productId });
+    const { error } = await sb.from('favorites').insert({ user_id: userId, product_id: productId });
     if (error && error.code !== '23505') {
       throw error;
     }
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await sb
     .from('favorites')
     .delete()
     .eq('user_id', userId)
@@ -115,7 +163,7 @@ export async function setFavoriteProduct(userId: string, productId: string, favo
 }
 
 export async function getFavoriteProductIds(userId: string): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('favorites')
     .select('product_id')
     .eq('user_id', userId);
@@ -124,7 +172,7 @@ export async function getFavoriteProductIds(userId: string): Promise<string[]> {
     throw error;
   }
 
-  return (data ?? []).map((row) => row.product_id);
+  return (data ?? []).map((row: { product_id: string }) => row.product_id);
 }
 
 export async function getProductById(productId: string): Promise<CatalogProduct | null> {
@@ -152,5 +200,28 @@ export async function getProductById(productId: string): Promise<CatalogProduct 
     price: row.price,
     image_url: normalizeImageUrl(row.image_url),
     category_name: mapCategoryName(row.categories),
+  };
+}
+
+export async function getProductGroupByProductId(productId: string): Promise<GroupedProduct | null> {
+  const mainProduct = await getProductById(productId);
+  if (!mainProduct) return null;
+
+  const allProducts = await getCatalogProducts();
+  const variants = allProducts
+    .filter(p => p.name.trim() === mainProduct.name.trim())
+    .map(p => ({
+      id: p.id,
+      size: p.description || 'قياسي',
+      price: p.price,
+      image_url: p.image_url
+    }))
+    .sort((a, b) => a.price - b.price);
+
+  return {
+    name: mainProduct.name,
+    description: mainProduct.description,
+    category_name: mainProduct.category_name,
+    variants
   };
 }

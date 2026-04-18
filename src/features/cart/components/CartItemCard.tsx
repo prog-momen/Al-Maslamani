@@ -14,6 +14,7 @@ export const CartItemCard = ({
     price: number;
     image: any;
     quantity: number;
+    variant?: string;
   };
   onIncrease: (id: string) => void;
   onDecrease: (id: string) => void;
@@ -26,7 +27,7 @@ export const CartItemCard = ({
       <View style={styles.infoContainer}>
         <View style={styles.titleBox}>
           <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.weight}>400 غم</Text>
+          <Text style={styles.weight}>{item.variant || 'قياسي'}</Text>
         </View>
         <View style={styles.quantityBox}><TouchableOpacity onPress={() => onIncrease(item.id)}><Ionicons name="add" size={20} color="#67BB28" />
           </TouchableOpacity>

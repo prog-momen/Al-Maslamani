@@ -22,7 +22,12 @@ export const CartScreen = () => {
     if (!user?.id) return;
     const data = await getCartItems(user.id);
     const formatted = data.map((i: any) => ({
-      id: i.id, title: i.product.name, price: i.product.price, image: i.product.image_url ? { uri: i.product.image_url } : require('@/assets/images/mixed_nuts.png'), quantity: i.quantity,
+      id: i.id, 
+      title: i.product.name, 
+      variant: i.product.description,
+      price: i.product.price, 
+      image: i.product.image_url ? { uri: i.product.image_url } : require('@/assets/images/mixed_nuts.png'), 
+      quantity: i.quantity,
     }));
 
     setItems(formatted);

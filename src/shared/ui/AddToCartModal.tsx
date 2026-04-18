@@ -12,6 +12,8 @@ import { Button } from './Button';
 type AddToCartModalProps = {
   visible: boolean;
   productName?: string;
+  variantSize?: string;
+  price?: number;
   quantity?: number;
   onContinueShopping: () => void;
   onGoToCart: () => void;
@@ -20,6 +22,8 @@ type AddToCartModalProps = {
 export function AddToCartModal({
   visible,
   productName,
+  variantSize,
+  price,
   quantity = 1,
   onContinueShopping,
   onGoToCart,
@@ -140,17 +144,44 @@ export function AddToCartModal({
             </Text>
 
             {productName ? (
-              <Text
-                style={{
-                  fontFamily: 'Tajawal_700Bold',
-                  fontSize: 16,
-                  color: '#67BB28',
-                  textAlign: 'center',
-                  marginBottom: 28,
-                }}
-              >
-                {productName}
-              </Text>
+              <View style={{ alignItems: 'center', marginBottom: 28 }}>
+                <Text
+                  style={{
+                    fontFamily: 'Tajawal_700Bold',
+                    fontSize: 18,
+                    color: '#1B1C1C',
+                    textAlign: 'center',
+                  }}
+                >
+                  {productName}
+                </Text>
+                {variantSize && (
+                  <Text
+                    style={{
+                      fontFamily: 'Tajawal_700Bold',
+                      fontSize: 15,
+                      color: '#67BB28',
+                      textAlign: 'center',
+                      marginTop: 4,
+                    }}
+                  >
+                    {variantSize}
+                  </Text>
+                )}
+                {price !== undefined && (
+                  <Text
+                    style={{
+                      fontFamily: 'Tajawal_700Bold',
+                      fontSize: 19,
+                      color: '#67BB28',
+                      textAlign: 'center',
+                      marginTop: 10,
+                    }}
+                  >
+                    {price} ₪
+                  </Text>
+                )}
+              </View>
             ) : (
               <View style={{ marginBottom: 28 }} />
             )}
