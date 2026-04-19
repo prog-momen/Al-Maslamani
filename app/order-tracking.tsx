@@ -1,9 +1,11 @@
 import { getOrderTrackingDetails, OrderTrackingDetails, reorderOrder } from '@/src/features/orders/services/orders.service';
+import { useCart } from '@/src/shared/contexts/CartContext';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
+import MapView, { Marker, Polyline } from '@/src/shared/ui/Maps/MapViewCustom';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -15,11 +17,8 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-    Dimensions,
-    Platform
+    View
 } from 'react-native';
-import MapView, { Marker, Polyline } from '@/src/shared/ui/Maps/MapViewCustom';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY_GREEN = '#67BB28';
@@ -126,6 +125,8 @@ export default function OrderTrackingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user } = useAuth();
+  const { refreshCart } = useCart();
+  const ordersSignal = useRealtimeSignal('orders');
   const [tracking, setTracking] = useState<OrderTrackingDetails | null>(null);
   const [isReordering, setIsReordering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -187,6 +188,13 @@ export default function OrderTrackingScreen() {
       loadTracking();
     }, [loadTracking])
   );
+
+  useEffect(() => {
+    if (!orderId) {
+      return;
+    }
+    loadTracking();
+  }, [loadTracking, orderId, ordersSignal]);
 
   const currentStepRaw = parseInt(getParamString(params.currentStep as string | string[] | undefined, '2'), 10);
   const currentStepFromParams = Number.isNaN(currentStepRaw) ? 2 : Math.max(0, Math.min(3, currentStepRaw));
@@ -263,6 +271,7 @@ export default function OrderTrackingScreen() {
     setIsReordering(true);
     try {
       await reorderOrder(orderId, user.id);
+      await refreshCart();
       router.push('/cart');
     } catch (error) {
       console.error('Reorder failed from tracking:', error);

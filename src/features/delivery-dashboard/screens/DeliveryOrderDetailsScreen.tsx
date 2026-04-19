@@ -1,5 +1,6 @@
 import { DeliveryOrderDetails, getDeliveryOrderDetails, setOrderStatus } from '@/src/features/orders/services/orders.service';
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, Card, StaffBottomNavbar } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -7,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +20,7 @@ export function DeliveryOrderDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user, role, isAuthenticated, isInitializing } = useAuth();
+  const ordersSignal = useRealtimeSignal('orders');
   const [order, setOrder] = useState<DeliveryOrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,6 +54,13 @@ export function DeliveryOrderDetailsScreen() {
       loadOrder();
     }, [isAuthenticated, role, loadOrder])
   );
+
+  useEffect(() => {
+    if (!isAuthenticated || (role !== 'delivery' && role !== 'admin')) {
+      return;
+    }
+    loadOrder();
+  }, [isAuthenticated, role, loadOrder, ordersSignal]);
 
   if (!isInitializing && (!isAuthenticated || (role !== 'delivery' && role !== 'admin'))) {
     router.replace(isAuthenticated ? getHomeRouteForRole(role) : '/(auth)/login');
@@ -93,6 +102,14 @@ export function DeliveryOrderDetailsScreen() {
     await Linking.openURL(url);
   };
 
+  const getErrorMessage = (error: unknown) => {
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const msg = (error as { message?: unknown }).message;
+      return typeof msg === 'string' && msg.trim().length > 0 ? msg : null;
+    }
+    return null;
+  };
+
   const markDelivered = async () => {
     if (!order) {
       return;
@@ -107,6 +124,7 @@ export function DeliveryOrderDetailsScreen() {
       ]);
     } catch (error) {
       console.error('Failed to mark as delivered:', error);
+      Alert.alert('تعذر تحديث الحالة', getErrorMessage(error) ?? 'حدث خطأ أثناء تأكيد التوصيل. حاول مرة أخرى.');
     } finally {
       setIsSaving(false);
     }
@@ -126,6 +144,7 @@ export function DeliveryOrderDetailsScreen() {
       ]);
     } catch (error) {
       console.error('Failed to mark as not delivered:', error);
+      Alert.alert('تعذر تحديث الحالة', getErrorMessage(error) ?? 'حدث خطأ أثناء تحديث الطلب. حاول مرة أخرى.');
     } finally {
       setIsSaving(false);
     }

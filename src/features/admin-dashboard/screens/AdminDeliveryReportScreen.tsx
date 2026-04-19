@@ -1,9 +1,10 @@
 import { AdminUserItem, DeliveryReportSummary, getAdminUsers, getDeliveryReport, OrderStatus } from '@/src/features/orders/services/orders.service';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { AppHeader, Card, StaffBottomNavbar } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -35,6 +36,8 @@ const ORDER_STATUS_CONFIG: Record<
 
 export function AdminDeliveryReportScreen() {
     const router = useRouter();
+    const ordersSignal = useRealtimeSignal('orders');
+    const profilesSignal = useRealtimeSignal('profiles');
     const [deliveryUsers, setDeliveryUsers] = useState<AdminUserItem[]>([]);
     const [selectedUser, setSelectedUser] = useState<AdminUserItem | null>(null);
     const [report, setReport] = useState<DeliveryReportSummary | null>(null);
@@ -82,6 +85,17 @@ export function AdminDeliveryReportScreen() {
             }
         }, [selectedUser, loadReport])
     );
+
+    useEffect(() => {
+        loadUsers();
+    }, [loadUsers, profilesSignal]);
+
+    useEffect(() => {
+        if (!selectedUser) {
+            return;
+        }
+        loadReport(selectedUser.id);
+    }, [selectedUser, loadReport, ordersSignal]);
 
     const formatDate = (dateStr: string) => {
         try {

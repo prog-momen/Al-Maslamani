@@ -1,12 +1,13 @@
 import { AppHeader, BottomNavbar } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/src/shared/hooks/useAuth';
 import { useCart } from '@/src/shared/contexts/CartContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { CartItemCard } from '../components/CartItemCard';
 
 export const CartScreen = () => {
@@ -15,12 +16,19 @@ export const CartScreen = () => {
   const { 
     items, 
     isLoading, 
+    refreshCart,
     updateQuantity, 
     removeFromCart, 
     subtotal, 
     shipping, 
     total 
   } = useCart();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshCart();
+    }, [refreshCart])
+  );
 
   const [coupon, setCoupon] = useState('');
   const [discount, setDiscount] = useState(0);

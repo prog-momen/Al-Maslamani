@@ -1,4 +1,6 @@
 import { getMyOrders, OrderHistoryItem, reorderOrder } from '@/src/features/orders/services/orders.service';
+import { useCart } from '@/src/shared/contexts/CartContext';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
@@ -8,13 +10,13 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -115,6 +117,8 @@ type OrderCardProps = {
 export default function OrderHistoryScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshCart } = useCart();
+  const ordersSignal = useRealtimeSignal('orders');
   const [orders, setOrders] = useState<OrderHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -142,6 +146,13 @@ export default function OrderHistoryScreen() {
       loadOrders();
     }, [loadOrders])
   );
+
+  React.useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+    loadOrders();
+  }, [loadOrders, ordersSignal, user?.id]);
 
   const statusStepMap = useMemo(
     () => ({
@@ -183,6 +194,7 @@ export default function OrderHistoryScreen() {
     setReorderingId(order.id);
     try {
       await reorderOrder(order.id, user.id);
+      await refreshCart();
       router.push('/cart');
     } catch (error) {
       console.error('Reorder failed:', error);

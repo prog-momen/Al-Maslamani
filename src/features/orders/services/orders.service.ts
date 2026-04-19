@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { Database } from '@/src/lib/supabase/database.types';
 import { sendNotification } from '@/src/features/notifications/services/notifications.service';
+import { addToCart } from '@/src/features/cart/services/cart.service';
 import { formatOrderNumber } from '@/src/shared/utils/order-utils';
 export { formatOrderNumber };
 
@@ -32,19 +33,18 @@ export async function reorderOrder(orderId: string, userId: string) {
     throw fetchError || new Error('No items found in this order');
   }
 
-  // 2. Add each item to the cart
-  const cartEntries = orderItems.map((item: any) => ({
-    user_id: userId,
-    product_id: item.product_id,
-    quantity: item.quantity,
-  }));
+  if (orderItems.length === 0) {
+    throw new Error('No items found in this order');
+  }
 
-  const { error: insertError } = await sb
-    .from('cart_items')
-    .insert(cartEntries);
+  const validItems = orderItems.filter((item: any) => !!item.product_id);
+  if (validItems.length === 0) {
+    throw new Error('لا يمكن إعادة الطلب لأن منتجات الطلب غير متاحة حالياً.');
+  }
 
-  if (insertError) {
-    throw insertError;
+  // 2. Add each item to the cart using merge logic to avoid unique conflicts.
+  for (const item of validItems) {
+    await addToCart(userId, item.product_id, item.quantity);
   }
 }
 
@@ -350,13 +350,18 @@ export async function setOrderStatus(orderId: string, status: OrderStatus, note?
   };
   const label = statusLabels[status] || status;
 
-  await sendNotification({
-    type: 'order_update',
-    title: `📦 تحديث الطلب ${orderNumber}`,
-    body: `حالة طلبك تغيّرت إلى: ${label}`,
-    userId: order.user_id,
-    orderId: orderId,
-  });
+  try {
+    await sendNotification({
+      type: 'order_update',
+      title: `📦 تحديث الطلب ${orderNumber}`,
+      body: `حالة طلبك تغيّرت إلى: ${label}`,
+      userId: order.user_id,
+      orderId: orderId,
+    });
+  } catch (notificationError) {
+    // Do not fail status update if notification insertion is blocked by role policies.
+    console.warn('Order status updated but notification failed:', notificationError);
+  }
 }
 
 export async function getAdminUsers(): Promise<AdminUserItem[]> {

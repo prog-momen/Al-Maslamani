@@ -1,11 +1,12 @@
 import { adminAssignDeliveryToOrder, AdminOrderItem, adminSetUserRole, AdminUserItem, AppRole, getAdminOrders, getAdminUsers, OrderStatus, setOrderStatus } from '@/src/features/orders/services/orders.service';
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, Card, StaffBottomNavbar } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -83,6 +84,8 @@ function RoleChip({
 export function AdminDashboardScreen() {
   const router = useRouter();
   const { isAuthenticated, isInitializing, role } = useAuth();
+  const ordersSignal = useRealtimeSignal('orders');
+  const profilesSignal = useRealtimeSignal('profiles');
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState<AdminOrderItem[]>([]);
@@ -116,6 +119,13 @@ export function AdminDashboardScreen() {
       loadDashboardData();
     }, [isAuthenticated, role, loadDashboardData])
   );
+
+  useEffect(() => {
+    if (!isAuthenticated || role !== 'admin') {
+      return;
+    }
+    loadDashboardData();
+  }, [isAuthenticated, role, loadDashboardData, ordersSignal, profilesSignal]);
 
   if (!isInitializing && (!isAuthenticated || role !== 'admin')) {
     router.replace(isAuthenticated ? getHomeRouteForRole(role) : '/(auth)/login');

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 import * as cartService from '@/src/features/cart/services/cart.service';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type CartItem = {
   id: string; // This is the cart_item.id (database UUID)
@@ -29,6 +30,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const cartSignal = useRealtimeSignal('cart');
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,7 +67,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refreshCart();
-  }, [refreshCart]);
+  }, [refreshCart, cartSignal]);
 
   const addToCart = async (productId: string, quantity: number = 1) => {
     if (!user?.id) return;

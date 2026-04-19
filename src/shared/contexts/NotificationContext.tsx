@@ -1,17 +1,17 @@
-import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 import {
-  getNotifications,
-  getUnreadCount,
-  markAllAsRead,
-  markAsRead,
+    getNotifications,
+    markAllAsRead,
+    markAsRead
 } from '@/src/features/notifications/services/notifications.service';
-import { 
-  getNotificationPermissionStatus,
-  registerForPushNotificationsAsync 
+import {
+    getNotificationPermissionStatus,
+    registerForPushNotificationsAsync
 } from '@/src/features/notifications/services/push-notifications.service';
 import type { Notification } from '@/src/features/notifications/types/notification.types';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { NotificationPermissionModal } from '@/src/shared/ui';
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type NotificationContextValue = {
   notifications: Notification[];
@@ -33,6 +33,7 @@ const NotificationContext = createContext<NotificationContextValue>({
 
 export function NotificationProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
+  const notificationsSignal = useRealtimeSignal('notifications');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +58,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     }
   }, [user?.id]);
 
-  // Initial load + periodic refresh (every 30s)
+  // Initial load + real-time refresh
   useEffect(() => {
     refresh();
 
@@ -74,9 +75,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       });
     }
 
-    const interval = setInterval(refresh, 30_000);
-    return () => clearInterval(interval);
-  }, [refresh, user?.id]);
+  }, [refresh, user?.id, notificationsSignal]);
 
   const markNotificationRead = useCallback(
     async (id: string) => {
