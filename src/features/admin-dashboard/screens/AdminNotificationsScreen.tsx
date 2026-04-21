@@ -35,7 +35,7 @@ export function AdminNotificationsScreen() {
       });
 
       Alert.alert('نجاح', 'تم إرسال الإشعار لجميع المستخدمين بنجاح');
-      
+
       // Reset form
       setTitle('');
       setBody('');
@@ -57,7 +57,7 @@ export function AdminNotificationsScreen() {
           <Button
             variant="secondary"
             className="w-10 h-10 p-0 border-0"
-            icon={<Ionicons name="arrow-forward" size={24} color="#67BB28" />}
+            icon={<Ionicons name="arrow-forward" size={24} color="#84BD00" />}
             onPress={() => router.back()}
             label=""
           />
@@ -135,7 +135,7 @@ export function AdminNotificationsScreen() {
 
         {/* Preview Tip */}
         <View className="mt-8 p-4 bg-brand-primary/10 rounded-2xl flex-row-reverse items-start gap-3">
-          <Ionicons name="information-circle-outline" size={24} color="#67BB28" />
+          <Ionicons name="information-circle-outline" size={24} color="#84BD00" />
           <View className="flex-1">
             <Text className="font-tajawal-bold text-[16px] text-brand-primary text-right">تلميح</Text>
             <Text className="font-tajawal-medium text-[14px] text-gray-700 text-right mt-1">

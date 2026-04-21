@@ -1,7 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { getHomeRouteForRole } from '@/src/shared/constants/role-routes';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 import { useNotifications } from '@/src/shared/contexts/NotificationContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -17,7 +17,9 @@ export type SidebarItemKey =
   | 'notifications'
   | 'orders'
   | 'profile'
+  | 'phones'
   | 'about'
+  | 'branches'
   | 'contact';
 
 type SidebarDrawerProps = {
@@ -32,16 +34,18 @@ const memberItems: {
   icon: keyof typeof Ionicons.glyphMap;
   route: string;
 }[] = [
-  { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
-  { key: 'notifications', label: 'الإشعارات', icon: 'notifications-outline', route: '/notifications' },
-  { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
-  { key: 'categories', label: 'التصنيفات', icon: 'apps-outline', route: '/categories' },
-  { key: 'cart', label: 'السلة', icon: 'cart-outline', route: '/home' },
-  { key: 'favorites', label: 'المفضلة', icon: 'heart-outline', route: '/favorites' },
-  { key: 'orders', label: 'الطلبات', icon: 'receipt-outline', route: '/order-history' },
-  { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
-  { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
-];
+    { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
+    { key: 'notifications', label: 'الإشعارات', icon: 'notifications-outline', route: '/notifications' },
+    { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
+    { key: 'categories', label: 'التصنيفات', icon: 'apps-outline', route: '/categories' },
+    { key: 'cart', label: 'السلة', icon: 'cart-outline', route: '/home' },
+    { key: 'favorites', label: 'المفضلة', icon: 'heart-outline', route: '/favorites' },
+    { key: 'orders', label: 'الطلبات', icon: 'receipt-outline', route: '/order-history' },
+    { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
+    { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
+    { key: 'branches', label: 'فروعنا', icon: 'location-outline', route: '/branches' },
+    { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
+  ];
 
 const staffItems: {
   key: SidebarItemKey;
@@ -49,12 +53,14 @@ const staffItems: {
   icon: keyof typeof Ionicons.glyphMap;
   route: string;
 }[] = [
-  { key: 'dashboard', label: 'لوحة التحكم', icon: 'speedometer-outline', route: '/home' },
-  { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
-  { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
-  { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
-  { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
-];
+    { key: 'dashboard', label: 'لوحة التحكم', icon: 'speedometer-outline', route: '/home' },
+    { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
+    { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
+    { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
+    { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
+    { key: 'branches', label: 'فروعنا', icon: 'location-outline', route: '/branches' },
+    { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
+  ];
 
 export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerProps) {
   const router = useRouter();
@@ -97,10 +103,10 @@ export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerPro
           </Pressable>
 
           <View className="items-center mb-5">
-            <View className="w-[68px] h-[68px] rounded-full bg-[#67BB28] border-2 border-white items-center justify-center">
+            <View className="w-[68px] h-[68px] rounded-full bg-[#84BD00] border-2 border-white items-center justify-center">
               <Ionicons name="person" size={40} color="#F2F6EA" />
             </View>
-            <Text className="font-tajawal-bold text-[26px] text-[#67BB28] mt-2">{displayName}</Text>
+            <Text className="font-tajawal-bold text-[26px] text-[#84BD00] mt-2">{displayName}</Text>
           </View>
 
           <View className="px-4">
@@ -109,9 +115,8 @@ export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerPro
               return (
                 <TouchableOpacity
                   key={item.key}
-                  className={`h-[44px] rounded-full mb-2 px-4 flex-row-reverse items-center justify-between ${
-                    isActive ? 'bg-[#67BB28]' : ''
-                  }`}
+                  className={`h-[44px] rounded-full mb-2 px-4 flex-row-reverse items-center justify-between ${isActive ? 'bg-[#84BD00]' : ''
+                    }`}
                   onPress={() => handleNavigate(item.route)}
                   activeOpacity={0.85}
                 >

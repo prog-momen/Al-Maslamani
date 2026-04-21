@@ -1,12 +1,12 @@
 import { getMyOrders } from '@/src/features/orders/services/orders.service';
 import { getFavoriteProductIds } from '@/src/features/products/services/products.service';
 import { supabase } from '@/src/lib/supabase/client';
+import { useNotifications } from '@/src/shared/contexts/NotificationContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, CARD_BASE_CLASS } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useNotifications } from '@/src/shared/contexts/NotificationContext';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -148,32 +148,34 @@ export function ProfileScreen() {
 
   return (
     <View className="flex-1 bg-[#F5F2EC]">
+      <SafeAreaView edges={['top']}>
+        {/* Header */}
+        <AppHeader
+          logo="transparent"
+          withSidebar
+          sidebarActiveItem="profile"
+          sidebarSide="left"
+          left={<Icons.Menu color="#84BD00" />}
+          right={
+            <Pressable className="hit-slop-10" onPress={() => router.push('/contact-us')}>
+              <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
+            </Pressable>
+          }
+        />
+      </SafeAreaView>
+
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <SafeAreaView edges={['top']}>
-          {/* Header */}
-          <AppHeader
-            logo="transparent"
-            withSidebar
-            sidebarActiveItem="profile"
-            sidebarSide="left"
-            left={<Icons.Menu color="#67BB28" />}
-            right={
-              <Pressable className="hit-slop-10" onPress={() => router.push('/contact-us')}>
-                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
-              </Pressable>
-            }
-          />
 
           {/* Profile Section */}
           <View className="items-center mt-8">
             <View className="relative">
-              <View className="w-[120px] h-[120px] rounded-full bg-[#67BB28] items-center justify-center border-4 border-white shadow-sm overflow-hidden pt-6">
+              <View className="w-[120px] h-[120px] rounded-full bg-[#84BD00] items-center justify-center border-4 border-white shadow-sm overflow-hidden pt-6">
                 <Svg width="80" height="80" viewBox="0 0 24 24" fill="#F5F2EC">
                   <Circle cx="12" cy="8" r="4" />
                   <Path d="M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z" />
                 </Svg>
               </View>
-              <Pressable className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#67BB28] border-2 border-white items-center justify-center">
+              <Pressable className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#84BD00] border-2 border-white items-center justify-center">
                 <Icons.Edit color="white" />
               </Pressable>
             </View>
@@ -189,11 +191,11 @@ export function ProfileScreen() {
           {/* Stats Cards */}
           <View className="flex-row px-4 mt-8 gap-4">
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">{favoritesCount}</Text>
+              <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{favoritesCount}</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">المفضلة</Text>
             </View>
             <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#67BB28] mb-1">{completedOrdersCount}</Text>
+              <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{completedOrdersCount}</Text>
               <Text className="font-tajawal-medium text-[14px] text-brand-text">طلبات مكتملة</Text>
             </View>
           </View>
@@ -201,11 +203,11 @@ export function ProfileScreen() {
           {/* Menu List */}
           <View className="px-4 mt-6">
             <View className={`${CARD_BASE_CLASS} p-2`}>
-              
+
               {/* My Orders */}
               <Pressable onPress={() => router.push('/order-history')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
                 <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
                     <Icons.Bag color="white" />
                   </View>
                   <Text className="font-tajawal-bold text-[16px] text-brand-title">طلباتي</Text>
@@ -214,12 +216,12 @@ export function ProfileScreen() {
               </Pressable>
 
               {/* Notifications */}
-              <Pressable 
+              <Pressable
                 onPress={() => router.push('/notifications')}
                 className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]"
               >
                 <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
                     <Icons.Bell color="white" />
                   </View>
                   <Text className="font-tajawal-bold text-[16px] text-brand-title">التنبيهات</Text>
@@ -234,10 +236,32 @@ export function ProfileScreen() {
                 </View>
               </Pressable>
 
+              {/* Saved Addresses */}
+              <Pressable onPress={() => router.push('/addresses')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                <View className="flex-row-reverse items-center gap-4">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                    <Icons.MapPin color="white" />
+                  </View>
+                  <Text className="font-tajawal-bold text-[16px] text-brand-title">العناوين المحفوظة</Text>
+                </View>
+                <Icons.ChevronLeft color="#A1A1AA" />
+              </Pressable>
+
+              {/* Saved Phones */}
+              <Pressable onPress={() => router.push('/contact-phones')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                <View className="flex-row-reverse items-center gap-4">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                    <Ionicons name="call-outline" size={20} color="white" />
+                  </View>
+                  <Text className="font-tajawal-bold text-[16px] text-brand-title">أرقام التواصل المحفوظة</Text>
+                </View>
+                <Icons.ChevronLeft color="#A1A1AA" />
+              </Pressable>
+
               {/* About Company */}
               <Pressable onPress={() => router.push('/about-us')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
                 <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
                     <Icons.Info color="white" />
                   </View>
                   <Text className="font-tajawal-bold text-[16px] text-brand-title">عن الشركة</Text>
@@ -245,10 +269,21 @@ export function ProfileScreen() {
                 <Icons.ChevronLeft color="#A1A1AA" />
               </Pressable>
 
+              {/* Branches */}
+              <Pressable onPress={() => router.push('/branches')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                <View className="flex-row-reverse items-center gap-4">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                    <Icons.MapPin color="white" />
+                  </View>
+                  <Text className="font-tajawal-bold text-[16px] text-brand-title">فروعنا</Text>
+                </View>
+                <Icons.ChevronLeft color="#A1A1AA" />
+              </Pressable>
+
               {/* Contact Us */}
               <Pressable onPress={() => router.push('/contact-us')} className="flex-row-reverse items-center justify-between p-4 border-b-transparent">
                 <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center">
+                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
                     <Icons.Headset color="white" />
                   </View>
                   <Text className="font-tajawal-bold text-[16px] text-brand-title">اتصل بنا</Text>
@@ -261,7 +296,7 @@ export function ProfileScreen() {
 
           {/* Logout Button */}
           <View className="px-4 mt-6 mb-8">
-            <Pressable 
+            <Pressable
               onPress={handleLogout}
               className="bg-[#FAEDE8] rounded-[24px] h-[54px] flex-row-reverse items-center justify-center gap-2 border border-[#F4E1D8]"
             >
@@ -270,7 +305,6 @@ export function ProfileScreen() {
             </Pressable>
           </View>
 
-        </SafeAreaView>
       </ScrollView>
 
       <BottomNavbar activeTab="profile" />

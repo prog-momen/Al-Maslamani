@@ -13,15 +13,15 @@ import { CartItemCard } from '../components/CartItemCard';
 export const CartScreen = () => {
   const { user } = useAuth();
   const router = useRouter();
-  const { 
-    items, 
-    isLoading, 
+  const {
+    items,
+    isLoading,
     refreshCart,
-    updateQuantity, 
-    removeFromCart, 
-    subtotal, 
-    shipping, 
-    total 
+    updateQuantity,
+    removeFromCart,
+    subtotal,
+    shipping,
+    total
   } = useCart();
 
   useFocusEffect(
@@ -79,7 +79,7 @@ export const CartScreen = () => {
       <SafeAreaView style={styles.container}>
         <AppHeader logo="transparent" />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#67BB28" />
+          <ActivityIndicator size="large" color="#84BD00" />
         </View>
         <BottomNavbar activeTab="cart" />
       </SafeAreaView>
@@ -88,7 +88,7 @@ export const CartScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppHeader logo="transparent" withSidebar sidebarActiveItem="cart" sidebarSide="left" left={<Feather name="menu" size={26} color="#67BB28" />}/>
+      <AppHeader logo="transparent" withSidebar sidebarActiveItem="cart" sidebarSide="left" left={<Feather name="menu" size={26} color="#84BD00" />} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerBox}>
@@ -97,29 +97,29 @@ export const CartScreen = () => {
         </View>
 
         <View style={styles.itemsBox}>{items.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>السلة فارغة حالياً</Text>
-            </View>
-          ) : (
-            items.map((item) => (
-              <CartItemCard
-                key={item.id}
-                item={{
-                    ...item,
-                    image: item.image || require('@/assets/images/mixed_nuts.png')
-                }}
-                onIncrease={() => handleIncrease(item.id)}
-                onDecrease={() => handleDecrease(item.id)}
-                onRemove={() => handleRemove(item.id)}
-              />
-            ))
-          )}
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>السلة فارغة حالياً</Text>
+          </View>
+        ) : (
+          items.map((item) => (
+            <CartItemCard
+              key={item.id}
+              item={{
+                ...item,
+                image: item.image || require('@/assets/images/mixed_nuts.png')
+              }}
+              onIncrease={() => handleIncrease(item.id)}
+              onDecrease={() => handleDecrease(item.id)}
+              onRemove={() => handleRemove(item.id)}
+            />
+          ))
+        )}
         </View>
 
         <View style={styles.couponBox}>
           <Text style={styles.couponTitle}>كود الخصم</Text>
           <View style={styles.couponInputContainer}>
-            <TextInput style={styles.couponInput} placeholder="ادخل كود الخصم هنا" placeholderTextColor="#6B6B6B" value={coupon} onChangeText={setCoupon}/>
+            <TextInput style={styles.couponInput} placeholder="ادخل كود الخصم هنا" placeholderTextColor="#6B6B6B" value={coupon} onChangeText={setCoupon} />
 
             <TouchableOpacity style={styles.couponButton} onPress={applyCoupon}>
               <Text style={styles.couponButtonText}>تطبيق</Text>
@@ -129,7 +129,7 @@ export const CartScreen = () => {
           )}
 
           {couponError !== '' && (<Text style={styles.errorText}>{couponError}
-            </Text>
+          </Text>
           )}
         </View>
 
@@ -319,12 +319,12 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#67BB28',
+    color: '#84BD00',
     fontFamily: 'Tajawal_700Bold',
   },
 
   orderBtn: {
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
     borderRadius: 999,
     paddingVertical: 16,
     alignItems: 'center',

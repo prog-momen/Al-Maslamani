@@ -28,17 +28,17 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
   const router = useRouter();
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
+    <TouchableOpacity
+      activeOpacity={0.9}
       onPress={() => router.push({ pathname: '/product-details', params: { id: product.id } })}
       className={`${CARD_BASE_CLASS} relative h-[320px] overflow-hidden mb-4`}
     >
       {/* Heart Icon (Top Left) */}
-      <TouchableOpacity 
+      <TouchableOpacity
         className="absolute top-4 left-4 z-10 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         onPress={() => onToggleFavorite?.(product.id)}
       >
-        <Ionicons name={product.isFavorite ? "heart" : "heart-outline"} size={22} color={product.isFavorite ? '#E53935' : '#67BB28'} />
+        <Ionicons name={product.isFavorite ? "heart" : "heart-outline"} size={22} color={product.isFavorite ? '#E53935' : '#84BD00'} />
       </TouchableOpacity>
 
       {/* Product Image */}
@@ -66,11 +66,11 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
           ) : (
             <View />
           )}
-          <TouchableOpacity 
-             className="w-10 h-10 bg-brand-primary rounded-full items-center justify-center shadow-sm"
-             onPress={() => onAddToCart?.(product.id)}
+          <TouchableOpacity
+            className="w-10 h-10 bg-brand-primary rounded-full items-center justify-center shadow-sm"
+            onPress={() => onAddToCart?.(product.id)}
           >
-             <Ionicons name="cart" size={20} color="white" />
+            <Ionicons name="cart" size={20} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -80,7 +80,7 @@ export function FavoriteProductCard({ product, onToggleFavorite, onAddToCart }: 
             {product.title}
           </Text>
           <Text className="font-tajawal-bold text-brand-primary text-[16px]">
-            {product.price} 
+            {product.price}
           </Text>
         </View>
       </View>

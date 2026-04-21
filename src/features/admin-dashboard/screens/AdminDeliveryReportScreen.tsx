@@ -18,20 +18,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PAGE_BG = '#F2F1EE';
-const BRAND_GREEN = '#67BB28';
+const BRAND_GREEN = '#84BD00';
 const TITLE_TEXT = '#1F2120';
 const SUBTITLE_TEXT = '#626560';
 
 const ORDER_STATUS_CONFIG: Record<
-  OrderStatus,
-  { label: string; chipBg: string; chipColor: string; icon: keyof typeof Ionicons.glyphMap }
+    OrderStatus,
+    { label: string; chipBg: string; chipColor: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  pending: { label: 'بانتظار', chipBg: '#F4E8BE', chipColor: '#6A5A10', icon: 'time-outline' },
-  confirmed: { label: 'مؤكد', chipBg: '#DCEEFF', chipColor: '#3D6F9A', icon: 'checkmark-done-outline' },
-  preparing: { label: 'تحضير', chipBg: '#CFF3D2', chipColor: '#4D821F', icon: 'construct-outline' },
-  shipped: { label: 'مشحون', chipBg: '#D8F1D8', chipColor: '#296A2E', icon: 'car-outline' },
-  delivered: { label: 'تم التوصيل', chipBg: '#B8E8BE', chipColor: '#2F6D34', icon: 'checkmark-circle-outline' },
-  cancelled: { label: 'ملغي', chipBg: '#F3D9CF', chipColor: '#C93206', icon: 'close-circle-outline' },
+    pending: { label: 'بانتظار', chipBg: '#F4E8BE', chipColor: '#6A5A10', icon: 'time-outline' },
+    confirmed: { label: 'مؤكد', chipBg: '#DCEEFF', chipColor: '#3D6F9A', icon: 'checkmark-done-outline' },
+    preparing: { label: 'تحضير', chipBg: '#CFF3D2', chipColor: '#4D821F', icon: 'construct-outline' },
+    shipped: { label: 'مشحون', chipBg: '#D8F1D8', chipColor: '#296A2E', icon: 'car-outline' },
+    delivered: { label: 'تم التوصيل', chipBg: '#B8E8BE', chipColor: '#2F6D34', icon: 'checkmark-circle-outline' },
+    cancelled: { label: 'ملغي', chipBg: '#F3D9CF', chipColor: '#C93206', icon: 'close-circle-outline' },
 };
 
 export function AdminDeliveryReportScreen() {

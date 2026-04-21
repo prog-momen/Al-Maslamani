@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 interface SocialLoginButtonsProps {
   onGooglePress: () => void;
@@ -23,7 +23,7 @@ export function SocialLoginButtons({ onGooglePress, isLoading }: SocialLoginButt
         className="flex-row-reverse items-center justify-center bg-white border border-gray-200 h-[54px] rounded-[16px] px-4 shadow-sm"
       >
         {isLoading ? (
-          <ActivityIndicator color="#67BB28" />
+          <ActivityIndicator color="#84BD00" />
         ) : (
           <>
             <Ionicons name="logo-google" size={20} color="#EA4335" style={{ marginLeft: 12 }} />

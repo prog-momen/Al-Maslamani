@@ -1,6 +1,6 @@
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import { supabase } from '@/src/lib/supabase/client';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // We import these only when needed or guard them to prevent SSR crashes
 let Notifications: any;
@@ -33,7 +33,7 @@ if (Platform.OS !== 'web' && !isExpoGo) {
 export async function registerForPushNotificationsAsync(userId: string) {
   if (Platform.OS === 'web' || !Notifications || !Device || !Device.isDevice) {
     if (!isExpoGo) {
-       console.warn('Push notifications are only supported on physical Android/iOS devices');
+      console.warn('Push notifications are only supported on physical Android/iOS devices');
     }
     return null;
   }
@@ -72,7 +72,7 @@ export async function registerForPushNotificationsAsync(userId: string) {
         name: 'default',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#67BB28',
+        lightColor: '#84BD00',
       });
     }
 

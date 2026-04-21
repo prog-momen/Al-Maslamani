@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Text, View } from 'react-native';
 
 let MapView: any;
 let Marker: any;
@@ -23,7 +23,7 @@ export const MapViewCustom = React.forwardRef((props: any, ref: any) => {
   if (!mapsAvailable) {
     return (
       <View style={[{ flex: 1, backgroundColor: '#EBEBEB', alignItems: 'center', justifyContent: 'center', padding: 20 }, props.style]}>
-        <Ionicons name="map-outline" size={48} color="#67BB28" />
+        <Ionicons name="map-outline" size={48} color="#84BD00" />
         <Text style={{ fontFamily: 'Tajawal_700Bold', fontSize: 16, marginTop: 12, color: '#1F2937', textAlign: 'center' }}>
           الخريطة التفاعلية غير مدعومة في هذه النسخة
         </Text>

@@ -13,7 +13,7 @@ import { ActivityIndicator, Alert, ScrollView, StatusBar, StyleSheet, Text, Touc
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PAGE_BG = '#F2EFE9';
-const PRIMARY = '#67BB28';
+const PRIMARY = '#84BD00';
 const TITLE = '#1F2120';
 
 export function DeliveryOrderDetailsScreen() {

@@ -9,7 +9,7 @@ type NotificationBellProps = {
   size?: number;
 };
 
-export function NotificationBell({ color = '#67BB28', size = 26 }: NotificationBellProps) {
+export function NotificationBell({ color = '#84BD00', size = 26 }: NotificationBellProps) {
   const router = useRouter();
   const { unreadCount } = useNotifications();
 

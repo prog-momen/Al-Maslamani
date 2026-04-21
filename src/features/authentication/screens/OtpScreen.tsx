@@ -11,10 +11,10 @@ export function OtpScreen() {
     const router = useRouter();
     const { email } = useLocalSearchParams<{ email: string }>();
     const { verifyOtp, isLoading, error, success, setError } = useVerifyOtp();
-    
+
     const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
     const inputs = useRef<(TextInput | null)[]>([]);
-    
+
     const [timeLeft, setTimeLeft] = useState(54);
 
     useEffect(() => {
@@ -71,20 +71,20 @@ export function OtpScreen() {
         <SafeAreaView className="flex-1 bg-brand-surface">
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
                 <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-                    
+
                     {/* ✅ AppHeader الموحّد */}
                     <AppHeader
                         logo="transparent"
                         withSidebar
                         sidebarSide="left"
-                        left={<Ionicons name="menu" size={26} color="#67BB28" />}
+                        left={<Ionicons name="menu" size={26} color="#84BD00" />}
                         right={
                             <Pressable
                                 onPress={() => router.push('/contact-us')}
                                 hitSlop={10}
                                 className="w-10 h-10 items-center justify-center"
                             >
-                                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
+                                <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
                             </Pressable>
                         }
                     />

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export const PaymentMethod = ({ value, onChange }: any) => {
   return (
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
 
   active: {
-    borderColor: '#67BB28',
+    borderColor: '#84BD00',
     backgroundColor: '#EAF7E3',
   },
 });

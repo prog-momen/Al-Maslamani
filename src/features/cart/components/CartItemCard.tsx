@@ -29,11 +29,11 @@ export const CartItemCard = ({
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.weight}>{item.variant || 'قياسي'}</Text>
         </View>
-        <View style={styles.quantityBox}><TouchableOpacity onPress={() => onIncrease(item.id)}><Ionicons name="add" size={20} color="#67BB28" />
-          </TouchableOpacity>
+        <View style={styles.quantityBox}><TouchableOpacity onPress={() => onIncrease(item.id)}><Ionicons name="add" size={20} color="#84BD00" />
+        </TouchableOpacity>
           <Text style={styles.quantity}>{item.quantity}</Text>
 
-          <TouchableOpacity onPress={() => onDecrease(item.id)}><Ionicons name="remove" size={20} color="#67BB28" /></TouchableOpacity>
+          <TouchableOpacity onPress={() => onDecrease(item.id)}><Ionicons name="remove" size={20} color="#84BD00" /></TouchableOpacity>
         </View>
       </View>
 
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   weight: {
     fontSize: 14,
-    color: '#67BB28',
+    color: '#84BD00',
     marginBottom: 12,
   },
   quantityBox: {
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#67BB28',
+    color: '#84BD00',
     marginTop: 30,
   },
 });

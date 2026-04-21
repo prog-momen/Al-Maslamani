@@ -51,7 +51,7 @@ export function Button({
       disabled={isDisabled}
       className={`rounded-full px-5 py-4 active:opacity-90 flex-row items-center justify-center ${bgClass} ${borderClass} ${className}`}>
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? 'white' : '#67BB28'} />
+        <ActivityIndicator color={variant === 'primary' ? 'white' : '#84BD00'} />
       ) : (
         <>
           {icon && iconPosition === 'start' ? <View className="mr-2">{icon}</View> : null}

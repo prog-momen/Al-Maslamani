@@ -10,18 +10,18 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-  const PRIMARY_GREEN = '#67BB28';
-  const PAGE_BG = '#F5F4F0';
+const PRIMARY_GREEN = '#84BD00';
+const PAGE_BG = '#F5F4F0';
 
 const STATUS_CONFIG = {
   delivered: {
@@ -60,40 +60,42 @@ type OrderCardProps = {
   order: OrderHistoryItem;
   onPress: (order: OrderHistoryItem) => void;
   onReorder: (order: OrderHistoryItem) => void;
+  canReorder: boolean;
   isReordering?: boolean;
 };
 
-  function OrderCard({ order, onPress, onReorder, isReordering }: OrderCardProps) {
+function OrderCard({ order, onPress, onReorder, canReorder, isReordering }: OrderCardProps) {
   const statusInfo = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
   const imageSource = order.productImageUrl
     ? { uri: order.productImageUrl }
     : require('@/assets/images/mixed_nuts.png');
 
   return (
-      <TouchableOpacity style={styles.orderCard} onPress={() => onPress(order)} activeOpacity={0.9}>
-        <View style={styles.cardTopRow}>
-          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
+    <TouchableOpacity style={styles.orderCard} onPress={() => onPress(order)} activeOpacity={0.9}>
+      <View style={styles.cardTopRow}>
+        <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+          <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
         </View>
 
-          <View style={styles.productInfoRow}>
-            <View style={styles.productImageWrap}>
-              <Image source={imageSource} style={styles.productImage} contentFit="contain" />
-            </View>
-            <View style={styles.productTextWrap}>
-              <Text style={styles.productWeight}>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</Text>
-              <Text style={styles.productName}>{order.productName}</Text>
-              {order.productSubtitle ? <Text style={styles.productSubtitle}>{order.productSubtitle}</Text> : null}
-            </View>
+        <View style={styles.productInfoRow}>
+          <View style={styles.productImageWrap}>
+            <Image source={imageSource} style={styles.productImage} contentFit="contain" />
+          </View>
+          <View style={styles.productTextWrap}>
+            <Text style={styles.productWeight}>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</Text>
+            <Text style={styles.productName}>{order.productName}</Text>
+            {order.productSubtitle ? <Text style={styles.productSubtitle}>{order.productSubtitle}</Text> : null}
+          </View>
         </View>
       </View>
 
       <View style={styles.cardDivider} />
 
       <View style={styles.cardFooter}>
-          <TouchableOpacity 
-            style={[styles.reorderButton, isReordering && { opacity: 0.7 }]} 
-            activeOpacity={0.85} 
+        {canReorder ? (
+          <TouchableOpacity
+            style={[styles.reorderButton, isReordering && { opacity: 0.7 }]}
+            activeOpacity={0.85}
             onPress={() => onReorder(order)}
             disabled={isReordering}
           >
@@ -102,12 +104,17 @@ type OrderCardProps = {
             ) : (
               <Ionicons name="refresh" size={18} color="#FFFFFF" />
             )}
-          <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
-        </TouchableOpacity>
+            <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.reorderPlaceholder}>
+            <Text style={styles.reorderPlaceholderText}>تظهر بعد التوصيل أو الإلغاء</Text>
+          </View>
+        )}
 
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>الإجمالي</Text>
-            <Text style={styles.totalValue}>{order.total.toFixed(2)}</Text>
+          <Text style={styles.totalValue}>{order.total.toFixed(2)}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -168,6 +175,7 @@ export default function OrderHistoryScreen() {
 
   const handleOrderPress = (order: OrderHistoryItem) => {
     const currentStep = statusStepMap[order.status] ?? 0;
+    const allowReorder = order.status === 'cancelled' || order.status === 'delivered';
     const isPreviousOrder = order.status !== 'pending' && order.status !== 'confirmed' && order.status !== 'preparing';
 
     router.push({
@@ -177,7 +185,7 @@ export default function OrderHistoryScreen() {
         orderNumber: order.orderNumber,
         currentStep,
         previous: isPreviousOrder ? '1' : '0',
-        allowReorder: isPreviousOrder ? '1' : '0',
+        allowReorder: allowReorder ? '1' : '0',
         productName: order.productName,
         productSubtitle: order.productSubtitle || '-',
         productWeight: '-',
@@ -190,7 +198,7 @@ export default function OrderHistoryScreen() {
 
   const handleReorder = async (order: OrderHistoryItem) => {
     if (!user?.id) return;
-    
+
     setReorderingId(order.id);
     try {
       await reorderOrder(order.id, user.id);
@@ -206,7 +214,7 @@ export default function OrderHistoryScreen() {
 
   return (
     <View style={styles.container}>
-        <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
+      <StatusBar backgroundColor={PAGE_BG} barStyle="dark-content" />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <AppHeader
@@ -222,33 +230,34 @@ export default function OrderHistoryScreen() {
           }
         />
 
-          <View style={styles.titleSection}>
-            <Text style={styles.pageTitle}>سجل الطلبات</Text>
-            <Text style={styles.pageSubtitle}>تتبع مشترياتك السابقة من متجرنا</Text>
-            <Text style={styles.pageSubtitle}>المنسق</Text>
+        <View style={styles.titleSection}>
+          <Text style={styles.pageTitle}>سجل الطلبات</Text>
+          <Text style={styles.pageSubtitle}>تتبع مشترياتك السابقة من متجرنا</Text>
+          <Text style={styles.pageSubtitle}>المنسق</Text>
         </View>
 
-          {isLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator color={PRIMARY_GREEN} size="large" />
-            </View>
-          ) : (
-            <FlatList
-              data={orders}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <OrderCard 
-                  order={item} 
-                  onPress={handleOrderPress} 
-                  onReorder={handleReorder}
-                  isReordering={reorderingId === item.id}
-                />
-              )}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={<Text style={styles.emptyText}>لا توجد طلبات حالياً.</Text>}
-            />
-          )}
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={PRIMARY_GREEN} size="large" />
+          </View>
+        ) : (
+          <FlatList
+            data={orders}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <OrderCard
+                order={item}
+                onPress={handleOrderPress}
+                onReorder={handleReorder}
+                canReorder={item.status === 'cancelled' || item.status === 'delivered'}
+                isReordering={reorderingId === item.id}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={<Text style={styles.emptyText}>لا توجد طلبات حالياً.</Text>}
+          />
+        )}
       </SafeAreaView>
 
       <BottomNavbar activeTab="profile" />
@@ -412,6 +421,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     fontFamily: 'Tajawal_700Bold',
+  },
+  reorderPlaceholder: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  reorderPlaceholderText: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontFamily: 'Tajawal_500Medium',
   },
   totalRow: {
     alignItems: 'flex-end',

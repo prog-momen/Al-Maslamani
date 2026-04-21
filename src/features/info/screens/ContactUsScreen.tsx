@@ -40,13 +40,13 @@ const Icons = {
   ),
   Phone: (props: any) => (
     <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+      <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </Svg>
   ),
   Mail: (props: any) => (
     <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <Rect width="20" height="16" x="2" y="4" rx="2" />
-        <Path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+      <Rect width="20" height="16" x="2" y="4" rx="2" />
+      <Path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </Svg>
   ),
   ChevronRight: (props: any) => (
@@ -72,10 +72,10 @@ export function ContactUsScreen() {
             withSidebar
             sidebarActiveItem="contact"
             sidebarSide="left"
-            left={<Icons.Menu color="#67BB28" />}
+            left={<Icons.Menu color="#84BD00" />}
             right={
               <Pressable onPress={() => router.push('/contact-us')} hitSlop={10} className="hit-slop-10 items-center justify-center w-10 h-10">
-                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
+                <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
               </Pressable>
             }
           />
@@ -124,7 +124,7 @@ export function ContactUsScreen() {
                 </View>
               </View>
 
-              <Pressable className="w-full bg-[#67BB28] rounded-[16px] h-[54px] flex-row items-center justify-center gap-2">
+              <Pressable className="w-full bg-[#84BD00] rounded-[16px] h-[54px] flex-row items-center justify-center gap-2">
                 <Icons.Send color="white" />
                 <Text className="font-tajawal-bold text-[16px] text-white">إرسال</Text>
               </Pressable>
@@ -141,7 +141,7 @@ export function ContactUsScreen() {
                 </Svg>
               </View>
               <View className="items-center">
-                <View className="w-12 h-12 bg-[#67BB28] rounded-full items-center justify-center border-4 border-white/30 mb-2">
+                <View className="w-12 h-12 bg-[#84BD00] rounded-full items-center justify-center border-4 border-white/30 mb-2">
                   <Icons.MapPin color="white" />
                 </View>
                 <Text className="font-tajawal-bold text-[18px] text-[#18181B]">موقعنا في نابلس</Text>
@@ -174,12 +174,12 @@ export function ContactUsScreen() {
 
           {/* Working Hours */}
           <View className="px-6 mt-6">
-             <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 border-r-4 border-r-[#67BB28]`}>
-                 <Text className="font-tajawal-bold text-[18px] text-brand-title text-right mb-2">ساعات العمل</Text>
-                 <Text className="font-tajawal-medium text-[14px] text-brand-text text-right leading-relaxed">
-                     الأحد - الخميس: 9:00 صباحاً - 8:00 مساءً{'\n'}الجمعة: مغلق
-                 </Text>
-             </View>
+            <View className={`${CARD_BASE_CLASS} bg-[#FAF9F5] p-6 border-r-4 border-r-[#84BD00]`}>
+              <Text className="font-tajawal-bold text-[18px] text-brand-title text-right mb-2">ساعات العمل</Text>
+              <Text className="font-tajawal-medium text-[14px] text-brand-text text-right leading-relaxed">
+                الأحد - الخميس: 9:00 صباحاً - 8:00 مساءً{'\n'}الجمعة: مغلق
+              </Text>
+            </View>
           </View>
 
         </SafeAreaView>

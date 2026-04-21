@@ -17,7 +17,7 @@ type AppHeaderProps = {
 
 const logoSourceMap = {
   logo2: require('../../../assets/images/logo2.png'),
-  transparent: require('../../../assets/images/logo-transparent.png'),
+  transparent: require('../../../assets/images/1400.png'),
 };
 
 export function AppHeader({
@@ -36,7 +36,7 @@ export function AppHeader({
 
   const leftNode = withSidebar && sidebarSide === 'left' ? (
     <Pressable onPress={openSidebar} hitSlop={10} className="w-11 h-11 items-center justify-center">
-      {left ?? <Ionicons name="menu" size={28} color="#67BB28" />}
+      {left ?? <Ionicons name="menu" size={28} color="#84BD00" />}
     </Pressable>
   ) : (
     left
@@ -44,7 +44,7 @@ export function AppHeader({
 
   const rightNode = withSidebar && sidebarSide === 'right' ? (
     <Pressable onPress={openSidebar} hitSlop={10} className="w-11 h-11 items-center justify-center">
-      {right ?? <Ionicons name="menu" size={28} color="#67BB28" />}
+      {right ?? <Ionicons name="menu" size={28} color="#84BD00" />}
     </Pressable>
   ) : (
     right
@@ -52,7 +52,7 @@ export function AppHeader({
 
   return (
     <>
-      <View className={`flex-row items-center justify-between px-6 pt-2 pb-2 min-h-[64px] ${className}`}>
+      <View className={`flex-row items-center justify-between px-6 pt-0 pb-0 min-h-[64px] ${className}`}>
         <View className="w-11 h-11 items-center justify-center">{leftNode}</View>
         <View className="flex-1 items-center justify-center">
           {title ? (
@@ -60,7 +60,7 @@ export function AppHeader({
           ) : logo === 'none' ? null : (
             <Image
               source={logoSourceMap[logo]}
-              style={logo === 'transparent' ? { width: 170, height: 72 } : { width: 84, height: 34 }}
+              style={logo === 'transparent' ? { width: 150, height: 37 } : { width: 69, height: 13 }}
               contentFit="contain"
               transition={200}
             />

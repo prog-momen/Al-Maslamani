@@ -69,7 +69,7 @@ export function ProductDetailsScreen() {
           setProduct(data);
           setProductGroup(group);
           setIsFavorite(favoriteIds.includes(productId));
-          
+
           if (group) {
             const initialVariant = group.variants.find(v => v.id === productId) || group.variants[0];
             setSelectedVariant(initialVariant);
@@ -150,10 +150,10 @@ export function ProductDetailsScreen() {
         className="z-10"
         withSidebar
         sidebarSide="left"
-        left={<Feather name="menu" size={24} color="#67BB28" />}
+        left={<Feather name="menu" size={24} color="#84BD00" />}
         right={
           <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
-            <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
+            <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
           </TouchableOpacity>
         }
       />
@@ -161,7 +161,7 @@ export function ProductDetailsScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         {isLoading ? (
           <View className="mt-14 items-center justify-center">
-            <ActivityIndicator color="#67BB28" size="large" />
+            <ActivityIndicator color="#84BD00" size="large" />
           </View>
         ) : (
           <>
@@ -187,92 +187,100 @@ export function ProductDetailsScreen() {
             {/* Details Section */}
             <View className="px-6 mt-8">
 
-          {/* Title and Price */}
-          <View className="flex-row justify-between items-start mb-6">
-            <View>
-              <Text className="text-brand-primary font-tajawal-bold text-[24px]">{displayPrice}</Text>
-              <Text className="text-gray-500 font-tajawal-medium text-[12px] mt-1">شامل الضريبة</Text>
-            </View>
-            <View className="items-end">
-              <Text className="text-[32px] font-tajawal-bold text-brand-title">{displayName}</Text>
-              <View className="flex-row items-center mt-2">
-                <Text className="text-gray-500 font-tajawal-regular text-[13px] mr-2">(120 تقييم)</Text>
-                <Text className="text-brand-text font-tajawal-bold text-[16px] mr-1">4.9</Text>
-                <Ionicons name="star" size={16} color="#E81E61" />
+              {/* Title and Price */}
+              <View className="flex-row justify-between items-start mb-6">
+                <View>
+                  <Text className="text-brand-primary font-tajawal-bold text-[24px]">{displayPrice}</Text>
+                  <Text className="text-gray-500 font-tajawal-medium text-[12px] mt-1">شامل الضريبة</Text>
+                </View>
+                <View className="items-end">
+                  <Text className="text-[32px] font-tajawal-bold text-brand-title">{displayName}</Text>
+                  <View className="flex-row items-center mt-2">
+                    <Text className="text-gray-500 font-tajawal-regular text-[13px] mr-2">(120 تقييم)</Text>
+                    <Text className="text-brand-text font-tajawal-bold text-[16px] mr-1">4.9</Text>
+                    <Ionicons name="star" size={16} color="#E81E61" />
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
 
-          {/* About Product */}
-          <View className="mb-8">
-            <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-3">عن المنتج</Text>
-            <Text className="font-tajawal-regular text-[14px] text-right text-[#4D4D4D] leading-6">
-              {displayDescription}
-            </Text>
-          </View>
-
-          {/* Weight Selector */}
-          {productGroup && productGroup.variants.length > 1 && (
-            <View className="mb-8">
-              <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-4">اختر الوزن</Text>
-              <View className="flex-row items-center justify-end flex-wrap gap-x-3">
-                {productGroup.variants.map((v) => {
-                  const isSelected = selectedVariant?.id === v.id;
-                  return (
-                    <TouchableOpacity
-                      key={v.id}
-                      onPress={() => setSelectedVariant(v)}
-                      className={`px-6 py-3 rounded-[20px] ${isSelected ? 'bg-brand-primary' : 'bg-[#EAE8E3]'
-                        }`}
-                    >
-                      <Text
-                        className={`font-tajawal-bold text-[15px] ${isSelected ? 'text-white' : 'text-[#666666]'
-                          }`}
-                      >
-                        {v.size}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              {/* About Product */}
+              <View className="mb-8">
+                <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-3">عن المنتج</Text>
+                <Text className="font-tajawal-regular text-[14px] text-right text-[#4D4D4D] leading-6">
+                  {displayDescription}
+                </Text>
+                {productGroup?.packaging && (
+                  <View className="mt-3 flex-row items-center justify-end">
+                    <View className="bg-white px-3 py-1.5 rounded-md border border-[#EAE8E3]">
+                      <Text className="font-tajawal-bold text-[13px] text-brand-title">{productGroup.packaging}</Text>
+                    </View>
+                    <Text className="font-tajawal-medium text-[14px] text-gray-500 mr-2">التغليف:</Text>
+                  </View>
+                )}
               </View>
-            </View>
-          )}
 
-          {/* Quantity Selector */}
-          <View className="flex-row items-center justify-between mb-10">
-            {/* Quantity Stepper */}
-            <View className="flex-row items-center bg-[#EAE8E3] rounded-full px-2 h-[50px] min-w-[140px]">
-              <TouchableOpacity onPress={decrementQuantity} className="w-10 h-10 items-center justify-center">
-                <Feather name="minus" size={20} color="#000" />
-              </TouchableOpacity>
-              <View className="flex-1 items-center justify-center">
-                <Text className="font-tajawal-bold text-[18px] text-black">{quantity}</Text>
+              {/* Weight Selector */}
+              {productGroup && productGroup.variants.length > 1 && (
+                <View className="mb-8">
+                  <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-4">اختر الوزن</Text>
+                  <View className="flex-row items-center justify-end flex-wrap gap-x-3">
+                    {productGroup.variants.map((v) => {
+                      const isSelected = selectedVariant?.id === v.id;
+                      return (
+                        <TouchableOpacity
+                          key={v.id}
+                          onPress={() => setSelectedVariant(v)}
+                          className={`px-6 py-3 rounded-[20px] ${isSelected ? 'bg-brand-primary' : 'bg-[#EAE8E3]'
+                            }`}
+                        >
+                          <Text
+                            className={`font-tajawal-bold text-[15px] ${isSelected ? 'text-white' : 'text-[#666666]'
+                              }`}
+                          >
+                            {v.size}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {/* Quantity Selector */}
+              <View className="flex-row items-center justify-between mb-10">
+                {/* Quantity Stepper */}
+                <View className="flex-row items-center bg-[#EAE8E3] rounded-full px-2 h-[50px] min-w-[140px]">
+                  <TouchableOpacity onPress={decrementQuantity} className="w-10 h-10 items-center justify-center">
+                    <Feather name="minus" size={20} color="#000" />
+                  </TouchableOpacity>
+                  <View className="flex-1 items-center justify-center">
+                    <Text className="font-tajawal-bold text-[18px] text-black">{quantity}</Text>
+                  </View>
+                  <TouchableOpacity onPress={incrementQuantity} className="w-10 h-10 items-center justify-center">
+                    <Feather name="plus" size={20} color="#000" />
+                  </TouchableOpacity>
+                </View>
+                <Text className="font-tajawal-bold text-[16px] text-brand-title">الكمية</Text>
               </View>
-              <TouchableOpacity onPress={incrementQuantity} className="w-10 h-10 items-center justify-center">
-                <Feather name="plus" size={20} color="#000" />
-              </TouchableOpacity>
-            </View>
-            <Text className="font-tajawal-bold text-[16px] text-brand-title">الكمية</Text>
-          </View>
 
-          {/* Feature Tags */}
-          <View className="flex-row flex-wrap justify-end gap-3 mb-8">
-            {/* Tag 1 */}
-            <View className="flex-row items-center bg-[#EAEFD2] px-4 py-2 rounded-full border border-[#D5E1AC]">
-              <Text className="text-[#55772D] font-tajawal-medium text-[13px] mr-2">عضوي</Text>
-              <Ionicons name="leaf-outline" size={16} color="#55772D" />
-            </View>
-            {/* Tag 2 */}
-            <View className="flex-row items-center bg-[#DEF0DE] px-4 py-2 rounded-full border border-[#B3DCBB]">
-              <Text className="text-[#3F7C4D] font-tajawal-medium text-[13px] mr-2">بروتين عالي</Text>
-              <Feather name="arrow-up-right" size={16} color="#3F7C4D" />
-            </View>
-            {/* Tag 3 */}
-            <View className="flex-row items-center bg-[#E6F3E3] px-4 py-2 rounded-full border border-[#C5E5BE]">
-              <Text className="text-[#4F8D40] font-tajawal-medium text-[13px] mr-2">طاقة طبيعية</Text>
-              <Ionicons name="flash-outline" size={16} color="#4F8D40" />
-            </View>
-          </View>
+              {/* Feature Tags */}
+              <View className="flex-row flex-wrap justify-end gap-3 mb-8">
+                {/* Tag 1 */}
+                <View className="flex-row items-center bg-[#EAEFD2] px-4 py-2 rounded-full border border-[#D5E1AC]">
+                  <Text className="text-[#55772D] font-tajawal-medium text-[13px] mr-2">عضوي</Text>
+                  <Ionicons name="leaf-outline" size={16} color="#55772D" />
+                </View>
+                {/* Tag 2 */}
+                <View className="flex-row items-center bg-[#DEF0DE] px-4 py-2 rounded-full border border-[#B3DCBB]">
+                  <Text className="text-[#3F7C4D] font-tajawal-medium text-[13px] mr-2">بروتين عالي</Text>
+                  <Feather name="arrow-up-right" size={16} color="#3F7C4D" />
+                </View>
+                {/* Tag 3 */}
+                <View className="flex-row items-center bg-[#E6F3E3] px-4 py-2 rounded-full border border-[#C5E5BE]">
+                  <Text className="text-[#4F8D40] font-tajawal-medium text-[13px] mr-2">طاقة طبيعية</Text>
+                  <Ionicons name="flash-outline" size={16} color="#4F8D40" />
+                </View>
+              </View>
             </View>
           </>
         )}

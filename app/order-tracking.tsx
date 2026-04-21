@@ -10,18 +10,18 @@ import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const PRIMARY_GREEN = '#67BB28';
+const PRIMARY_GREEN = '#84BD00';
 const PAGE_BG = '#F5F4F0';
 const LIGHT_GREEN = '#B8E8BE';
 
@@ -207,7 +207,10 @@ export default function OrderTrackingScreen() {
   const productSubtitle = getParamString(params.productSubtitle as string | string[] | undefined, '-');
   const productWeight = tracking ? `${tracking.productQuantity}x` : getParamString(params.productWeight as string | string[] | undefined, '1x');
 
-  const allowReorder = getParamString(params.allowReorder as string | string[] | undefined, '0') === '1';
+  const allowReorderFromParams = getParamString(params.allowReorder as string | string[] | undefined, '0') === '1';
+  const allowReorder = tracking
+    ? tracking.status === 'cancelled' || tracking.status === 'delivered'
+    : allowReorderFromParams;
   const deliveryName = tracking?.deliveryName ?? 'لم يتم تعيين مندوب بعد';
   const deliveryPhone = tracking?.deliveryPhone ?? '-';
   const createdAtTime = useMemo(() => {
@@ -264,10 +267,10 @@ export default function OrderTrackingScreen() {
 
     await Linking.openURL(phoneUrl);
   };
-  
+
   const handleReorder = async () => {
     if (!user?.id || !orderId) return;
-    
+
     setIsReordering(true);
     try {
       await reorderOrder(orderId, user.id);
@@ -282,15 +285,14 @@ export default function OrderTrackingScreen() {
   };
 
   const renderStep = (step: (typeof ORDER_STEPS)[number], index: number) => {
-    const isCompleted = index < currentStep;
     const isCurrent = index === currentStep;
     const isPending = index > currentStep;
 
     const circleStyle = isPending
       ? styles.timelineCirclePending
       : isCurrent
-      ? styles.timelineCircleCurrent
-      : styles.timelineCircleCompleted;
+        ? styles.timelineCircleCurrent
+        : styles.timelineCircleCompleted;
 
     const iconColor = isPending ? '#BFC5BC' : '#FFFFFF';
     const textStyle = isPending ? styles.timelineTitlePending : styles.timelineTitle;
@@ -330,10 +332,10 @@ export default function OrderTrackingScreen() {
           withSidebar
           sidebarActiveItem="orders"
           sidebarSide="left"
-          left={<Ionicons name="menu" size={22} color={PRIMARY_GREEN} />}
+          left={<Ionicons name="menu" size={22} color="#84BD00" />}
           right={
             <TouchableOpacity style={styles.headerAction} activeOpacity={0.8} onPress={() => router.push('/contact-us')}>
-              <Ionicons name="help-circle-outline" size={26} color="#4F5C50" />
+              <Ionicons name="help-circle-outline" size={26} color="#84BD00" />
             </TouchableOpacity>
           }
         />
@@ -343,135 +345,135 @@ export default function OrderTrackingScreen() {
             <ActivityIndicator size="large" color={PRIMARY_GREEN} />
           </View>
         ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTracking} tintColor={PRIMARY_GREEN} />}
-        >
-          <View style={styles.etaCard}>
-            <View style={styles.etaShape} />
-            <Text style={styles.etaLabel}>وقت التوصيل المتوقع</Text>
-            <Text style={styles.etaValue}>{eta}</Text>
-            <View style={styles.speedBadge}>
-              <Text style={styles.speedBadgeText}>{statusBanner}</Text>
-            </View>
-          </View>
-
-          <View style={styles.mapCard}>
-            <MapView
-              style={styles.mapView}
-              initialRegion={{
-                latitude: tracking?.deliveryLat || 31.9029, 
-                longitude: tracking?.deliveryLng || 35.2062,
-                latitudeDelta: 0.015,
-                longitudeDelta: 0.015,
-              }}
-              region={tracking?.deliveryLat ? {
-                latitude: (tracking.deliveryLat + (tracking.customerLat || tracking.deliveryLat)) / 2,
-                longitude: (tracking.deliveryLng + (tracking.customerLng || tracking.deliveryLng)) / 2,
-                latitudeDelta: Math.abs(tracking.deliveryLat - (tracking.customerLat || tracking.deliveryLat)) * 2 + 0.01,
-                longitudeDelta: Math.abs(tracking.deliveryLng - (tracking.customerLng || tracking.deliveryLng)) * 2 + 0.01,
-              } : undefined}
-              customMapStyle={googleMapStyle}
-            >
-              {/* Delivery Rider Marker */}
-              {tracking?.deliveryLat && (
-                <Marker
-                  coordinate={{ latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! }}
-                  title={deliveryName || 'المندوب'}
-                >
-                  <View style={styles.riderPin}>
-                    <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
-                  </View>
-                </Marker>
-              )}
-
-              {/* Customer Destination Marker */}
-              {tracking?.customerLat && (
-                <Marker
-                  coordinate={{ latitude: tracking.customerLat, longitude: tracking.customerLng! }}
-                  pinColor="#000"
-                >
-                  <View style={styles.destinationPin}>
-                    <Ionicons name="home" size={18} color="#FFFFFF" />
-                  </View>
-                </Marker>
-              )}
-
-              {/* Path */}
-              {tracking?.deliveryLat && tracking?.customerLat && (
-                <Polyline
-                  coordinates={[
-                    { latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! },
-                    { latitude: tracking.customerLat, longitude: tracking.customerLng! },
-                  ]}
-                  strokeColor={PRIMARY_GREEN}
-                  strokeWidth={3}
-                />
-              )}
-            </MapView>
-
-            <View style={styles.riderTag}>
-              <Text style={styles.riderTagText}>({deliveryName})</Text>
-            </View>
-          </View>
-
-          {tracking?.deliveryName ? (
-            <View style={styles.driverRow}>
-              <TouchableOpacity style={styles.callCircle} activeOpacity={0.8} onPress={callDelivery}>
-                <Ionicons name="call-outline" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-
-              <View style={styles.driverInfo}>
-                <Text style={styles.driverName}>{deliveryName}</Text>
-                <Text style={styles.driverPhone}>رقم مندوب التوصيل: {deliveryPhone}</Text>
-              </View>
-
-              <View style={styles.driverAvatar}>
-                <Ionicons name="person" size={18} color="#5B5B5B" />
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadTracking} tintColor={PRIMARY_GREEN} />}
+          >
+            <View style={styles.etaCard}>
+              <View style={styles.etaShape} />
+              <Text style={styles.etaLabel}>وقت التوصيل المتوقع</Text>
+              <Text style={styles.etaValue}>{eta}</Text>
+              <View style={styles.speedBadge}>
+                <Text style={styles.speedBadgeText}>{statusBanner}</Text>
               </View>
             </View>
-          ) : (
-            <View style={styles.driverRowPlaceholder}>
-              <Text style={styles.driverPlaceholderText}>جاري تعيين مندوب لتوصيل طلبك...</Text>
-            </View>
-          )}
 
-          <View style={styles.timelineCard}>{ORDER_STEPS.map(renderStep)}</View>
-
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>ملخص الطلب</Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryValue}>{`${productWeight} ${productName}`}</Text>
-              <Text style={styles.summaryLabel}>الصنف</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryValue}>{productSubtitle}</Text>
-              <Text style={styles.summaryLabel}>الوصف</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryFooter}>
-              <Text style={styles.summaryTotalValue}>{total} ₪</Text>
-              <Text style={styles.summaryTotalLabel}>الإجمالي</Text>
-            </View>
-
-            {allowReorder ? (
-              <TouchableOpacity 
-                style={[styles.reorderButton, isReordering && { opacity: 0.7 }]} 
-                activeOpacity={0.85}
-                onPress={handleReorder}
-                disabled={isReordering}
+            <View style={styles.mapCard}>
+              <MapView
+                style={styles.mapView}
+                initialRegion={{
+                  latitude: tracking?.deliveryLat || 31.9029,
+                  longitude: tracking?.deliveryLng || 35.2062,
+                  latitudeDelta: 0.015,
+                  longitudeDelta: 0.015,
+                }}
+                region={tracking?.deliveryLat ? {
+                  latitude: (tracking.deliveryLat + (tracking.customerLat || tracking.deliveryLat)) / 2,
+                  longitude: (tracking.deliveryLng! + (tracking.customerLng || tracking.deliveryLng!)) / 2,
+                  latitudeDelta: Math.abs(tracking.deliveryLat - (tracking.customerLat || tracking.deliveryLat)) * 2 + 0.01,
+                  longitudeDelta: Math.abs(tracking.deliveryLng! - (tracking.customerLng || tracking.deliveryLng!)) * 2 + 0.01,
+                } : undefined}
+                customMapStyle={googleMapStyle}
               >
-                {isReordering ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                {/* Delivery Rider Marker */}
+                {tracking?.deliveryLat && (
+                  <Marker
+                    coordinate={{ latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! }}
+                    title={deliveryName || 'المندوب'}
+                  >
+                    <View style={styles.riderPin}>
+                      <Ionicons name="bicycle-outline" size={20} color="#FFFFFF" />
+                    </View>
+                  </Marker>
                 )}
-                <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </ScrollView>
+
+                {/* Customer Destination Marker */}
+                {tracking?.customerLat && (
+                  <Marker
+                    coordinate={{ latitude: tracking.customerLat, longitude: tracking.customerLng! }}
+                    pinColor="#000"
+                  >
+                    <View style={styles.destinationPin}>
+                      <Ionicons name="home" size={18} color="#FFFFFF" />
+                    </View>
+                  </Marker>
+                )}
+
+                {/* Path */}
+                {tracking?.deliveryLat && tracking?.customerLat && (
+                  <Polyline
+                    coordinates={[
+                      { latitude: tracking.deliveryLat, longitude: tracking.deliveryLng! },
+                      { latitude: tracking.customerLat, longitude: tracking.customerLng! },
+                    ]}
+                    strokeColor={PRIMARY_GREEN}
+                    strokeWidth={3}
+                  />
+                )}
+              </MapView>
+
+              <View style={styles.riderTag}>
+                <Text style={styles.riderTagText}>({deliveryName})</Text>
+              </View>
+            </View>
+
+            {tracking?.deliveryName ? (
+              <View style={styles.driverRow}>
+                <TouchableOpacity style={styles.callCircle} activeOpacity={0.8} onPress={callDelivery}>
+                  <Ionicons name="call-outline" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
+
+                <View style={styles.driverInfo}>
+                  <Text style={styles.driverName}>{deliveryName}</Text>
+                  <Text style={styles.driverPhone}>رقم مندوب التوصيل: {deliveryPhone}</Text>
+                </View>
+
+                <View style={styles.driverAvatar}>
+                  <Ionicons name="person" size={18} color="#5B5B5B" />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.driverRowPlaceholder}>
+                <Text style={styles.driverPlaceholderText}>جاري تعيين مندوب لتوصيل طلبك...</Text>
+              </View>
+            )}
+
+            <View style={styles.timelineCard}>{ORDER_STEPS.map(renderStep)}</View>
+
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>ملخص الطلب</Text>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryValue}>{`${productWeight} ${productName}`}</Text>
+                <Text style={styles.summaryLabel}>الصنف</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryValue}>{productSubtitle}</Text>
+                <Text style={styles.summaryLabel}>الوصف</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryFooter}>
+                <Text style={styles.summaryTotalValue}>{total} ₪</Text>
+                <Text style={styles.summaryTotalLabel}>الإجمالي</Text>
+              </View>
+
+              {allowReorder ? (
+                <TouchableOpacity
+                  style={[styles.reorderButton, isReordering && { opacity: 0.7 }]}
+                  activeOpacity={0.85}
+                  onPress={handleReorder}
+                  disabled={isReordering}
+                >
+                  {isReordering ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Ionicons name="refresh" size={16} color="#FFFFFF" />
+                  )}
+                  <Text style={styles.reorderText}>{isReordering ? 'جاري الإضافة...' : 'إعادة الطلب'}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </ScrollView>
         )}
       </SafeAreaView>
 

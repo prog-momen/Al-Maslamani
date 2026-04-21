@@ -8,24 +8,24 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Linking,
-    Modal,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Linking,
+  Modal,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type FilterTab = 'all' | OrderStatus;
 
 const PAGE_BG = '#F2F1EE';
-const BRAND_GREEN = '#67BB28';
+const BRAND_GREEN = '#84BD00';
 const BRAND_TEXT = '#30312F';
 
 const FILTERS: Array<{ key: FilterTab; label: string }> = [
@@ -194,11 +194,11 @@ export function AdminDashboardScreen() {
         prev.map((item) =>
           item.id === pickerOrder.id
             ? {
-                ...item,
-                status: item.status === 'pending' ? 'confirmed' : item.status,
-                assignedDeliveryUserId: selectedDeliveryId,
-                assignedDeliveryName: delivery?.fullName ?? delivery?.email ?? 'مندوب',
-              }
+              ...item,
+              status: item.status === 'pending' ? 'confirmed' : item.status,
+              assignedDeliveryUserId: selectedDeliveryId,
+              assignedDeliveryName: delivery?.fullName ?? delivery?.email ?? 'مندوب',
+            }
             : item
         )
       );
@@ -317,8 +317,8 @@ export function AdminDashboardScreen() {
                     </View>
 
                     {item.customerPhone && (
-                      <TouchableOpacity 
-                        style={styles.customerPhoneBtn} 
+                      <TouchableOpacity
+                        style={styles.customerPhoneBtn}
                         onPress={() => Linking.openURL(`tel:${item.customerPhone}`)}
                       >
                         <Feather name="phone" size={16} color={BRAND_GREEN} />
@@ -355,7 +355,7 @@ export function AdminDashboardScreen() {
                       onPress={() => updateOrder(item.id, 'shipped')}
                       style={[styles.actionButton, styles.actionNeutral, !canShip && styles.actionDisabled]}
                     >
-                      <Ionicons name="car-outline" size={20} color={!canShip ? '#B9B9B9' : '#67BB28'} />
+                      <Ionicons name="car-outline" size={20} color={!canShip ? '#B9B9B9' : '#84BD00'} />
                       <Text style={[styles.actionText, styles.actionNeutralText, !canShip && styles.actionDisabledText]}>تم الشحن</Text>
                     </TouchableOpacity>
                   </View>
@@ -610,8 +610,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalDeliveryItemActive: {
-    backgroundColor: '#67BB28',
-    borderColor: '#67BB28',
+    backgroundColor: '#84BD00',
+    borderColor: '#84BD00',
   },
   modalDeliveryText: {
     textAlign: 'right',
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
   },
   modalConfirmText: {
     color: '#FFFFFF',
@@ -669,12 +669,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionCancel: { backgroundColor: '#F3DDD4' },
-  actionSuccess: { backgroundColor: '#67BB28' },
+  actionSuccess: { backgroundColor: '#84BD00' },
   actionNeutral: { backgroundColor: '#DCE3D2' },
   actionText: { fontFamily: 'Tajawal_700Bold', fontSize: 14, lineHeight: 19, marginTop: 2 },
   actionCancelText: { color: '#C93206' },
   actionSuccessText: { color: '#FFFFFF' },
-  actionNeutralText: { color: '#67BB28' },
+  actionNeutralText: { color: '#84BD00' },
   actionDisabled: { backgroundColor: '#EFEEE9' },
   actionDisabledText: { color: '#B9B9B9' },
   emptyText: {

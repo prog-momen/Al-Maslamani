@@ -17,7 +17,7 @@ export function ForgotPasswordScreen() {
             setError('الرجاء إدخال البريد الإلكتروني أو رقم الهاتف');
             return;
         }
-        
+
         try {
             await forgotPassword(contact);
             // Navigate to OTP screen after successful submission, passing the email
@@ -36,10 +36,10 @@ export function ForgotPasswordScreen() {
                         logo="transparent"
                         withSidebar
                         sidebarSide="left"
-                        left={<Ionicons name="menu" size={26} color="#67BB28" />}
+                        left={<Ionicons name="menu" size={26} color="#84BD00" />}
                         right={
                             <Pressable onPress={() => router.push('/contact-us')} hitSlop={10} className="w-10 h-10 items-center justify-center">
-                                <Ionicons name="help-circle-outline" size={28} color="#67BB28" />
+                                <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
                             </Pressable>
                         }
                     />
@@ -60,21 +60,21 @@ export function ForgotPasswordScreen() {
 
                         {/* Form */}
                         <View className="w-full mb-6">
-                                <FormField
-                                 label=""
-                                 placeholder="البريد الإلكتروني أو رقم الجوال"
-                                 iconType="Email"
-                                 keyboardType="email-address"
-                                 autoCapitalize="none"
-                                 value={contact}
-                                 onChangeText={(text) => {
-                                     setContact(text);
-                                     if(error) setError(null);
-                                 }}
-                                 error={error as string}
-                             />
+                            <FormField
+                                label=""
+                                placeholder="البريد الإلكتروني أو رقم الجوال"
+                                iconType="Email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                value={contact}
+                                onChangeText={(text) => {
+                                    setContact(text);
+                                    if (error) setError(null);
+                                }}
+                                error={error as string}
+                            />
 
-                             {success && <Text className="font-tajawal-bold text-green-600 text-center mt-2 mb-2">تم الإرسال بنجاح!</Text>}
+                            {success && <Text className="font-tajawal-bold text-green-600 text-center mt-2 mb-2">تم الإرسال بنجاح!</Text>}
                         </View>
 
                         <Button
@@ -98,13 +98,13 @@ export function ForgotPasswordScreen() {
 
                         {/* Support Widget */}
                         <View className="w-[90%] bg-[#FCFBFA] rounded-full p-2 pl-6 pr-2 shadow-sm flex-row-reverse items-center justify-between border border-[#EFECE5] absolute bottom-8">
-                             <View>
-                                 <Text className="font-tajawal-bold text-[14px] text-brand-title text-right">هل تواجه مشكلة؟</Text>
-                                 <Text className="font-tajawal-medium text-[12px] text-brand-text text-right">تواصل مع الدعم الفني لمساعدتك فوراً</Text>
-                             </View>
-                             <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-[#EFECE5]">
-                                 <FormIcons.Headset color="#1F8A5B" width={24} height={24} />
-                             </View>
+                            <View>
+                                <Text className="font-tajawal-bold text-[14px] text-brand-title text-right">هل تواجه مشكلة؟</Text>
+                                <Text className="font-tajawal-medium text-[12px] text-brand-text text-right">تواصل مع الدعم الفني لمساعدتك فوراً</Text>
+                            </View>
+                            <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-[#EFECE5]">
+                                <FormIcons.Headset color="#1F8A5B" width={24} height={24} />
+                            </View>
                         </View>
                     </View>
                 </ScrollView>

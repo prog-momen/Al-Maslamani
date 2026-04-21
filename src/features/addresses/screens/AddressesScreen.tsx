@@ -1,22 +1,23 @@
+import { supabase } from '@/src/lib/supabase/client';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { 
-    ActivityIndicator, 
-    FlatList, 
-    Pressable, 
-    StyleSheet, 
-    Text, 
-    TouchableOpacity, 
-    View 
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '@/src/lib/supabase/client';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 
-const PRIMARY_GREEN = '#67BB28';
+const PRIMARY_GREEN = '#84BD00';
 const PAGE_BG = '#F5F4F0';
 
 const sb = supabase as any;
@@ -27,7 +28,7 @@ export function AddressesScreen() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     if (!user?.id) return;
     setIsLoading(true);
     try {
@@ -44,11 +45,17 @@ export function AddressesScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     loadAddresses();
-  }, [user?.id]);
+  }, [loadAddresses]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAddresses();
+    }, [loadAddresses])
+  );
 
   const handleDelete = async (id: string) => {
     try {
@@ -71,12 +78,25 @@ export function AddressesScreen() {
           {item.city}، {item.street}، {item.building}
         </Text>
       </View>
-      <TouchableOpacity 
-        style={styles.deleteBtn}
-        onPress={() => handleDelete(item.id)}
-      >
-        <Ionicons name="trash-outline" size={20} color="#DC2626" />
-      </TouchableOpacity>
+      <View style={styles.actionsCol}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() =>
+            router.push({
+              pathname: '/add-address',
+              params: { addressId: item.id },
+            })
+          }
+        >
+          <Ionicons name="create-outline" size={20} color={PRIMARY_GREEN} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(item.id)}
+        >
+          <Ionicons name="trash-outline" size={20} color="#DC2626" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -114,7 +134,7 @@ export function AddressesScreen() {
 
         {/* Add New Address Button */}
         <View style={styles.footer}>
-          <Pressable 
+          <Pressable
             style={styles.addBtn}
             onPress={() => router.push('/add-address')}
           >
@@ -187,6 +207,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 12,
     backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  editBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionsCol: {
     alignItems: 'center',
     justifyContent: 'center',
   },

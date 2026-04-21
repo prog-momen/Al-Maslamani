@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Platform, Text, View } from 'react-native';
 
 // Safely require react-native-maps
 let MapView: any = View;
@@ -23,10 +23,10 @@ if (Platform.OS !== 'web') {
 export const MapViewCustom = React.forwardRef(({ children, style, ...props }: any, ref: any) => {
   if (Platform.OS === 'web') {
     return (
-      <View 
+      <View
         style={[{ flex: 1, backgroundColor: '#EBEBEB', alignItems: 'center', justifyContent: 'center', padding: 20 }, style]}
       >
-        <Ionicons name="map-outline" size={48} color="#67BB28" />
+        <Ionicons name="map-outline" size={48} color="#84BD00" />
         <Text style={{ fontFamily: 'Tajawal_700Bold', fontSize: 16, marginTop: 12, color: '#1F2937' }}>
           الخريطة التفاعلية متاحة عبر تطبيق الموبايل
         </Text>

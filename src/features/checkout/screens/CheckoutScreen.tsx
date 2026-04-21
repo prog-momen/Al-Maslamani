@@ -1,33 +1,56 @@
+import { supabase } from '@/src/lib/supabase/client';
 import { useCart } from '@/src/shared/contexts/CartContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { 
-  Alert, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  View,
-  KeyboardAvoidingView,
-  Platform
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatOrderNumber, placeOrderFromCart } from '../../orders/services/orders.service';
 import { CheckoutSteps } from '../components/CheckoutSteps';
 
-const PRIMARY_GREEN = '#67BB28';
-const CARD_BG = '#F7F3EA';
+const PRIMARY_GREEN = '#84BD00';
+
+const sb = supabase as any;
+
+type SavedAddress = {
+  id: string;
+  label: string;
+  full_name: string;
+  phone: string;
+  city: string;
+  street: string;
+  building: string | null;
+  notes: string | null;
+  is_default: boolean;
+};
+
+type SavedPhone = {
+  id: string;
+  phone: string;
+  is_default?: boolean;
+};
 
 export const CheckoutScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { items, clearCart } = useCart();
   const { user } = useAuth();
-  
+  const defaultContactPhone =
+    (typeof user?.user_metadata?.phone === 'string' ? user.user_metadata.phone : '') ||
+    (typeof user?.phone === 'string' ? user.phone : '');
+
   // Detailed Address State
   const [addressDetails, setAddressDetails] = useState({
     city: '',
@@ -35,10 +58,114 @@ export const CheckoutScreen = () => {
     building: '',
     notes: '',
   });
+  const [contactPhone, setContactPhone] = useState(defaultContactPhone);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [savedPhones, setSavedPhones] = useState<SavedPhone[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedPhoneId, setSelectedPhoneId] = useState<string | null>(null);
 
   const [payment, setPayment] = useState('cash');
+  const [deliveryTiming, setDeliveryTiming] = useState<'asap' | 'normal_24'>('asap');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [isLoadingPhones, setIsLoadingPhones] = useState(false);
   const vatRate = 0.15;
+
+  useEffect(() => {
+    const loadSavedAddresses = async () => {
+      if (!user?.id) {
+        setSavedAddresses([]);
+        setSelectedAddressId(null);
+        return;
+      }
+
+      setIsLoadingAddresses(true);
+      try {
+        const { data, error } = await sb
+          .from('addresses')
+          .select('id,label,full_name,phone,city,street,building,notes,is_default')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const rows = (data || []) as SavedAddress[];
+        setSavedAddresses(rows);
+
+        if (rows.length > 0) {
+          const preferred = rows[0];
+          setSelectedAddressId(preferred.id);
+          setAddressDetails({
+            city: preferred.city || '',
+            street: preferred.street || '',
+            building: preferred.building || '',
+            notes: preferred.notes || '',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load saved addresses for checkout:', error);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    const loadSavedPhones = async () => {
+      if (!user?.id) {
+        setSavedPhones([]);
+        setSelectedPhoneId(null);
+        return;
+      }
+
+      setIsLoadingPhones(true);
+      try {
+        const { data, error } = await sb
+          .from('user_contact_phones')
+          .select('id,phone,is_default')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const rows = (data || []) as SavedPhone[];
+        if (defaultContactPhone.trim() && !rows.some((item) => item.phone === defaultContactPhone.trim())) {
+          rows.push({ id: 'profile-phone', phone: defaultContactPhone.trim(), is_default: false });
+        }
+
+        setSavedPhones(rows);
+
+        const preferredPhone = rows.find((item) => item.is_default)?.phone || rows[0]?.phone || defaultContactPhone;
+        if (preferredPhone) {
+          setContactPhone(preferredPhone);
+          const preferredEntry = rows.find((item) => item.phone === preferredPhone);
+          setSelectedPhoneId(preferredEntry?.id || null);
+        }
+      } catch (error) {
+        console.error('Failed to load saved phones for checkout:', error);
+      } finally {
+        setIsLoadingPhones(false);
+      }
+    };
+
+    loadSavedAddresses();
+    loadSavedPhones();
+  }, [user?.id]);
+
+  const handleSelectSavedAddress = (address: SavedAddress) => {
+    setSelectedAddressId(address.id);
+    setAddressDetails({
+      city: address.city || '',
+      street: address.street || '',
+      building: address.building || '',
+      notes: address.notes || '',
+    });
+  };
+
+  const handleSelectSavedPhone = (savedPhone: SavedPhone) => {
+    setSelectedPhoneId(savedPhone.id);
+    setContactPhone(savedPhone.phone);
+  };
 
   const parseNumberParam = (value: string | string[] | undefined) => {
     const raw = Array.isArray(value) ? value[0] : value;
@@ -67,6 +194,11 @@ export const CheckoutScreen = () => {
       return;
     }
 
+    if (!contactPhone.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال رقم التواصل للطلبية');
+      return;
+    }
+
     if (payment === 'card') {
       Alert.alert('تنبيه', 'الدفع بالبطاقة غير متوفر حالياً، يرجى اختيار الدفع عند الاستلام');
       return;
@@ -80,15 +212,20 @@ export const CheckoutScreen = () => {
     setIsSubmitting(true);
 
     try {
+      const selectedAddress = savedAddresses.find((item) => item.id === selectedAddressId);
+      const timingLabel = deliveryTiming === 'asap' ? 'الاستلام: بأسرع وقت' : 'الاستلام: عادي خلال 24 ساعة';
+      const combinedNote = [addressDetails.notes?.trim(), timingLabel].filter(Boolean).join(' | ');
+
       // Format the detailed address for the database
       const formattedAddress = `المدينة: ${addressDetails.city}, شارع: ${addressDetails.street}${addressDetails.building ? `, بناية: ${addressDetails.building}` : ''}`;
-      
+
       const { orderId } = await placeOrderFromCart({
-        addressLabel: 'طلب جديد',
+        addressLabel: selectedAddress?.label || 'طلب جديد',
         addressDetails: formattedAddress,
+        contactPhone: contactPhone.trim(),
         paymentMethod: 'cash_on_delivery',
         deliveryFee: shipping,
-        note: addressDetails.notes || undefined
+        note: combinedNote || undefined
       });
 
       clearCart?.();
@@ -113,7 +250,7 @@ export const CheckoutScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader 
+      <AppHeader
         logo="transparent"
         left={
           <TouchableOpacity
@@ -125,8 +262,8 @@ export const CheckoutScreen = () => {
         }
       />
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -141,9 +278,67 @@ export const CheckoutScreen = () => {
           </View>
 
           <View style={styles.formCard}>
+            <View style={styles.savedHeaderRow}>
+              <TouchableOpacity onPress={() => router.push('/addresses')}>
+                <Text style={styles.manageAddressesText}>إدارة العناوين</Text>
+              </TouchableOpacity>
+              <Text style={styles.inputLabel}>العناوين المحفوظة</Text>
+            </View>
+
+            {isLoadingAddresses ? (
+              <Text style={styles.savedAddressHint}>جاري تحميل العناوين...</Text>
+            ) : savedAddresses.length === 0 ? (
+              <Text style={styles.savedAddressHint}>لا يوجد عناوين محفوظة. يمكنك الإضافة من صفحة العناوين.</Text>
+            ) : (
+              <View style={styles.savedAddressList}>
+                {savedAddresses.map((address) => {
+                  const isSelected = selectedAddressId === address.id;
+                  return (
+                    <TouchableOpacity
+                      key={address.id}
+                      style={[styles.savedAddressCard, isSelected && styles.savedAddressCardActive]}
+                      onPress={() => handleSelectSavedAddress(address)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.savedAddressTitle}>{address.label}</Text>
+                      <Text style={styles.savedAddressLine}>{address.city}، {address.street}{address.building ? `، ${address.building}` : ''}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
+            <View style={styles.savedHeaderRow}>
+              <TouchableOpacity onPress={() => router.push('/contact-phones')}>
+                <Text style={styles.manageAddressesText}>تحديث الأرقام</Text>
+              </TouchableOpacity>
+              <Text style={styles.inputLabel}>الأرقام المحفوظة</Text>
+            </View>
+
+            {isLoadingPhones ? (
+              <Text style={styles.savedAddressHint}>جاري تحميل الأرقام...</Text>
+            ) : savedPhones.length === 0 ? (
+              <Text style={styles.savedAddressHint}>لا يوجد أرقام محفوظة. يمكنك إضافتها من صفحة أرقام التواصل.</Text>
+            ) : (
+              <View style={styles.phoneChipList}>
+                {savedPhones.map((phoneItem) => {
+                  const isSelected = selectedPhoneId === phoneItem.id;
+                  return (
+                    <TouchableOpacity
+                      key={`${phoneItem.id}-${phoneItem.phone}`}
+                      style={[styles.phoneChip, isSelected && styles.phoneChipActive]}
+                      onPress={() => handleSelectSavedPhone(phoneItem)}
+                    >
+                      <Text style={[styles.phoneChipText, isSelected && styles.phoneChipTextActive]}>{phoneItem.phone}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>المدينة / المنطقة</Text>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 value={addressDetails.city}
                 onChangeText={(val) => setAddressDetails(prev => ({ ...prev, city: val }))}
@@ -154,7 +349,7 @@ export const CheckoutScreen = () => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>اسم الشارع</Text>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 value={addressDetails.street}
                 onChangeText={(val) => setAddressDetails(prev => ({ ...prev, street: val }))}
@@ -165,7 +360,7 @@ export const CheckoutScreen = () => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>رقم البناية / العلامة المميزة</Text>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 value={addressDetails.building}
                 onChangeText={(val) => setAddressDetails(prev => ({ ...prev, building: val }))}
@@ -175,8 +370,23 @@ export const CheckoutScreen = () => {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>رقم التواصل</Text>
+              <TextInput
+                style={styles.input}
+                value={contactPhone}
+                onChangeText={(val) => {
+                  setContactPhone(val);
+                  setSelectedPhoneId(null);
+                }}
+                placeholder="مثال: 0599123456"
+                placeholderTextColor="#999"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>ملاحظات إضافية (اختياري)</Text>
-              <TextInput 
+              <TextInput
                 style={[styles.input, { height: 80, textAlignVertical: 'top', paddingTop: 12 }]}
                 value={addressDetails.notes}
                 onChangeText={(val) => setAddressDetails(prev => ({ ...prev, notes: val }))}
@@ -186,6 +396,34 @@ export const CheckoutScreen = () => {
               />
             </View>
           </View>
+
+          <Text style={styles.paymentTitle}>موعد الاستلام</Text>
+
+          <TouchableOpacity
+            style={[styles.paymentItem, deliveryTiming === 'asap' && styles.paymentItemActive]}
+            onPress={() => setDeliveryTiming('asap')}
+          >
+            <View style={styles.paymentRight}>
+              <View style={[styles.paymentIcon, { backgroundColor: '#2F855A' }]}>
+                <Feather name="zap" size={16} color="#fff" />
+              </View>
+              <Text style={styles.paymentText}>الاستلام بأسرع وقت</Text>
+            </View>
+            <View style={[styles.radio, deliveryTiming === 'asap' && styles.radioActive]} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.paymentItem, deliveryTiming === 'normal_24' && styles.paymentItemActive]}
+            onPress={() => setDeliveryTiming('normal_24')}
+          >
+            <View style={styles.paymentRight}>
+              <View style={[styles.paymentIcon, { backgroundColor: '#4B5563' }]}>
+                <Feather name="clock" size={16} color="#fff" />
+              </View>
+              <Text style={styles.paymentText}>الاستلام العادي خلال 24 ساعة</Text>
+            </View>
+            <View style={[styles.radio, deliveryTiming === 'normal_24' && styles.radioActive]} />
+          </TouchableOpacity>
 
           <Text style={styles.paymentTitle}>خيار الدفع</Text>
 
@@ -245,15 +483,15 @@ export const CheckoutScreen = () => {
               <Text style={styles.totalValue}>₪ {total.toFixed(2)}</Text>
             </View>
           </View>
-          
+
           <View style={{ height: 120 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.confirmBtn, isSubmitting && styles.btnDisabled]} 
-          onPress={handleCheckout} 
+        <TouchableOpacity
+          style={[styles.confirmBtn, isSubmitting && styles.btnDisabled]}
+          onPress={handleCheckout}
           disabled={isSubmitting}
         >
           <Text style={styles.confirmBtnText}>
@@ -285,7 +523,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { marginBottom: 15, marginTop: 10 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1B1C1C', textAlign: 'right', fontFamily: 'Tajawal_700Bold' },
-  
+
   formCard: {
     backgroundColor: '#fff',
     borderRadius: 24,
@@ -295,6 +533,79 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 10,
+  },
+  savedHeaderRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  manageAddressesText: {
+    fontSize: 13,
+    color: PRIMARY_GREEN,
+    fontFamily: 'Tajawal_700Bold',
+  },
+  savedAddressHint: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'right',
+    marginBottom: 14,
+    fontFamily: 'Tajawal_500Medium',
+  },
+  savedAddressList: {
+    marginBottom: 12,
+    gap: 8,
+  },
+  savedAddressCard: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 10,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'flex-end',
+  },
+  savedAddressCardActive: {
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: '#84BD0015',
+  },
+  savedAddressTitle: {
+    fontSize: 14,
+    color: '#111827',
+    fontFamily: 'Tajawal_700Bold',
+    textAlign: 'right',
+  },
+  savedAddressLine: {
+    fontSize: 12,
+    color: '#4B5563',
+    marginTop: 2,
+    textAlign: 'right',
+    fontFamily: 'Tajawal_500Medium',
+  },
+  phoneChipList: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  phoneChip: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: '#FFFFFF',
+  },
+  phoneChipActive: {
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: '#84BD001A',
+  },
+  phoneChipText: {
+    fontSize: 13,
+    color: '#374151',
+    fontFamily: 'Tajawal_700Bold',
+  },
+  phoneChipTextActive: {
+    color: PRIMARY_GREEN,
   },
   inputGroup: { marginBottom: 15 },
   inputLabel: {

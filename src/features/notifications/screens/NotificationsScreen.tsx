@@ -1,4 +1,5 @@
 import { useNotifications } from '@/src/shared/contexts/NotificationContext';
+import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +17,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/src/shared/hooks/useAuth';
 import { getNotificationPermissionStatus, registerForPushNotificationsAsync } from '../services/push-notifications.service';
 import type { Notification, NotificationType } from '../types/notification.types';
 
@@ -53,8 +53,8 @@ function getNotificationMeta(type: NotificationType) {
       return {
         icon: 'cube' as const,
         iconBg: '#E8F5E9',
-        iconColor: '#67BB28',
-        accentColor: '#67BB28',
+        iconColor: '#84BD00',
+        accentColor: '#84BD00',
         label: 'تحديث طلب',
       };
   }
@@ -114,9 +114,8 @@ function NotificationCard({
     >
       <Pressable
         onPress={onPress}
-        className={`mx-5 mb-3 rounded-2xl overflow-hidden ${
-          notification.isRead ? 'bg-white' : 'bg-[#F8FFF2]'
-        }`}
+        className={`mx-5 mb-3 rounded-2xl overflow-hidden ${notification.isRead ? 'bg-white' : 'bg-[#F8FFF2]'
+          }`}
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
@@ -168,9 +167,8 @@ function NotificationCard({
 
             {/* Title */}
             <Text
-              className={`font-tajawal-bold text-[15px] text-right leading-[22px] ${
-                notification.isRead ? 'text-[#757575]' : 'text-[#1B1C1C]'
-              }`}
+              className={`font-tajawal-bold text-[15px] text-right leading-[22px] ${notification.isRead ? 'text-[#757575]' : 'text-[#1B1C1C]'
+                }`}
               numberOfLines={2}
             >
               {notification.title}
@@ -214,7 +212,7 @@ function NotificationCard({
             {/* Order CTA link */}
             {notification.orderId ? (
               <View className="flex-row-reverse items-center mt-2">
-                <Ionicons name="open-outline" size={14} color="#67BB28" />
+                <Ionicons name="open-outline" size={14} color="#84BD00" />
                 <Text className="font-tajawal-medium text-[12px] text-brand-primary mr-1">
                   تتبع الطلب
                 </Text>
@@ -224,7 +222,7 @@ function NotificationCard({
 
           {/* Unread dot */}
           {!notification.isRead ? (
-            <View className="w-2.5 h-2.5 rounded-full bg-[#67BB28] mt-1" />
+            <View className="w-2.5 h-2.5 rounded-full bg-[#84BD00] mt-1" />
           ) : null}
         </View>
       </Pressable>
@@ -289,7 +287,7 @@ export function NotificationsScreen() {
       const token = await registerForPushNotificationsAsync(user.id);
       // Once they interact, we consider it "done" for this session's UI
       setIsBannerDismissed(true);
-      
+
       if (token) {
         setPermissionStatus('granted');
       }
@@ -340,7 +338,7 @@ export function NotificationsScreen() {
               className="w-10 h-10 items-center justify-center"
               onPress={markAllNotificationsRead}
             >
-              <Ionicons name="checkmark-done" size={22} color="#67BB28" />
+              <Ionicons name="checkmark-done" size={22} color="#84BD00" />
             </TouchableOpacity>
           ) : undefined
         }
@@ -349,12 +347,12 @@ export function NotificationsScreen() {
       {/* Permission Banner */}
       {Platform.OS !== 'web' && permissionStatus !== 'granted' && !isBannerDismissed && (
         <View className="mx-5 mb-4 bg-brand-primary/10 p-4 rounded-2xl flex-row-reverse items-center justify-between border border-brand-primary/20">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={requestPermission}
             activeOpacity={0.8}
             className="flex-row-reverse items-center flex-1"
           >
-            <View className="w-10 h-10 rounded-full bg-[#67BB28] items-center justify-center ml-3">
+            <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center ml-3">
               <Ionicons name="notifications" size={20} color="#FFFFFF" />
             </View>
             <View className="flex-1">
@@ -362,8 +360,8 @@ export function NotificationsScreen() {
               <Text className="font-tajawal-regular text-[12px] text-brand-muted text-right">لتبقى على اطلاع بآخر العروض وحالة طلباتك</Text>
             </View>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => setIsBannerDismissed(true)}
             className="w-8 h-8 items-center justify-center"
           >
@@ -402,15 +400,13 @@ export function NotificationsScreen() {
           return (
             <TouchableOpacity
               key={tab.key}
-              className={`px-4 py-2 rounded-full flex-row-reverse items-center gap-1.5 ${
-                isActive ? 'bg-brand-primary' : 'bg-[#ECEBE9]'
-              }`}
+              className={`px-4 py-2 rounded-full flex-row-reverse items-center gap-1.5 ${isActive ? 'bg-brand-primary' : 'bg-[#ECEBE9]'
+                }`}
               onPress={() => setActiveFilter(tab.key)}
             >
               <Text
-                className={`font-tajawal-bold text-[14px] ${
-                  isActive ? 'text-white' : 'text-[#5D645F]'
-                }`}
+                className={`font-tajawal-bold text-[14px] ${isActive ? 'text-white' : 'text-[#5D645F]'
+                  }`}
               >
                 {tab.label}
               </Text>
@@ -437,7 +433,7 @@ export function NotificationsScreen() {
       {/* Notifications List */}
       {isLoading && notifications.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#67BB28" size="large" />
+          <ActivityIndicator color="#84BD00" size="large" />
         </View>
       ) : (
         <ScrollView
@@ -445,7 +441,7 @@ export function NotificationsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 120 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#67BB28" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#84BD00" />
           }
         >
           {filtered.length === 0 ? (

@@ -9,6 +9,7 @@ export type CatalogProduct = {
   price: number;
   image_url: string | null;
   category_name: string | null;
+  packaging: string | null;
 };
 
 export type ProductVariant = {
@@ -16,12 +17,14 @@ export type ProductVariant = {
   size: string;
   price: number;
   image_url: string | null;
+  packaging: string | null;
 };
 
 export type GroupedProduct = {
   name: string;
   description: string | null;
   category_name: string | null;
+  packaging: string | null;
   variants: ProductVariant[];
 };
 
@@ -31,6 +34,7 @@ type ProductRow = {
   description: string | null;
   price: number;
   image_url: string | null;
+  packaging: string | null;
   categories: { name: string } | { name: string }[] | null;
 };
 
@@ -65,7 +69,7 @@ function normalizeImageUrl(url: string | null): string | null {
 export async function getCatalogProducts(): Promise<CatalogProduct[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id,name,description,price,image_url,categories(name)')
+    .select('id,name,description,price,image_url,packaging,categories(name)')
     .eq('is_active', true)
     .order('created_at', { ascending: false });
 
@@ -79,6 +83,7 @@ export async function getCatalogProducts(): Promise<CatalogProduct[]> {
     description: row.description,
     price: row.price,
     image_url: normalizeImageUrl(row.image_url),
+    packaging: row.packaging,
     category_name: mapCategoryName(row.categories),
   }));
 }
@@ -94,6 +99,7 @@ export async function getGroupedProducts(): Promise<GroupedProduct[]> {
         name: trimmedName,
         description: p.description, // Can be improved to handle shared desc
         category_name: p.category_name,
+        packaging: p.packaging,
         variants: []
       };
     }
@@ -103,7 +109,8 @@ export async function getGroupedProducts(): Promise<GroupedProduct[]> {
       id: p.id,
       size: p.description || 'قياسي',
       price: p.price,
-      image_url: p.image_url
+      image_url: p.image_url,
+      packaging: p.packaging
     });
   });
 
@@ -118,7 +125,7 @@ export async function getGroupedProducts(): Promise<GroupedProduct[]> {
 export async function getFavoriteProducts(userId: string): Promise<CatalogProduct[]> {
   const { data, error } = await sb
     .from('favorites')
-    .select('products!inner(id,name,description,price,image_url,categories(name))')
+    .select('products!inner(id,name,description,price,image_url,packaging,categories(name))')
     .eq('user_id', userId);
 
   if (error) {
@@ -138,6 +145,7 @@ export async function getFavoriteProducts(userId: string): Promise<CatalogProduc
       description: product.description,
       price: product.price,
       image_url: normalizeImageUrl(product.image_url),
+      packaging: product.packaging,
       category_name: mapCategoryName(product.categories),
     }));
 }
@@ -178,7 +186,7 @@ export async function getFavoriteProductIds(userId: string): Promise<string[]> {
 export async function getProductById(productId: string): Promise<CatalogProduct | null> {
   const { data, error } = await supabase
     .from('products')
-    .select('id,name,description,price,image_url,categories(name)')
+    .select('id,name,description,price,image_url,packaging,categories(name)')
     .eq('id', productId)
     .eq('is_active', true)
     .maybeSingle();
@@ -199,6 +207,7 @@ export async function getProductById(productId: string): Promise<CatalogProduct 
     description: row.description,
     price: row.price,
     image_url: normalizeImageUrl(row.image_url),
+    packaging: row.packaging,
     category_name: mapCategoryName(row.categories),
   };
 }
@@ -214,7 +223,8 @@ export async function getProductGroupByProductId(productId: string): Promise<Gro
       id: p.id,
       size: p.description || 'قياسي',
       price: p.price,
-      image_url: p.image_url
+      image_url: p.image_url,
+      packaging: p.packaging
     }))
     .sort((a, b) => a.price - b.price);
 
@@ -222,6 +232,7 @@ export async function getProductGroupByProductId(productId: string): Promise<Gro
     name: mainProduct.name,
     description: mainProduct.description,
     category_name: mainProduct.category_name,
+    packaging: mainProduct.packaging,
     variants
   };
 }

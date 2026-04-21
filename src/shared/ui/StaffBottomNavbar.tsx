@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   itemActive: {
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
   },
   itemLabel: {
     marginTop: 2,

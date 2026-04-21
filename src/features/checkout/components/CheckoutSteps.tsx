@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
 
 export const CheckoutSteps = () => {
   return (
     <View style={styles.container}>
-      
+
 
       <View style={styles.row}>
-        
+
 
         <View style={styles.stepContainer}>
           <View style={[styles.circle, styles.activeCircle]}>
@@ -63,14 +63,14 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 9999,
     borderWidth: 2,
-    borderColor: '#67BB28',
+    borderColor: '#84BD00',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
   },
 
   activeCircle: {
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
   },
 
   number: {
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   line: {
     width: 40,
     height: 2,
-    backgroundColor: '#67BB28',
+    backgroundColor: '#84BD00',
     marginHorizontal: 8,
   },
 
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   activeLabel: {
     marginTop: 6,
     fontSize: 12,
-    color: '#67BB28',
+    color: '#84BD00',
     fontWeight: 'bold',
   },
 });

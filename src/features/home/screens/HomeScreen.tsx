@@ -66,14 +66,14 @@ function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: Prod
           onToggleFavorite(selectedVariant.id);
         }}
       >
-        <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#E53935' : '#67BB28'} />
+        <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#E53935' : '#84BD00'} />
       </Pressable>
 
       <View className="mt-3 items-end flex-1">
         <Text className="font-tajawal-bold text-[18px] text-brand-title text-right leading-[22px] min-h-[44px]" numberOfLines={2}>
           {group.name}
         </Text>
-        
+
         {/* Variant Selector */}
         <View className="flex-row items-center justify-end flex-wrap gap-1.5 mt-2 mb-3 w-full">
           {group.variants.map((v) => {
@@ -93,7 +93,7 @@ function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: Prod
         </View>
 
         <View className="flex-row items-center justify-between w-full mt-auto">
-           <TouchableOpacity
+          <TouchableOpacity
             className="w-10 h-10 rounded-full bg-brand-primary items-center justify-center"
             onPress={() => onAddToCart(selectedVariant.id, group.name, selectedVariant.size, selectedVariant.price)}
           >
@@ -231,7 +231,7 @@ export function HomeScreen() {
         withSidebar
         sidebarActiveItem="home"
         sidebarSide="left"
-        left={<Feather name="menu" size={27} color="#67BB28" />}
+        left={<Feather name="menu" size={27} color="#84BD00" />}
         right={
           <NotificationBell />
         }
@@ -312,7 +312,7 @@ export function HomeScreen() {
 
         {isLoading ? (
           <View className="mt-10 items-center justify-center">
-            <ActivityIndicator color="#67BB28" size="large" />
+            <ActivityIndicator color="#84BD00" size="large" />
           </View>
         ) : null}
 
@@ -326,8 +326,8 @@ export function HomeScreen() {
 
         <View className="px-5 mt-6 flex-row flex-wrap justify-between">
           {visibleGrouped.map((group) => (
-            <ProductCard 
-              key={group.name} 
+            <ProductCard
+              key={group.name}
               group={group}
               favoriteIds={favoriteIds}
               onToggleFavorite={handleToggleFavorite}

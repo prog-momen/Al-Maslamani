@@ -113,7 +113,7 @@ export function AddToCartModal({
                 borderColor: '#C7E9A8',
               }}
             >
-              <Ionicons name="checkmark-circle" size={40} color="#67BB28" />
+              <Ionicons name="checkmark-circle" size={40} color="#84BD00" />
             </View>
 
             {/* Title */}
@@ -160,7 +160,7 @@ export function AddToCartModal({
                     style={{
                       fontFamily: 'Tajawal_700Bold',
                       fontSize: 15,
-                      color: '#67BB28',
+                      color: '#84BD00',
                       textAlign: 'center',
                       marginTop: 4,
                     }}
@@ -173,7 +173,7 @@ export function AddToCartModal({
                     style={{
                       fontFamily: 'Tajawal_700Bold',
                       fontSize: 19,
-                      color: '#67BB28',
+                      color: '#84BD00',
                       textAlign: 'center',
                       marginTop: 10,
                     }}

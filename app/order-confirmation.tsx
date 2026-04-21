@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const PRIMARY_GREEN = '#67BB28';
+const PRIMARY_GREEN = '#84BD00';
 const PAGE_BG = '#F2EFE9';
 const CARD_BG = '#FFFFFF';
 const LIGHT_GREEN = '#CFF3D2';

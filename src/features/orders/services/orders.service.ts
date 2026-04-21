@@ -1,7 +1,7 @@
+import { addToCart } from '@/src/features/cart/services/cart.service';
+import { sendNotification } from '@/src/features/notifications/services/notifications.service';
 import { supabase } from '@/src/lib/supabase/client';
 import { Database } from '@/src/lib/supabase/database.types';
-import { sendNotification } from '@/src/features/notifications/services/notifications.service';
-import { addToCart } from '@/src/features/cart/services/cart.service';
 import { formatOrderNumber } from '@/src/shared/utils/order-utils';
 export { formatOrderNumber };
 
@@ -86,6 +86,7 @@ export type DeliveryReportSummary = {
 type PlaceOrderFromCartPayload = {
   addressLabel: string;
   addressDetails: string;
+  contactPhone: string;
   paymentMethod: 'cash_on_delivery' | 'card';
   deliveryFee: number;
   note?: string;
@@ -264,6 +265,7 @@ export async function placeOrderFromCart(payload: PlaceOrderFromCartPayload): Pr
   const { data, error } = await sb.rpc('place_order_from_cart', {
     address_label: payload.addressLabel,
     address_details: payload.addressDetails,
+    contact_phone_input: payload.contactPhone,
     payment_method_input: payload.paymentMethod,
     delivery_fee_input: payload.deliveryFee,
     note_input: payload.note ?? null,

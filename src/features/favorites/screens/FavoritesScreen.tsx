@@ -1,17 +1,17 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import {
-    CatalogProduct,
-    getCatalogProducts,
-    getFavoriteProducts,
-    setFavoriteProduct,
+  CatalogProduct,
+  getCatalogProducts,
+  getFavoriteProducts,
+  setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, AddToCartModal, BottomNavbar, NotificationBell } from '@/src/shared/ui';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { AddToCartModal, AppHeader, BottomNavbar, NotificationBell } from '@/src/shared/ui';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FavoriteProduct, FavoriteProductCard } from '../components/FavoriteProductCard';
 import { SuggestedProduct, SuggestedProductCard } from '../components/SuggestedProductCard';
@@ -158,7 +158,7 @@ export function FavoritesScreen() {
         withSidebar
         sidebarActiveItem="favorites"
         sidebarSide="left"
-        left={<Feather name="menu" size={26} color="#67BB28" />}
+        left={<Feather name="menu" size={26} color="#84BD00" />}
         right={
           <NotificationBell />
         }
@@ -185,7 +185,7 @@ export function FavoritesScreen() {
 
         {isLoading ? (
           <View className="mt-10 items-center justify-center">
-            <ActivityIndicator color="#67BB28" size="large" />
+            <ActivityIndicator color="#84BD00" size="large" />
           </View>
         ) : null}
 

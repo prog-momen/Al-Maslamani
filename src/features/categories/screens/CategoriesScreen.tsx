@@ -1,6 +1,6 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader, AddToCartModal, CARD_BASE_CLASS, NotificationBell } from '@/src/shared/ui';
+import { AddToCartModal, AppHeader, CARD_BASE_CLASS, NotificationBell } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -9,7 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CatalogProduct, getCatalogProducts, getGroupedProducts, GroupedProduct, ProductVariant } from '@/src/features/products/services/products.service';
+import { CatalogProduct, getGroupedProducts, GroupedProduct, ProductVariant } from '@/src/features/products/services/products.service';
 
 type CategoryProduct = {
   id: string;
@@ -156,7 +156,7 @@ export function CategoriesScreen() {
         withSidebar
         sidebarActiveItem="categories"
         sidebarSide="left"
-        left={<Feather name="menu" size={27} color="#67BB28" />}
+        left={<Feather name="menu" size={27} color="#84BD00" />}
         right={
           <NotificationBell />
         }
@@ -199,7 +199,7 @@ export function CategoriesScreen() {
 
         {isLoading ? (
           <View className="mt-10 items-center justify-center">
-            <ActivityIndicator color="#67BB28" size="large" />
+            <ActivityIndicator color="#84BD00" size="large" />
           </View>
         ) : null}
 
@@ -213,8 +213,8 @@ export function CategoriesScreen() {
 
         <View className="px-6 mt-6 flex-row flex-wrap justify-between">
           {visibleGrouped.map((group) => (
-            <CategoryProductCard 
-              key={group.name} 
+            <CategoryProductCard
+              key={group.name}
               group={group}
             />
           ))}
