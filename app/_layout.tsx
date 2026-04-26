@@ -55,6 +55,8 @@ export default function RootLayout() {
               <Stack.Screen name="order-tracking" />
               <Stack.Screen name="admin-dashboard" />
               <Stack.Screen name="admin-notifications" />
+              <Stack.Screen name="delivery-dashboard" />
+              <Stack.Screen name="delivery-pending-orders" />
               <Stack.Screen name="delivery-order-details" />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             </Stack>

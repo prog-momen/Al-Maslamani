@@ -199,6 +199,11 @@ export const CheckoutScreen = () => {
       return;
     }
 
+    if (!/^059\d{7}$/.test(contactPhone.trim())) {
+      Alert.alert('تنبيه', 'رقم التواصل يجب أن يكون 10 أرقام ويبدأ بـ 059');
+      return;
+    }
+
     if (payment === 'card') {
       Alert.alert('تنبيه', 'الدفع بالبطاقة غير متوفر حالياً، يرجى اختيار الدفع عند الاستلام');
       return;
