@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { useCart } from '@/src/shared/contexts/CartContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
+import { useLoyaltyPoints, useRedeemLoyaltyPoints } from '@/src/shared/hooks/useLoyalty';
 import { AppHeader } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -43,6 +44,18 @@ type SavedPhone = {
 };
 
 export const CheckoutScreen = () => {
+    // نقاط الولاء
+    const { data: loyaltyPoints = 0 } = useLoyaltyPoints(user);
+    const redeemMutation = useRedeemLoyaltyPoints(user);
+    const [usePoints, setUsePoints] = useState(false);
+    const [pointsToRedeem, setPointsToRedeem] = useState(0);
+    const [coupon, setCoupon] = useState(params.coupon || '');
+    const [isCouponValid, setIsCouponValid] = useState(!!params.discount);
+    // إذا تم اختيار النقاط، يتم تعطيل كود الخصم والعكس
+    const canUsePoints = loyaltyPoints >= 500;
+    const maxRedeemablePoints = Math.floor(loyaltyPoints / 500) * 500;
+    const pointsDiscount = usePoints ? ((pointsToRedeem / 500) * 20) : 0;
+    const effectiveDiscount = usePoints ? pointsDiscount : (discountRate * subtotal);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { items, clearCart } = useCart();
@@ -180,7 +193,26 @@ export const CheckoutScreen = () => {
   const subtotal = parseNumberParam(params.subtotal) ?? subtotalFromContext;
   const shipping = parseNumberParam(params.shipping) ?? (subtotal > 50 ? 0 : 5);
   const discountRate = parseNumberParam(params.discount) ?? 0;
-  const discountedSubtotal = Math.max(0, subtotal - subtotal * discountRate);
+  const discountedSubtotal = Math.max(0, subtotal - effectiveDiscount);
+  // منطق تفعيل/تعطيل الخيارات
+  function handleToggleUsePoints() {
+    if (!usePoints) {
+      setUsePoints(true);
+      setCoupon('');
+      setIsCouponValid(false);
+      setPointsToRedeem(500);
+    } else {
+      setUsePoints(false);
+      setPointsToRedeem(0);
+    }
+  }
+  function handleCouponChange(val) {
+    setCoupon(val);
+    if (val) {
+      setUsePoints(false);
+      setPointsToRedeem(0);
+    }
+  }
 
   const { vat, total } = useMemo(() => {
     const vat = discountedSubtotal * vatRate;
@@ -189,6 +221,19 @@ export const CheckoutScreen = () => {
   }, [discountedSubtotal, shipping]);
 
   const handleCheckout = async () => {
+        // إذا اختار المستخدم استخدام النقاط
+        let pointsDiscountValue = 0;
+        if (usePoints && pointsToRedeem > 0) {
+          try {
+            // خصم النقاط فعليًا من الرصيد
+            const discount = await redeemMutation.mutateAsync(pointsToRedeem);
+            pointsDiscountValue = discount;
+          } catch (e) {
+            Alert.alert('خطأ في استبدال النقاط', e.message || 'حدث خطأ أثناء خصم النقاط');
+            setIsSubmitting(false);
+            return;
+          }
+        }
     if (!addressDetails.city || !addressDetails.street) {
       Alert.alert('تنبيه', 'يرجى إدخال تفاصيل العنوان (المدينة والشارع على الأقل)');
       return;
@@ -230,7 +275,7 @@ export const CheckoutScreen = () => {
         contactPhone: contactPhone.trim(),
         paymentMethod: 'cash_on_delivery',
         deliveryFee: shipping,
-        note: combinedNote || undefined
+        note: [combinedNote, usePoints && pointsToRedeem > 0 ? `خصم نقاط الولاء: ${pointsToRedeem} نقطة` : undefined].filter(Boolean).join(' | ') || undefined
       });
 
       clearCart?.();
@@ -458,13 +503,62 @@ export const CheckoutScreen = () => {
             <View style={styles.radio} />
           </TouchableOpacity>
 
+          {/* خيار استخدام النقاط أو كود الخصم */}
+          <View style={[styles.formCard, { marginBottom: 16 }]}> 
+            <Text style={styles.inputLabel}>الخصم</Text>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
+              <TouchableOpacity
+                style={{ flexDirection: 'row-reverse', alignItems: 'center', marginLeft: 16 }}
+                onPress={handleToggleUsePoints}
+                disabled={!canUsePoints || isCouponValid}
+              >
+                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: usePoints ? PRIMARY_GREEN : '#D1D5DB', backgroundColor: usePoints ? PRIMARY_GREEN : '#fff', marginLeft: 8 }} />
+                <Text style={{ color: canUsePoints ? '#222' : '#aaa' }}>استخدم نقاط الولاء</Text>
+              </TouchableOpacity>
+              {usePoints && (
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginRight: 16 }}>
+                  <TouchableOpacity onPress={() => setPointsToRedeem(Math.max(500, pointsToRedeem - 500))} disabled={pointsToRedeem <= 500}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>-</Text></TouchableOpacity>
+                  <Text style={{ fontSize: 18 }}>{pointsToRedeem}</Text>
+                  <TouchableOpacity onPress={() => setPointsToRedeem(Math.min(maxRedeemablePoints, pointsToRedeem + 500))} disabled={pointsToRedeem >= maxRedeemablePoints}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>+</Text></TouchableOpacity>
+                  <Text style={{ marginRight: 8, color: '#888' }}>رصيدك: {loyaltyPoints} نقطة</Text>
+                </View>
+              )}
+            </View>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ color: '#888', marginLeft: 8 }}>كل 500 نقطة = 20 شيكل خصم</Text>
+            </View>
+            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+              <Text style={{ color: '#888', marginLeft: 8 }}>أو</Text>
+              <TextInput
+                style={[styles.input, { flex: 1, backgroundColor: usePoints ? '#eee' : '#fff' }]}
+                placeholder="ادخل كود الخصم هنا"
+                placeholderTextColor="#6B6B6B"
+                value={coupon}
+                onChangeText={handleCouponChange}
+                editable={!usePoints}
+              />
+            </View>
+            {usePoints && pointsToRedeem > 0 && (
+              <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>خصم النقاط: ₪ {pointsDiscount}</Text>
+            )}
+            {isCouponValid && (
+              <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>تم تطبيق كود خصم {(discountRate * 100).toFixed(0)}%</Text>
+            )}
+          </View>
+
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>قيمة المشتريات</Text>
               <Text style={styles.summaryValue}>₪ {subtotal.toFixed(2)}</Text>
             </View>
 
-            {discountRate > 0 && (
+            {(usePoints && pointsToRedeem > 0) && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>خصم النقاط</Text>
+                <Text style={styles.summaryValue}>- ₪ {pointsDiscount.toFixed(2)}</Text>
+              </View>
+            )}
+            {(!usePoints && discountRate > 0) && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>الخصم</Text>
                 <Text style={styles.summaryValue}>- ₪ {(subtotal * discountRate).toFixed(2)}</Text>
