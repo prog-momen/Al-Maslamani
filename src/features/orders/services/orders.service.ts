@@ -597,7 +597,7 @@ export async function getDeliveryReport(
   const { data: orders, error } = await sb
     .from("orders")
     .select(
-      "id,total,status,created_at,user_id,profiles!orders_user_id_fkey(full_name,email)",
+      "id,total,status,created_at,user_id",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .order("created_at", { ascending: false });
@@ -614,6 +614,21 @@ export async function getDeliveryReport(
     0,
   );
 
+  const profileIds = Array.from(new Set((orders ?? []).map((o: any) => o.user_id).filter(Boolean)));
+
+  const { data: profiles, error: profilesError } = profileIds.length > 0
+    ? await sb
+        .from("profiles")
+        .select("id,full_name,email")
+        .in("id", profileIds)
+    : { data: [], error: null };
+
+  if (profilesError) {
+    throw profilesError;
+  }
+
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+
   const mappedOrders: DeliveryReportItem[] = (orders ?? []).map((o: any) => ({
     id: o.id,
     orderNumber: formatOrderNumber(o.id),
@@ -621,8 +636,8 @@ export async function getDeliveryReport(
     status: o.status,
     createdAt: o.created_at,
     customerName: toDisplayName(
-      o.profiles?.full_name,
-      o.profiles?.email,
+      profileMap.get(o.user_id)?.full_name,
+      profileMap.get(o.user_id)?.email,
       "عميل",
     ),
   }));
@@ -658,7 +673,7 @@ export async function getDeliveryDashboard(
   const { data: ordersToday, error } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes),profiles!orders_user_id_fkey(full_name,email)",
+      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .gte("created_at", todayISO)
@@ -680,7 +695,7 @@ export async function getDeliveryDashboard(
   const { data: activeOrders, error: activeOrdersError } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes),profiles!orders_user_id_fkey(full_name,email)",
+      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .not("status", "in", '("delivered","cancelled")')
@@ -689,6 +704,26 @@ export async function getDeliveryDashboard(
   if (activeOrdersError) {
     throw activeOrdersError;
   }
+
+  const activeProfileIds = Array.from(
+    new Set((activeOrders ?? []).map((o: any) => o.user_id).filter(Boolean)),
+  );
+
+  const { data: activeProfiles, error: activeProfilesError } =
+    activeProfileIds.length > 0
+      ? await sb
+          .from("profiles")
+          .select("id,full_name,email")
+          .in("id", activeProfileIds)
+      : { data: [], error: null };
+
+  if (activeProfilesError) {
+    throw activeProfilesError;
+  }
+
+  const activeProfileMap = new Map(
+    (activeProfiles ?? []).map((p: any) => [p.id, p]),
+  );
 
   const pendingOrders = (activeOrders ?? []).filter(
     (o: any) => !["delivered", "cancelled"].includes(o.status),
@@ -713,8 +748,8 @@ export async function getDeliveryDashboard(
       status: o.status,
       total: Number(o.total),
       customerName: toDisplayName(
-        o.profiles?.full_name,
-        o.profiles?.email,
+        activeProfileMap.get(o.user_id)?.full_name,
+        activeProfileMap.get(o.user_id)?.email,
         "عميل",
       ),
       addressDetails,
@@ -744,7 +779,7 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
   const { data: orders, error } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes),profiles!orders_user_id_fkey(full_name,email,phone)",
+      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .not("status", "in", '("delivered","cancelled")')
@@ -753,6 +788,23 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
   if (error) {
     throw error;
   }
+
+  const profileIds = Array.from(
+    new Set((orders ?? []).map((o: any) => o.user_id).filter(Boolean)),
+  );
+
+  const { data: profiles, error: profilesError } = profileIds.length > 0
+    ? await sb
+        .from("profiles")
+        .select("id,full_name,email,phone")
+        .in("id", profileIds)
+    : { data: [], error: null };
+
+  if (profilesError) {
+    throw profilesError;
+  }
+
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
   const mappedOrders = (orders ?? []).map((o: any) => {
     const address = Array.isArray(o.address) ? o.address[0] : o.address;
@@ -773,11 +825,11 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
       status: o.status,
       total: Number(o.total),
       customerName: toDisplayName(
-        o.profiles?.full_name,
-        o.profiles?.email,
+        profileMap.get(o.user_id)?.full_name,
+        profileMap.get(o.user_id)?.email,
         "عميل",
       ),
-      customerPhone: o.profiles?.phone ?? null,
+      customerPhone: profileMap.get(o.user_id)?.phone ?? null,
       addressDetails,
       createdAt: o.created_at,
     };
