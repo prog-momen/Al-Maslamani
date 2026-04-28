@@ -53,8 +53,9 @@
       "reactCompiler": true
     },
     "extra": {
-      "eas": {
-      }
+      "eas": {},
+      "EXPO_PUBLIC_SUPABASE_URL": "https://YOUR_PROJECT_ID.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "YOUR_SUPABASE_ANON_KEY"
     }
   }
 }

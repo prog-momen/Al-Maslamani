@@ -7,15 +7,15 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatOrderNumber, placeOrderFromCart } from '../../orders/services/orders.service';
@@ -44,22 +44,40 @@ type SavedPhone = {
 };
 
 export const CheckoutScreen = () => {
-    // نقاط الولاء
-    const { data: loyaltyPoints = 0 } = useLoyaltyPoints(user);
-    const redeemMutation = useRedeemLoyaltyPoints(user);
-    const [usePoints, setUsePoints] = useState(false);
-    const [pointsToRedeem, setPointsToRedeem] = useState(0);
-    const [coupon, setCoupon] = useState(params.coupon || '');
-    const [isCouponValid, setIsCouponValid] = useState(!!params.discount);
-    // إذا تم اختيار النقاط، يتم تعطيل كود الخصم والعكس
-    const canUsePoints = loyaltyPoints >= 500;
-    const maxRedeemablePoints = Math.floor(loyaltyPoints / 500) * 500;
-    const pointsDiscount = usePoints ? ((pointsToRedeem / 500) * 20) : 0;
-    const effectiveDiscount = usePoints ? pointsDiscount : (discountRate * subtotal);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { items, clearCart } = useCart();
   const { user } = useAuth();
+
+  // نقاط الولاء
+  const { data: loyaltyPoints = 0 } = useLoyaltyPoints(user);
+  const redeemMutation = useRedeemLoyaltyPoints(user);
+  const parseStringParam = (value: string | string[] | undefined) => {
+    return Array.isArray(value) ? value[0] ?? '' : value ?? '';
+  };
+  const parseNumberParam = (value: string | string[] | undefined) => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
+  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [coupon, setCoupon] = useState(parseStringParam(params.coupon));
+  const [isCouponValid, setIsCouponValid] = useState((parseNumberParam(params.discount) ?? 0) > 0);
+
+  const subtotalFromContext = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [items]);
+  const subtotal = parseNumberParam(params.subtotal) ?? subtotalFromContext;
+  const shipping = parseNumberParam(params.shipping) ?? (subtotal > 50 ? 0 : 5);
+  const discountRate = parseNumberParam(params.discount) ?? 0;
+
+  // إذا تم اختيار النقاط، يتم تعطيل كود الخصم والعكس
+  const canUsePoints = loyaltyPoints >= 500;
+  const maxRedeemablePoints = Math.floor(loyaltyPoints / 500) * 500;
+  const pointsDiscount = usePoints ? ((pointsToRedeem / 500) * 20) : 0;
+  const effectiveDiscount = usePoints ? pointsDiscount : (discountRate * subtotal);
+  const discountedSubtotal = Math.max(0, subtotal - effectiveDiscount);
   const defaultContactPhone =
     (typeof user?.user_metadata?.phone === 'string' ? user.user_metadata.phone : '') ||
     (typeof user?.phone === 'string' ? user.phone : '');
@@ -163,7 +181,7 @@ export const CheckoutScreen = () => {
 
     loadSavedAddresses();
     loadSavedPhones();
-  }, [user?.id]);
+  }, [user?.id, defaultContactPhone]);
 
   const handleSelectSavedAddress = (address: SavedAddress) => {
     setSelectedAddressId(address.id);
@@ -180,20 +198,6 @@ export const CheckoutScreen = () => {
     setContactPhone(savedPhone.phone);
   };
 
-  const parseNumberParam = (value: string | string[] | undefined) => {
-    const raw = Array.isArray(value) ? value[0] : value;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  };
-
-  const subtotalFromContext = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [items]);
-
-  const subtotal = parseNumberParam(params.subtotal) ?? subtotalFromContext;
-  const shipping = parseNumberParam(params.shipping) ?? (subtotal > 50 ? 0 : 5);
-  const discountRate = parseNumberParam(params.discount) ?? 0;
-  const discountedSubtotal = Math.max(0, subtotal - effectiveDiscount);
   // منطق تفعيل/تعطيل الخيارات
   function handleToggleUsePoints() {
     if (!usePoints) {
@@ -206,7 +210,7 @@ export const CheckoutScreen = () => {
       setPointsToRedeem(0);
     }
   }
-  function handleCouponChange(val) {
+  function handleCouponChange(val: string) {
     setCoupon(val);
     if (val) {
       setUsePoints(false);
@@ -221,19 +225,16 @@ export const CheckoutScreen = () => {
   }, [discountedSubtotal, shipping]);
 
   const handleCheckout = async () => {
-        // إذا اختار المستخدم استخدام النقاط
-        let pointsDiscountValue = 0;
-        if (usePoints && pointsToRedeem > 0) {
-          try {
-            // خصم النقاط فعليًا من الرصيد
-            const discount = await redeemMutation.mutateAsync(pointsToRedeem);
-            pointsDiscountValue = discount;
-          } catch (e) {
-            Alert.alert('خطأ في استبدال النقاط', e.message || 'حدث خطأ أثناء خصم النقاط');
-            setIsSubmitting(false);
-            return;
-          }
-        }
+    // إذا اختار المستخدم استخدام النقاط
+    if (usePoints && pointsToRedeem > 0) {
+      try {
+        await redeemMutation.mutateAsync(pointsToRedeem);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'حدث خطأ أثناء خصم النقاط';
+        Alert.alert('خطأ في استبدال النقاط', message);
+        return;
+      }
+    }
     if (!addressDetails.city || !addressDetails.street) {
       Alert.alert('تنبيه', 'يرجى إدخال تفاصيل العنوان (المدينة والشارع على الأقل)');
       return;
@@ -297,6 +298,10 @@ export const CheckoutScreen = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!user) {
+    return null; // أو يمكن إرجاع شاشة تحميل
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -483,7 +488,7 @@ export const CheckoutScreen = () => {
           >
             <View style={styles.paymentRight}>
               <View style={[styles.paymentIcon, { backgroundColor: '#2E7D32' }]}>
-                <Feather name="dollar-sign" size={16} color="#fff" />
+                <Feather name="credit-card" size={16} color="#fff" />
               </View>
               <Text style={styles.paymentText}>الدفع عند الاستلام</Text>
             </View>

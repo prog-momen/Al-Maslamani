@@ -655,7 +655,7 @@ export async function getDeliveryDashboard(
   today.setUTCHours(0, 0, 0, 0);
   const todayISO = today.toISOString();
 
-  const { data: orders, error } = await sb
+  const { data: ordersToday, error } = await sb
     .from("orders")
     .select(
       "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes),profiles!orders_user_id_fkey(full_name,email)",
@@ -668,16 +668,29 @@ export async function getDeliveryDashboard(
     throw error;
   }
 
-  const ordersToday = orders ?? [];
-  const ordersCountToday = ordersToday.length;
-  const deliveredToday = ordersToday.filter(
+  const todayOrdersList = ordersToday ?? [];
+  const ordersCountToday = todayOrdersList.length;
+  const deliveredToday = todayOrdersList.filter(
     (o: any) => o.status === "delivered",
   ).length;
-  const dailyEarningsTotal = ordersToday
+  const dailyEarningsTotal = todayOrdersList
     .filter((o: any) => o.status === "delivered")
     .reduce((sum: number, o: any) => sum + Number(o.total), 0);
 
-  const pendingOrders = ordersToday.filter(
+  const { data: activeOrders, error: activeOrdersError } = await sb
+    .from("orders")
+    .select(
+      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes),profiles!orders_user_id_fkey(full_name,email)",
+    )
+    .eq("assigned_delivery_user_id", deliveryUserId)
+    .not("status", "in", '("delivered","cancelled")')
+    .order("created_at", { ascending: false });
+
+  if (activeOrdersError) {
+    throw activeOrdersError;
+  }
+
+  const pendingOrders = (activeOrders ?? []).filter(
     (o: any) => !["delivered", "cancelled"].includes(o.status),
   );
 
