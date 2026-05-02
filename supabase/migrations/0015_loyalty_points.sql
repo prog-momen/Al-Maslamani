@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS loyalty_points (
 CREATE TABLE IF NOT EXISTS loyalty_points_history (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) NOT NULL,
-    order_id BIGINT REFERENCES orders(id),
+    order_id UUID REFERENCES orders(id),
     points_delta INTEGER NOT NULL,
     reason TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

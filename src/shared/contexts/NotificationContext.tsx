@@ -10,7 +10,7 @@ import {
 import type { Notification } from '@/src/features/notifications/types/notification.types';
 import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { NotificationPermissionModal } from '@/src/shared/ui';
+import { NotificationPermissionModal } from '../ui/NotificationPermissionModal';
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type NotificationContextValue = {

@@ -2,7 +2,7 @@ import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
 
-type RealtimeDomain = 'cart' | 'orders' | 'notifications' | 'profiles';
+type RealtimeDomain = 'cart' | 'orders' | 'notifications' | 'profiles' | 'products';
 
 type RealtimeContextValue = {
   signals: Record<RealtimeDomain, number>;
@@ -14,6 +14,7 @@ const RealtimeContext = createContext<RealtimeContextValue>({
     orders: 0,
     notifications: 0,
     profiles: 0,
+    products: 0,
   },
 });
 
@@ -24,6 +25,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     orders: 0,
     notifications: 0,
     profiles: 0,
+    products: 0,
   });
 
   useEffect(() => {
@@ -43,6 +45,8 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => bump('orders'))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => bump('orders'))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => bump('profiles'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => bump('products'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => bump('products'))
       .subscribe();
 
     return () => {

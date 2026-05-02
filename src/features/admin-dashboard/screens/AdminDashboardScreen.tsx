@@ -255,6 +255,15 @@ export function AdminDashboardScreen() {
                 <Text style={styles.pageTitle}>إدارة الطلبات الواردة</Text>
                 <Text style={styles.pageSubtitle}>متابعة الطلبات وإدارة صلاحيات المستخدمين من نفس الشاشة.</Text>
 
+                <TouchableOpacity
+                  style={styles.manageProductsBtn}
+                  onPress={() => router.push('/admin-products' as never)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="cube-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.manageProductsBtnText}>إدارة المنتجات</Text>
+                </TouchableOpacity>
+
                 <View style={styles.filtersRow}>
                   {FILTERS.map((filter) => (
                     <StatusFilterChip
@@ -470,6 +479,28 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: 'Tajawal_500Medium',
     marginTop: 4,
+  },
+  manageProductsBtn: {
+    backgroundColor: BRAND_GREEN,
+    borderRadius: 16,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    alignSelf: 'flex-end',
+    gap: 8,
+    shadowColor: BRAND_GREEN,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  manageProductsBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Tajawal_700Bold',
+    fontSize: 14,
   },
   filtersRow: {
     flexDirection: 'row-reverse',

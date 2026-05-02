@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type SidebarItemKey =
   | 'dashboard'
+  | 'admin-products'
   | 'home'
   | 'categories'
   | 'cart'
@@ -41,7 +42,7 @@ const memberItems: {
     { key: 'cart', label: 'السلة', icon: 'cart-outline', route: '/home' },
     { key: 'favorites', label: 'المفضلة', icon: 'heart-outline', route: '/favorites' },
     { key: 'orders', label: 'الطلبات', icon: 'receipt-outline', route: '/order-history' },
-    { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
+    // { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
     { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
     { key: 'branches', label: 'فروعنا', icon: 'location-outline', route: '/branches' },
     { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },
@@ -54,9 +55,10 @@ const staffItems: {
   route: string;
 }[] = [
     { key: 'dashboard', label: 'لوحة التحكم', icon: 'speedometer-outline', route: '/home' },
+    { key: 'admin-products', label: 'إدارة المنتجات', icon: 'cube-outline', route: '/admin-products' },
     { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
     { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
-    { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
+    // { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },
     { key: 'about', label: 'عن الشركة', icon: 'information-circle-outline', route: '/about-us' },
     { key: 'branches', label: 'فروعنا', icon: 'location-outline', route: '/branches' },
     { key: 'contact', label: 'تواصل معنا', icon: 'help-circle-outline', route: '/contact-us' },

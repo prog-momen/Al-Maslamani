@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { CatalogProduct, getGroupedProducts, GroupedProduct, ProductVariant } from '@/src/features/products/services/products.service';
 
 type CategoryProduct = {
@@ -37,6 +38,7 @@ function toCategoryProduct(product: CatalogProduct): CategoryProduct {
 export function CategoriesScreen() {
   const router = useRouter();
   const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
+  const productsSignal = useRealtimeSignal('products');
   const [isLoading, setIsLoading] = useState(true);
   const tabs = useMemo(() => {
     const names = Array.from(new Set(groupedProducts.map((p) => p.category_name?.trim()).filter(Boolean) as string[]));
@@ -132,7 +134,7 @@ export function CategoriesScreen() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [productsSignal]);
 
   const visibleGrouped = useMemo(() => {
     const trimmedActiveTab = activeTab.trim();

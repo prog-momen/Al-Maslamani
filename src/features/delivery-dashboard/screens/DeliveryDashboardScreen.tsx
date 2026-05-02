@@ -1,5 +1,6 @@
 import { getDeliveryDashboard } from "@/src/features/orders/services/orders.service";
 import { useAuth } from "@/src/shared/hooks/useAuth";
+import { useRealtimeSignal } from "@/src/shared/contexts/RealtimeContext";
 import { AppHeader, StaffBottomNavbar } from "@/src/shared/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -45,6 +46,7 @@ const STATUS_COLORS = {
 export function DeliveryDashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const ordersSignal = useRealtimeSignal("orders");
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -66,7 +68,7 @@ export function DeliveryDashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDashboard();
-    }, [loadDashboard]),
+    }, [loadDashboard, ordersSignal]),
   );
 
   const handleRefresh = useCallback(async () => {

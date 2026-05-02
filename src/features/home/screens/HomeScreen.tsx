@@ -1,7 +1,9 @@
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
-import { CatalogProduct, getCatalogProducts, getFavoriteProductIds, getGroupedProducts, GroupedProduct, ProductVariant, setFavoriteProduct } from '@/src/features/products/services/products.service';
+import { AdminProduct, getAdminProducts, getCategories, CategoryOption, CatalogProduct, getCatalogProducts, getFavoriteProductIds, getGroupedProducts, GroupedProduct, ProductVariant, setFavoriteProduct } from '@/src/features/products/services/products.service';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AddToCartModal, AppHeader, CARD_BASE_CLASS, NotificationBell } from '@/src/shared/ui';
+import { AdminProductGroupModal } from '../../admin-dashboard/components/AdminProductGroupModal';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -40,9 +42,11 @@ type ProductCardProps = {
   favoriteIds: Set<string>;
   onToggleFavorite: (id: string) => void;
   onAddToCart: (id: string, name: string, size: string, price: number) => void;
+  isAdmin?: boolean;
+  onEdit?: (variant: ProductVariant, groupName: string) => void;
 };
 
-function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: ProductCardProps) {
+function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart, isAdmin, onEdit }: ProductCardProps) {
   const router = useRouter();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(group.variants[0]);
 
@@ -68,6 +72,18 @@ function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: Prod
       >
         <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={isFavorite ? '#E53935' : '#84BD00'} />
       </Pressable>
+
+      {isAdmin && (
+        <Pressable
+          className="absolute top-2 right-2 w-9 h-9 bg-brand-primary rounded-full items-center justify-center shadow-sm z-10"
+          onPress={(event) => {
+            event.stopPropagation();
+            onEdit?.(selectedVariant, group.name);
+          }}
+        >
+          <Feather name="edit-2" size={16} color="white" />
+        </Pressable>
+      )}
 
       <View className="mt-3 items-end flex-1">
         <Text className="font-tajawal-bold text-[18px] text-brand-title text-right leading-[22px] min-h-[44px]" numberOfLines={2}>
@@ -109,11 +125,17 @@ function ProductCard({ group, favoriteIds, onToggleFavorite, onAddToCart }: Prod
 
 export function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isAdmin = role === 'admin';
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
+  const productsSignal = useRealtimeSignal('products');
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [adminProducts, setAdminProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [selectedAdminGroup, setSelectedAdminGroup] = useState<{ name: string, variants: AdminProduct[] } | null>(null);
+
   const { addItem } = useCartActions();
   const [showCartModal, setShowCartModal] = useState(false);
   const [cartProductName, setCartProductName] = useState<string | undefined>();
@@ -127,36 +149,33 @@ export function HomeScreen() {
 
   const [activeCategory, setActiveCategory] = useState('الكل');
 
-  useEffect(() => {
-    let mounted = true;
+  const loadData = useCallback(async () => {
+    try {
+      const [data, grouped, userFavoriteIds] = await Promise.all([
+        getCatalogProducts(),
+        getGroupedProducts(),
+        user?.id ? getFavoriteProductIds(user.id) : Promise.resolve([]),
+      ]);
 
-    const load = async () => {
-      try {
-        const [data, grouped, userFavoriteIds] = await Promise.all([
-          getCatalogProducts(),
-          getGroupedProducts(),
-          user?.id ? getFavoriteProductIds(user.id) : Promise.resolve([]),
-        ]);
+      setProducts(data);
+      setGroupedProducts(grouped);
+      setFavoriteIds(new Set(userFavoriteIds));
 
-        if (mounted) {
-          setProducts(data);
-          setGroupedProducts(grouped);
-          setFavoriteIds(new Set(userFavoriteIds));
-        }
-      } catch (error) {
-        console.error('Failed to load products for home:', error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+      if (isAdmin) {
+        const [aProds, cats] = await Promise.all([getAdminProducts(), getCategories()]);
+        setAdminProducts(aProds);
+        setCategories(cats);
       }
-    };
+    } catch (error) {
+      console.error('Failed to load home screen data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, isAdmin]);
 
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id]);
+  useEffect(() => {
+    loadData();
+  }, [loadData, productsSignal]);
 
   useFocusEffect(
     useCallback(() => {
@@ -210,6 +229,11 @@ export function HomeScreen() {
     });
   };
 
+  const handleEditGroup = (groupName: string) => {
+    const groupVariants = adminProducts.filter(p => p.name === groupName);
+    setSelectedAdminGroup({ name: groupName, variants: groupVariants });
+  };
+
   const visibleGrouped = useMemo(() => {
     if (activeCategory === 'الكل') {
       return groupedProducts;
@@ -233,7 +257,17 @@ export function HomeScreen() {
         sidebarSide="left"
         left={<Feather name="menu" size={27} color="#84BD00" />}
         right={
-          <NotificationBell />
+          <View className="flex-row items-center gap-3">
+            {isAdmin && (
+              <TouchableOpacity
+                className="w-10 h-10 bg-brand-primary rounded-full items-center justify-center"
+                onPress={() => setSelectedAdminGroup({ name: '', variants: [] })}
+              >
+                <Ionicons name="add" size={26} color="white" />
+              </TouchableOpacity>
+            )}
+            <NotificationBell />
+          </View>
         }
       />
 
@@ -331,6 +365,8 @@ export function HomeScreen() {
               group={group}
               favoriteIds={favoriteIds}
               onToggleFavorite={handleToggleFavorite}
+              isAdmin={isAdmin}
+              onEdit={(v, name) => handleEditGroup(name)}
               onAddToCart={(id, name, size, price) => {
                 if (!user?.id) return;
                 addItem(user.id, id, {
@@ -360,6 +396,17 @@ export function HomeScreen() {
           router.push('/cart');
         }}
       />
+
+      {selectedAdminGroup && (
+        <AdminProductGroupModal
+          visible={!!selectedAdminGroup}
+          onClose={() => setSelectedAdminGroup(null)}
+          groupName={selectedAdminGroup.name}
+          variants={selectedAdminGroup.variants}
+          categories={categories}
+          onRefresh={loadData}
+        />
+      )}
     </SafeAreaView>
   );
 }

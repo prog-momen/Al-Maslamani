@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type StaffRole = 'admin' | 'delivery';
-type StaffTab = 'roleHome' | 'notifications' | 'storeHome' | 'profile';
+type StaffTab = 'roleHome' | 'notifications' | 'products' | 'storeHome' | 'profile';
 
 type StaffBottomNavbarProps = {
   role: StaffRole;
@@ -27,6 +27,11 @@ export function StaffBottomNavbar({ role, activeTab }: StaffBottomNavbarProps) {
 
     if (tab === 'notifications') {
       router.replace('/admin-notifications');
+      return;
+    }
+
+    if (tab === 'products') {
+      router.replace('/admin-products' as never);
       return;
     }
 
@@ -68,6 +73,16 @@ export function StaffBottomNavbar({ role, activeTab }: StaffBottomNavbarProps) {
           name={activeTab === 'notifications' ? 'notifications' : 'notifications-outline'}
           size={20}
           color={activeTab === 'notifications' ? '#FFFFFF' : '#5C605A'}
+        />
+      )}
+
+      {role === 'admin' && renderItem(
+        'products',
+        'المنتجات',
+        <Ionicons
+          name={activeTab === 'products' ? 'cube' : 'cube-outline'}
+          size={20}
+          color={activeTab === 'products' ? '#FFFFFF' : '#5C605A'}
         />
       )}
 
