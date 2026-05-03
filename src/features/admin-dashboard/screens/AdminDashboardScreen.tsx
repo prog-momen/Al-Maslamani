@@ -95,6 +95,7 @@ export function AdminDashboardScreen() {
   const [pickerOrder, setPickerOrder] = useState<AdminOrderItem | null>(null);
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
   const [deliverySearch, setDeliverySearch] = useState('');
+  const [activeMainTab, setActiveMainTab] = useState<'orders' | 'users'>('orders');
 
   const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
@@ -145,6 +146,15 @@ export function AdminDashboardScreen() {
       return passFilter && passSearch;
     });
   }, [activeFilter, orders, search]);
+
+  const filteredUsers = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    if (!normalized) return users;
+    return users.filter(u => 
+      u.fullName.toLowerCase().includes(normalized) || 
+      u.email.toLowerCase().includes(normalized)
+    );
+  }, [users, search]);
 
   const deliveryUsers = useMemo(() => users.filter((user) => user.role === 'delivery'), [users]);
 
@@ -240,40 +250,71 @@ export function AdminDashboardScreen() {
           }
         />
 
+        <View style={styles.tabSwitcher}>
+          <TouchableOpacity 
+            style={[styles.tabButton, activeMainTab === 'orders' && styles.tabButtonActive]} 
+            onPress={() => {
+              setActiveMainTab('orders');
+              setSearch('');
+            }}
+          >
+            <Text style={[styles.tabButtonText, activeMainTab === 'orders' && styles.tabButtonTextActive]}>الطلبات الحالية</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tabButton, activeMainTab === 'users' && styles.tabButtonActive]} 
+            onPress={() => {
+              setActiveMainTab('users');
+              setSearch('');
+            }}
+          >
+            <Text style={[styles.tabButtonText, activeMainTab === 'users' && styles.tabButtonTextActive]}>مستخدمين التطبيق</Text>
+          </TouchableOpacity>
+        </View>
+
         {isLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color={BRAND_GREEN} />
           </View>
         ) : (
-          <FlatList
-            data={filteredOrders}
+          <FlatList<any>
+            data={activeMainTab === 'orders' ? filteredOrders : filteredUsers}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <View style={styles.headerSection}>
-                <Text style={styles.pageTitle}>إدارة الطلبات الواردة</Text>
-                <Text style={styles.pageSubtitle}>متابعة الطلبات وإدارة صلاحيات المستخدمين من نفس الشاشة.</Text>
+                <Text style={styles.pageTitle}>
+                  {activeMainTab === 'orders' ? 'إدارة الطلبات الواردة' : 'إدارة المستخدمين'}
+                </Text>
+                <Text style={styles.pageSubtitle}>
+                  {activeMainTab === 'orders' 
+                    ? 'متابعة الطلبات وتعيين المناديب وتحديث الحالات.' 
+                    : 'إدارة رتب المستخدمين وصلاحياتهم داخل النظام.'}
+                </Text>
 
-                <TouchableOpacity
-                  style={styles.manageProductsBtn}
-                  onPress={() => router.push('/admin-products' as never)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="cube-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.manageProductsBtnText}>إدارة المنتجات</Text>
-                </TouchableOpacity>
+                {activeMainTab === 'orders' && (
+                  <TouchableOpacity
+                    style={styles.manageProductsBtn}
+                    onPress={() => router.push('/admin-products' as never)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="cube-outline" size={20} color="#FFFFFF" />
+                    <Text style={styles.manageProductsBtnText}>إدارة المنتجات</Text>
+                  </TouchableOpacity>
+                )}
 
-                <View style={styles.filtersRow}>
-                  {FILTERS.map((filter) => (
-                    <StatusFilterChip
-                      key={filter.key}
-                      label={filter.label}
-                      selected={activeFilter === filter.key}
-                      onPress={() => setActiveFilter(filter.key)}
-                    />
-                  ))}
-                </View>
+                {activeMainTab === 'orders' && (
+                  <View style={styles.filtersRow}>
+                    {FILTERS.map((filter) => (
+                      <StatusFilterChip
+                        key={filter.key}
+                        label={filter.label}
+                        selected={activeFilter === filter.key}
+                        onPress={() => setActiveFilter(filter.key)}
+                      />
+                    ))}
+                  </View>
+                )}
 
                 <View style={styles.searchBox}>
                   <TouchableOpacity activeOpacity={0.8} onPress={() => setSearch('')}>
@@ -282,7 +323,7 @@ export function AdminDashboardScreen() {
                   <TextInput
                     value={search}
                     onChangeText={setSearch}
-                    placeholder="بحث برقم الطلب أو اسم العميل"
+                    placeholder={activeMainTab === 'orders' ? "بحث برقم الطلب أو اسم العميل" : "بحث باسم المستخدم أو البريد"}
                     placeholderTextColor="#9CA09A"
                     textAlign="right"
                     style={styles.searchInput}
@@ -291,19 +332,45 @@ export function AdminDashboardScreen() {
               </View>
             }
             renderItem={({ item }) => {
-              const statusConfig = ORDER_STATUS_CONFIG[item.status];
-              const isCancelledOrDelivered = item.status === 'cancelled' || item.status === 'delivered';
-              const isLockedForAssignment = item.status === 'shipped' || item.status === 'cancelled' || item.status === 'delivered';
+              if (activeMainTab === 'users') {
+                const user = item as unknown as AdminUserItem;
+                return (
+                  <Card key={user.id} className="mb-4 rounded-[30px] border border-[#ECE8E1] bg-[#FCFBF8] px-5 py-4">
+                    <View style={styles.userRoleHeader}>
+                      <View style={styles.customerAvatar}>
+                        <Ionicons name="person" size={24} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.userRoleMeta}>
+                        <Text style={styles.userRoleName}>{user.fullName || 'بدون اسم'}</Text>
+                        <Text style={styles.userRoleEmail}>{user.email}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.roleActionsRow}>
+                      <RoleChip label="عميل" active={user.role === 'member'} onPress={() => changeUserRole(user.id, 'member')} />
+                      <RoleChip label="مندوب" active={user.role === 'delivery'} onPress={() => changeUserRole(user.id, 'delivery')} />
+                      <RoleChip label="أدمن" active={user.role === 'admin'} onPress={() => changeUserRole(user.id, 'admin')} />
+                    </View>
+
+                    {isSaving === user.id ? <Text style={styles.savingText}>جاري حفظ التعديل...</Text> : null}
+                  </Card>
+                );
+              }
+
+              const order = item as unknown as AdminOrderItem;
+              const statusConfig = ORDER_STATUS_CONFIG[order.status];
+              const isCancelledOrDelivered = order.status === 'cancelled' || order.status === 'delivered';
+              const isLockedForAssignment = order.status === 'shipped' || order.status === 'cancelled' || order.status === 'delivered';
               const canShip =
-                Boolean(item.assignedDeliveryUserId) &&
-                (item.status === 'confirmed' || item.status === 'preparing' || item.status === 'pending');
+                Boolean(order.assignedDeliveryUserId) &&
+                (order.status === 'confirmed' || order.status === 'preparing' || order.status === 'pending');
 
               return (
                 <Card className="mb-5 rounded-[30px] border border-[#EBE8E1] bg-[#FCFBF8] px-4 py-4">
                   <View style={styles.orderTopRow}>
                     <View style={styles.orderInfoWrap}>
                       <Text style={styles.orderNumberLabel}>طلب رقم</Text>
-                      <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+                      <Text style={styles.orderNumber}>{order.orderNumber}</Text>
                     </View>
 
                     <View style={[styles.statusChip, { backgroundColor: statusConfig.chipBg }]}>
@@ -318,17 +385,17 @@ export function AdminDashboardScreen() {
                     </View>
 
                     <View style={styles.customerMeta}>
-                      <Text style={styles.customerName}>{item.customerName}</Text>
-                      <Text style={styles.totalText}>₪ {item.total.toFixed(2)} {item.customerPhone ? ` • ${item.customerPhone}` : ''}</Text>
+                      <Text style={styles.customerName}>{order.customerName}</Text>
+                      <Text style={styles.totalText}>₪ {order.total.toFixed(2)} {order.customerPhone ? ` • ${order.customerPhone}` : ''}</Text>
                       <Text style={styles.deliveryAssignedText}>
-                        {item.assignedDeliveryName ? `المندوب: ${item.assignedDeliveryName}` : 'المندوب: غير معين'}
+                        {order.assignedDeliveryName ? `المندوب: ${order.assignedDeliveryName}` : 'المندوب: غير معين'}
                       </Text>
                     </View>
 
-                    {item.customerPhone && (
+                    {order.customerPhone && (
                       <TouchableOpacity
                         style={styles.customerPhoneBtn}
-                        onPress={() => Linking.openURL(`tel:${item.customerPhone}`)}
+                        onPress={() => Linking.openURL(`tel:${order.customerPhone}`)}
                       >
                         <Feather name="phone" size={16} color={BRAND_GREEN} />
                       </TouchableOpacity>
@@ -339,7 +406,7 @@ export function AdminDashboardScreen() {
                     <TouchableOpacity
                       activeOpacity={0.9}
                       disabled={isCancelledOrDelivered}
-                      onPress={() => updateOrder(item.id, 'cancelled')}
+                      onPress={() => updateOrder(order.id, 'cancelled')}
                       style={[styles.actionButton, styles.actionCancel, isCancelledOrDelivered && styles.actionDisabled]}
                     >
                       <Ionicons name="close-circle-outline" size={20} color={isCancelledOrDelivered ? '#B9B9B9' : '#C93206'} />
@@ -348,20 +415,20 @@ export function AdminDashboardScreen() {
 
                     <TouchableOpacity
                       activeOpacity={0.9}
-                      disabled={isSaving === item.id || isLockedForAssignment}
-                      onPress={() => openDeliveryPicker(item)}
-                      style={[styles.actionButton, styles.actionSuccess, (isSaving === item.id || isLockedForAssignment) && styles.actionDisabled]}
+                      disabled={isSaving === order.id || isLockedForAssignment}
+                      onPress={() => openDeliveryPicker(order)}
+                      style={[styles.actionButton, styles.actionSuccess, (isSaving === order.id || isLockedForAssignment) && styles.actionDisabled]}
                     >
                       <Ionicons name="person-add-outline" size={20} color={isLockedForAssignment ? '#B9B9B9' : '#FFFFFF'} />
-                      <Text style={[styles.actionText, styles.actionSuccessText, (isSaving === item.id || isLockedForAssignment) && styles.actionDisabledText]}>
-                        {isSaving === item.id ? 'جارٍ التعيين...' : item.assignedDeliveryUserId ? 'تغيير المندوب' : 'تعيين مندوب'}
+                      <Text style={[styles.actionText, styles.actionSuccessText, (isSaving === order.id || isLockedForAssignment) && styles.actionDisabledText]}>
+                        {isSaving === order.id ? 'جارٍ التعيين...' : order.assignedDeliveryUserId ? 'تغيير المندوب' : 'تعيين مندوب'}
                       </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       activeOpacity={0.9}
                       disabled={!canShip}
-                      onPress={() => updateOrder(item.id, 'shipped')}
+                      onPress={() => updateOrder(order.id, 'shipped')}
                       style={[styles.actionButton, styles.actionNeutral, !canShip && styles.actionDisabled]}
                     >
                       <Ionicons name="car-outline" size={20} color={!canShip ? '#B9B9B9' : '#84BD00'} />
@@ -371,30 +438,10 @@ export function AdminDashboardScreen() {
                 </Card>
               );
             }}
-            ListEmptyComponent={<Text style={styles.emptyText}>لا توجد طلبات مطابقة.</Text>}
-            ListFooterComponent={
-              <View style={styles.userRolesSection}>
-                <Text style={styles.userRolesTitle}>إدارة رتب المستخدمين</Text>
-
-                {users.map((item) => (
-                  <Card key={item.id} className="mb-3 rounded-[20px] border border-[#ECE8E1] bg-[#FCFBF8] px-4 py-3">
-                    <View style={styles.userRoleHeader}>
-                      <View style={styles.userRoleMeta}>
-                        <Text style={styles.userRoleName}>{item.fullName}</Text>
-                        <Text style={styles.userRoleEmail}>{item.email}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.roleActionsRow}>
-                      <RoleChip label="Member" active={item.role === 'member'} onPress={() => changeUserRole(item.id, 'member')} />
-                      <RoleChip label="Delivery" active={item.role === 'delivery'} onPress={() => changeUserRole(item.id, 'delivery')} />
-                      <RoleChip label="Admin" active={item.role === 'admin'} onPress={() => changeUserRole(item.id, 'admin')} />
-                    </View>
-
-                    {isSaving === item.id ? <Text style={styles.savingText}>جاري حفظ التعديل...</Text> : null}
-                  </Card>
-                ))}
-              </View>
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                {activeMainTab === 'orders' ? 'لا توجد طلبات مطابقة.' : 'لا يوجد مستخدمون مطابقون.'}
+              </Text>
             }
           />
         )}
@@ -462,6 +509,39 @@ export function AdminDashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: PAGE_BG },
   safeArea: { flex: 1 },
+  tabSwitcher: {
+    flexDirection: 'row-reverse',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 18,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 20,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: '#E2DFD6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  tabButtonActive: {
+    backgroundColor: BRAND_GREEN,
+  },
+  tabButtonText: {
+    fontFamily: 'Tajawal_700Bold',
+    fontSize: 14,
+    color: '#7A7E78',
+  },
+  tabButtonTextActive: {
+    color: '#FFFFFF',
+  },
   loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 18, paddingBottom: 160 },
   headerSection: { marginTop: 2, marginBottom: 14 },
