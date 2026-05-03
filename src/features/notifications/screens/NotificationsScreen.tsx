@@ -272,6 +272,14 @@ export function NotificationsScreen() {
   const [permissionStatus, setPermissionStatus] = useState<string>('granted');
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  };
+
   useEffect(() => {
     checkPermission();
   }, []);
@@ -327,9 +335,9 @@ export function NotificationsScreen() {
         left={
           <TouchableOpacity
             className="w-10 h-10 items-center justify-center"
-            onPress={() => router.back()}
+            onPress={handleGoBack}
           >
-            <Ionicons name="arrow-forward" size={24} color="#1B1C1C" />
+            <Ionicons name="chevron-forward" size={28} color="#1B1C1C" />
           </TouchableOpacity>
         }
         right={

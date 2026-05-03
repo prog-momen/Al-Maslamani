@@ -5,7 +5,7 @@ import { useAuth } from '@/src/shared/hooks/useAuth';
 import { AppHeader, Card, StaffBottomNavbar } from '@/src/shared/ui';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -83,6 +83,7 @@ function RoleChip({
 
 export function AdminDashboardScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { isAuthenticated, isInitializing, role } = useAuth();
   const ordersSignal = useRealtimeSignal('orders');
   const profilesSignal = useRealtimeSignal('profiles');
@@ -95,7 +96,7 @@ export function AdminDashboardScreen() {
   const [pickerOrder, setPickerOrder] = useState<AdminOrderItem | null>(null);
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
   const [deliverySearch, setDeliverySearch] = useState('');
-  const [activeMainTab, setActiveMainTab] = useState<'orders' | 'users'>('orders');
+  const [activeMainTab, setActiveMainTab] = useState<'orders' | 'users'>((params.tab as 'orders' | 'users') || 'orders');
 
   const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
@@ -127,6 +128,12 @@ export function AdminDashboardScreen() {
     }
     loadDashboardData();
   }, [isAuthenticated, role, loadDashboardData, ordersSignal, profilesSignal]);
+
+  useEffect(() => {
+    if (params.tab === 'users' || params.tab === 'orders') {
+      setActiveMainTab(params.tab as 'users' | 'orders');
+    }
+  }, [params.tab]);
 
   if (!isInitializing && (!isAuthenticated || role !== 'admin')) {
     router.replace(isAuthenticated ? getHomeRouteForRole(role) : '/(auth)/login');
@@ -258,7 +265,15 @@ export function AdminDashboardScreen() {
               setSearch('');
             }}
           >
-            <Text style={[styles.tabButtonText, activeMainTab === 'orders' && styles.tabButtonTextActive]}>الطلبات الحالية</Text>
+            <View style={styles.tabContent}>
+              <Ionicons 
+                name="list-outline" 
+                size={18} 
+                color={activeMainTab === 'orders' ? '#FFFFFF' : '#7A7E78'} 
+                style={{ marginLeft: 6 }}
+              />
+              <Text style={[styles.tabButtonText, activeMainTab === 'orders' && styles.tabButtonTextActive]}>الطلبات الحالية</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.tabButton, activeMainTab === 'users' && styles.tabButtonActive]} 
@@ -267,7 +282,15 @@ export function AdminDashboardScreen() {
               setSearch('');
             }}
           >
-            <Text style={[styles.tabButtonText, activeMainTab === 'users' && styles.tabButtonTextActive]}>مستخدمين التطبيق</Text>
+            <View style={styles.tabContent}>
+              <Ionicons 
+                name="people-outline" 
+                size={18} 
+                color={activeMainTab === 'users' ? '#FFFFFF' : '#7A7E78'} 
+                style={{ marginLeft: 6 }}
+              />
+              <Text style={[styles.tabButtonText, activeMainTab === 'users' && styles.tabButtonTextActive]}>مستخدمين التطبيق</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -533,6 +556,11 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: BRAND_GREEN,
+  },
+  tabContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabButtonText: {
     fontFamily: 'Tajawal_700Bold',

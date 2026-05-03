@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export type SidebarItemKey =
   | 'dashboard'
   | 'admin-products'
+  | 'admin-users'
   | 'home'
   | 'categories'
   | 'cart'
@@ -56,6 +57,7 @@ const staffItems: {
 }[] = [
     { key: 'dashboard', label: 'لوحة التحكم', icon: 'speedometer-outline', route: '/home' },
     { key: 'admin-products', label: 'إدارة المنتجات', icon: 'cube-outline', route: '/admin-products' },
+    { key: 'admin-users', label: 'إدارة المستخدمين', icon: 'people-outline', route: '/admin-dashboard?tab=users' },
     { key: 'home', label: 'الصفحة الرئيسية', icon: 'grid-outline', route: '/home' },
     { key: 'profile', label: 'الملف الشخصي', icon: 'person-outline', route: '/profile' },
     // { key: 'phones', label: 'أرقام التواصل', icon: 'call-outline', route: '/contact-phones' },

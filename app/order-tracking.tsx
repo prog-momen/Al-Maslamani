@@ -141,6 +141,14 @@ export default function OrderTrackingScreen() {
 
   const orderId = getParamString(params.orderId as string | string[] | undefined, '');
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  };
+
   const formatPalestineTime = (date: Date) =>
     new Intl.DateTimeFormat('ar-PS', {
       timeZone: 'Asia/Hebron',
@@ -332,7 +340,14 @@ export default function OrderTrackingScreen() {
           withSidebar
           sidebarActiveItem="orders"
           sidebarSide="left"
-          left={<Ionicons name="menu" size={22} color="#84BD00" />}
+          left={
+            <TouchableOpacity 
+              className="w-10 h-10 items-center justify-center" 
+              onPress={handleGoBack}
+            >
+              <Ionicons name="chevron-forward" size={28} color="#84BD00" />
+            </TouchableOpacity>
+          }
           right={
             <TouchableOpacity style={styles.headerAction} activeOpacity={0.8} onPress={() => router.push('/contact-us')}>
               <Ionicons name="help-circle-outline" size={26} color="#84BD00" />
