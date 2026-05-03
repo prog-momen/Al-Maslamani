@@ -18,6 +18,14 @@ export function AdminNotificationsScreen() {
   const [discountCode, setDiscountCode] = useState('');
   const [discountValue, setDiscountValue] = useState('');
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/admin-dashboard');
+    }
+  };
+
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
       Alert.alert('خطأ', 'يرجى إدخال العنوان ونص الرسالة');
@@ -57,8 +65,8 @@ export function AdminNotificationsScreen() {
           <Button
             variant="secondary"
             className="w-10 h-10 p-0 border-0"
-            icon={<Ionicons name="arrow-forward" size={24} color="#84BD00" />}
-            onPress={() => router.back()}
+            icon={<Ionicons name="chevron-forward" size={28} color="#84BD00" />}
+            onPress={handleGoBack}
             label=""
           />
         }

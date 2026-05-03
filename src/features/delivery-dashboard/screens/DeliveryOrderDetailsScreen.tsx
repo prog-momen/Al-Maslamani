@@ -25,6 +25,14 @@ export function DeliveryOrderDetailsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/delivery-dashboard');
+    }
+  };
+
   const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
 
   const loadOrder = useCallback(async () => {
@@ -160,10 +168,12 @@ export function DeliveryOrderDetailsScreen() {
           withSidebar
           sidebarActiveItem="dashboard"
           sidebarSide="left"
-          left={<Ionicons name="menu" size={24} color={PRIMARY} />}
-          right={
-            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-              <Feather name="arrow-right" size={20} color={PRIMARY} />
+          left={
+            <TouchableOpacity 
+              className="w-10 h-10 items-center justify-center" 
+              onPress={handleGoBack}
+            >
+              <Ionicons name="chevron-forward" size={28} color={PRIMARY} />
             </TouchableOpacity>
           }
         />

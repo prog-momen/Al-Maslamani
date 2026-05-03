@@ -2,8 +2,8 @@ import { supabase } from '@/src/lib/supabase/client';
 import { useCart } from '@/src/shared/contexts/CartContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import { useLoyaltyPoints, useRedeemLoyaltyPoints } from '@/src/shared/hooks/useLoyalty';
-import { AppHeader } from '@/src/shared/ui';
-import { Feather } from '@expo/vector-icons';
+import { AppHeader, NotificationBell } from '@/src/shared/ui';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -100,6 +100,15 @@ export const CheckoutScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [isLoadingPhones, setIsLoadingPhones] = useState(false);
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/cart');
+    }
+  };
+
   const vatRate = 0.15;
 
   useEffect(() => {
@@ -307,13 +316,19 @@ export const CheckoutScreen = () => {
     <SafeAreaView style={styles.container}>
       <AppHeader
         logo="transparent"
-        left={
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={() => router.back()}
-          >
-            <Feather name="x" size={20} color="#000" />
-          </TouchableOpacity>
+        withSidebar={true}
+        sidebarActiveItem="cart"
+        sidebarSide="left"
+        right={
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <NotificationBell />
+            <TouchableOpacity 
+              className="w-10 h-10 items-center justify-center" 
+              onPress={handleGoBack}
+            >
+              <Ionicons name="chevron-forward" size={28} color={PRIMARY_GREEN} />
+            </TouchableOpacity>
+          </View>
         }
       />
 

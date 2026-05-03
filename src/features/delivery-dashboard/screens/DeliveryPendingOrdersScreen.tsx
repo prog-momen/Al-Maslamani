@@ -49,6 +49,14 @@ export function DeliveryPendingOrdersScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/delivery-dashboard');
+    }
+  };
+
   const loadPendingOrders = useCallback(async () => {
     !user?.id || !isAuthenticated ? (setOrders([]), setIsLoading(false)) : null;
     if (!user?.id || !isAuthenticated) return;
@@ -95,10 +103,10 @@ export function DeliveryPendingOrdersScreen() {
           logo="transparent"
           left={
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={handleGoBack}
               style={styles.backBtn}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
+              <Ionicons name="chevron-forward" size={28} color={PRIMARY_GREEN} />
             </TouchableOpacity>
           }
         />
@@ -116,10 +124,10 @@ export function DeliveryPendingOrdersScreen() {
         logo="transparent"
         left={
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleGoBack}
             style={styles.backBtn}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="chevron-forward" size={28} color={PRIMARY_GREEN} />
           </TouchableOpacity>
         }
       />

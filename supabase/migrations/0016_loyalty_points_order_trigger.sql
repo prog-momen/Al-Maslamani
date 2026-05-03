@@ -6,7 +6,7 @@ DECLARE
 BEGIN
     -- فقط إذا كان الطلب مكتمل
     IF NEW.status = 'delivered' AND OLD.status <> 'delivered' THEN
-        points_to_add := FLOOR(NEW.total_amount);
+        points_to_add := FLOOR(NEW.total);
         IF points_to_add > 0 THEN
             INSERT INTO loyalty_points (user_id, points, updated_at)
             VALUES (NEW.user_id, points_to_add, NOW())

@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCartActions } from '@/src/features/cart/hooks/useCartActions';
@@ -17,6 +17,7 @@ import {
     ProductVariant,
     setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
+import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 
 const DEFAULT_WEIGHTS = ['250 جرام', '500 جرام', '1 كيلو'];
@@ -27,6 +28,7 @@ export function ProductDetailsScreen() {
   const { addItem } = useCartActions();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const productId = Array.isArray(id) ? id[0] : id;
+  const productsSignal = useRealtimeSignal('products');
   const [product, setProduct] = useState<CatalogProduct | null>(null);
   const [productGroup, setProductGroup] = useState<GroupedProduct | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -35,6 +37,35 @@ export function ProductDetailsScreen() {
   const [quantity, setQuantity] = useState(1);
   const [showCartModal, setShowCartModal] = useState(false);
   const [cartProductName, setCartProductName] = useState<string | undefined>();
+  const [explainingFeature, setExplainingFeature] = useState<{ id: string, label: string, desc: string, icon: string, color: string } | null>(null);
+
+  const featureInfo: Record<string, { desc: string, icon: string, color: string }> = {
+    'عضوي': { 
+      desc: 'تم إنتاجه بطرق طبيعية بالكامل دون استخدام أسمدة كيماوية أو مبيدات صناعية، لضمان أعلى جودة ونكهة طبيعية.',
+      icon: 'leaf-outline',
+      color: '#55772D'
+    },
+    'بروتين عالي': { 
+      desc: 'يحتوي على نسبة عالية من البروتين النباتي الضروري لبناء العضلات ومد الجسم بالأحماض الأمينية الأساسية.',
+      icon: 'trending-up-outline',
+      color: '#3F7C4D'
+    },
+    'طاقة طبيعية': { 
+      desc: 'مصدر مثالي للطاقة المستدامة التي تساعدك على التركيز والنشاط طوال اليوم دون هبوط مفاجئ.',
+      icon: 'flash-outline',
+      color: '#4F8D40'
+    },
+    'بدون سكر': { 
+      desc: 'خالٍ تماماً من السكر المضاف، مما يجعله خياراً صحياً مثالياً لمرضى السكري أو من يتبعون حمية غذائية.',
+      icon: 'remove-circle-outline',
+      color: '#C93206'
+    },
+    'غني بالألياف': { 
+      desc: 'يساعد في تحسين عملية الهضم والشعور بالشبع لفترة أطول، مما يدعم صحة الجهاز الهضمي.',
+      icon: 'fitness-outline',
+      color: '#005FB8'
+    },
+  };
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
@@ -88,7 +119,7 @@ export function ProductDetailsScreen() {
     return () => {
       mounted = false;
     };
-  }, [productId, user?.id]);
+  }, [productId, user?.id, productsSignal]);
 
   useFocusEffect(
     useCallback(() => {
@@ -140,7 +171,12 @@ export function ProductDetailsScreen() {
   const displayPrice = `${unitPrice.toFixed(0)} ₪`;
   const displayImage = selectedVariant?.image_url ? { uri: selectedVariant.image_url } : fallbackProductImage;
   const displayName = productGroup?.name ?? 'منتج';
-  const displayDescription = productGroup?.description ?? 'وصف المنتج غير متوفر حالياً.';
+  
+  // Smart description fallback: Variant Long -> Group Long -> Group Short
+  const displayDescription = selectedVariant?.long_description 
+    || productGroup?.long_description 
+    || productGroup?.description 
+    || 'وصف المنتج غير متوفر حالياً.';
 
   return (
     <SafeAreaView className="flex-1 bg-[#F6F5F2]" edges={['top']}>
@@ -150,7 +186,14 @@ export function ProductDetailsScreen() {
         className="z-10"
         withSidebar
         sidebarSide="left"
-        left={<Feather name="menu" size={24} color="#84BD00" />}
+        left={
+          <TouchableOpacity 
+            className="w-10 h-10 items-center justify-center" 
+            onPress={handleGoBack}
+          >
+            <Ionicons name="chevron-forward" size={28} color="#84BD00" />
+          </TouchableOpacity>
+        }
         right={
           <TouchableOpacity className="w-10 h-10 items-center justify-center" onPress={() => router.push('/contact-us')}>
             <Ionicons name="help-circle-outline" size={28} color="#84BD00" />
@@ -207,7 +250,7 @@ export function ProductDetailsScreen() {
               <View className="mb-8">
                 <Text className="font-tajawal-bold text-[16px] text-right text-brand-title mb-3">عن المنتج</Text>
                 <Text className="font-tajawal-regular text-[14px] text-right text-[#4D4D4D] leading-6">
-                  {displayDescription}
+                  {selectedVariant?.long_description || displayDescription}
                 </Text>
                 {productGroup?.packaging && (
                   <View className="mt-3 flex-row items-center justify-end">
@@ -263,28 +306,39 @@ export function ProductDetailsScreen() {
                 <Text className="font-tajawal-bold text-[16px] text-brand-title">الكمية</Text>
               </View>
 
-              {/* Feature Tags */}
-              <View className="flex-row flex-wrap justify-end gap-3 mb-8">
-                {/* Tag 1 */}
-                <View className="flex-row items-center bg-[#EAEFD2] px-4 py-2 rounded-full border border-[#D5E1AC]">
-                  <Text className="text-[#55772D] font-tajawal-medium text-[13px] mr-2">عضوي</Text>
-                  <Ionicons name="leaf-outline" size={16} color="#55772D" />
+              {/* Feature Tags (Product Group Level) */}
+              {productGroup?.features && productGroup.features.length > 0 && (
+                <View className="flex-row flex-wrap justify-end gap-3 mb-8">
+                  {productGroup.features.map((feat: string) => {
+                    const config: any = {
+                      'عضوي': { icon: 'leaf-outline', iconType: 'Ionicons', bg: '#EAEFD2', text: '#55772D', border: '#D5E1AC' },
+                      'بروتين عالي': { icon: 'trending-up-outline', iconType: 'Ionicons', bg: '#DEF0DE', text: '#3F7C4D', border: '#B3DCBB' },
+                      'طاقة طبيعية': { icon: 'flash-outline', iconType: 'Ionicons', bg: '#E6F3E3', text: '#4F8D40', border: '#C5E5BE' },
+                      'بدون سكر': { icon: 'remove-circle-outline', iconType: 'Ionicons', bg: '#FDECEC', text: '#C93206', border: '#F9D7D7' },
+                      'غني بالألياف': { icon: 'fitness-outline', iconType: 'Ionicons', bg: '#F0F7FF', text: '#005FB8', border: '#D1E4FF' },
+                    }[feat] || { icon: 'star-outline', iconType: 'Ionicons', bg: '#F8F9FA', text: '#666', border: '#EEE' };
+
+                    return (
+                      <TouchableOpacity 
+                        key={feat}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          const info = featureInfo[feat] || { desc: 'ميزة غذائية خاصة لضمان جودة المنتج.', icon: 'star-outline', color: '#666' };
+                          setExplainingFeature({ id: feat, label: feat, ...info });
+                        }}
+                        style={{ backgroundColor: config.bg, borderColor: config.border }}
+                        className="flex-row items-center px-4 py-2 rounded-full border"
+                      >
+                        <Text style={{ color: config.text }} className="font-tajawal-medium text-[13px] mr-2">{feat}</Text>
+                        <Ionicons name={config.icon} size={16} color={config.text} />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                {/* Tag 2 */}
-                <View className="flex-row items-center bg-[#DEF0DE] px-4 py-2 rounded-full border border-[#B3DCBB]">
-                  <Text className="text-[#3F7C4D] font-tajawal-medium text-[13px] mr-2">بروتين عالي</Text>
-                  <Feather name="arrow-up-right" size={16} color="#3F7C4D" />
-                </View>
-                {/* Tag 3 */}
-                <View className="flex-row items-center bg-[#E6F3E3] px-4 py-2 rounded-full border border-[#C5E5BE]">
-                  <Text className="text-[#4F8D40] font-tajawal-medium text-[13px] mr-2">طاقة طبيعية</Text>
-                  <Ionicons name="flash-outline" size={16} color="#4F8D40" />
-                </View>
-              </View>
+              )}
             </View>
           </>
         )}
-
       </ScrollView>
 
       {/* Sticky Bottom Bar */}
@@ -331,6 +385,40 @@ export function ProductDetailsScreen() {
           router.push('/cart');
         }}
       />
+
+      {/* Feature Explanation Modal */}
+      <Modal visible={!!explainingFeature} transparent animationType="fade">
+        <View className="flex-1 bg-black/60 items-center justify-center px-8">
+          <View className="bg-white w-full rounded-[32px] p-8 shadow-2xl items-center">
+            {explainingFeature && (
+              <>
+                <View 
+                  style={{ backgroundColor: explainingFeature.color + '15' }}
+                  className="w-20 h-20 rounded-full items-center justify-center mb-6"
+                >
+                  <Ionicons name={explainingFeature.icon as any} size={44} color={explainingFeature.color} />
+                </View>
+                
+                <Text style={{ color: explainingFeature.color }} className="font-tajawal-bold text-[24px] mb-4">
+                  {explainingFeature.label}
+                </Text>
+                
+                <Text className="font-tajawal-medium text-[16px] text-[#4D4D4D] text-center leading-7 mb-8">
+                  {explainingFeature.desc}
+                </Text>
+
+                <TouchableOpacity 
+                  onPress={() => setExplainingFeature(null)}
+                  style={{ backgroundColor: explainingFeature.color }}
+                  className="w-full py-4 rounded-2xl items-center shadow-sm"
+                >
+                  <Text className="font-tajawal-bold text-white text-[18px]">فهمت، شكراً!</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
