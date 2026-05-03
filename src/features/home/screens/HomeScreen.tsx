@@ -368,8 +368,7 @@ export function HomeScreen() {
               isAdmin={isAdmin}
               onEdit={(v, name) => handleEditGroup(name)}
               onAddToCart={(id, name, size, price) => {
-                if (!user?.id) return;
-                addItem(user.id, id, {
+                addItem(user?.id, id, {
                   onSuccess: () => {
                     setCartProductName(name);
                     setCartVariantSize(size);

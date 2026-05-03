@@ -257,7 +257,7 @@ function EmptyState({ filter }: { filter: FilterTab }) {
 // ─── Main Screen ─────────────────────────────────────────────────
 export function NotificationsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isDelivery } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -321,9 +321,13 @@ export function NotificationsScreen() {
       markNotificationRead(notification.id);
     }
 
-    // Navigate to order tracking for order updates
+    // Navigate to order tracking or delivery details based on role
     if (notification.orderId) {
-      router.push({ pathname: '/order-tracking', params: { orderId: notification.orderId } });
+      if (isDelivery) {
+        router.push({ pathname: '/delivery-order-details', params: { orderId: notification.orderId } });
+      } else {
+        router.push({ pathname: '/order-tracking', params: { orderId: notification.orderId } });
+      }
     }
   };
 

@@ -92,8 +92,7 @@ export function CategoriesScreen() {
             <TouchableOpacity
               className="w-10 h-10 rounded-full bg-brand-primary items-center justify-center"
               onPress={() => {
-                if (!user?.id) return;
-                addItem(user.id, selectedVariant.id, {
+                addItem(user?.id, selectedVariant.id, {
                   onSuccess: () => {
                     setCartProductName(group.name);
                     setCartVariantSize(selectedVariant.size);

@@ -104,7 +104,7 @@ const Icons = {
 
 export function ProfileScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest, setGuestMode } = useAuth();
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [completedOrdersCount, setCompletedOrdersCount] = useState(0);
   const { unreadCount } = useNotifications();
@@ -175,99 +175,94 @@ export function ProfileScreen() {
                   <Path d="M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z" />
                 </Svg>
               </View>
-              <Pressable className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#84BD00] border-2 border-white items-center justify-center">
-                <Icons.Edit color="white" />
-              </Pressable>
+              {!isGuest && (
+                <Pressable className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#84BD00] border-2 border-white items-center justify-center">
+                  <Icons.Edit color="white" />
+                </Pressable>
+              )}
             </View>
 
             <Text className="font-tajawal-bold text-[24px] text-brand-title mt-4">
-              {user?.user_metadata?.full_name || 'سعد المسلماني'}
+              {isGuest ? 'زائر' : (user?.user_metadata?.full_name || 'سعد المسلماني')}
             </Text>
-            <Text className="font-tajawal-medium text-[14px] text-[#71717A] mt-1">
-              {user?.email || 'saad.almuslemani@gmail.com'}
-            </Text>
+            {!isGuest && (
+              <Text className="font-tajawal-medium text-[14px] text-[#71717A] mt-1">
+                {user?.email || 'saad.almuslemani@gmail.com'}
+              </Text>
+            )}
+            {isGuest && (
+              <Text className="font-tajawal-medium text-[14px] text-[#71717A] mt-1">
+                سجل الدخول للاستفادة من كافة الميزات
+              </Text>
+            )}
           </View>
 
           {/* Stats Cards */}
-          <View className="flex-row px-4 mt-8 gap-4">
-            <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{favoritesCount}</Text>
-              <Text className="font-tajawal-medium text-[14px] text-brand-text">المفضلة</Text>
+          {!isGuest && (
+            <View className="flex-row px-4 mt-8 gap-4">
+              <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
+                <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{favoritesCount}</Text>
+                <Text className="font-tajawal-medium text-[14px] text-brand-text">المفضلة</Text>
+              </View>
+              <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
+                <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{completedOrdersCount}</Text>
+                <Text className="font-tajawal-medium text-[14px] text-brand-text">طلبات مكتملة</Text>
+              </View>
             </View>
-            <View className={`${CARD_BASE_CLASS} flex-1 py-6 items-center justify-center`}>
-              <Text className="font-tajawal-bold text-[20px] text-[#84BD00] mb-1">{completedOrdersCount}</Text>
-              <Text className="font-tajawal-medium text-[14px] text-brand-text">طلبات مكتملة</Text>
-            </View>
-          </View>
+          )}
 
           {/* Menu List */}
           <View className="px-4 mt-6">
             <View className={`${CARD_BASE_CLASS} p-2`}>
 
-              {/* My Orders */}
-              <Pressable onPress={() => router.push('/order-history')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
-                    <Icons.Bag color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">طلباتي</Text>
-                </View>
-                <Icons.ChevronLeft color="#A1A1AA" />
-              </Pressable>
-
-              {/* Loyalty Points */}
-              <Pressable onPress={() => router.push('/loyalty-points')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
-                    <Ionicons name="star-outline" size={20} color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">نقاط الولاء</Text>
-                </View>
-                <Icons.ChevronLeft color="#A1A1AA" />
-              </Pressable>
-
-              {/* Notifications */}
-              <Pressable
-                onPress={() => router.push('/notifications')}
-                className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]"
-              >
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
-                    <Icons.Bell color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">التنبيهات</Text>
-                </View>
-                <View className="flex-row-reverse items-center gap-2">
-                  {unreadCount > 0 && (
-                    <View className="bg-[#DC2626] rounded-full px-3 py-1">
-                      <Text className="font-tajawal-bold text-[12px] text-white">{unreadCount} جديد</Text>
+              {/* Protected Links */}
+              {!isGuest && (
+                <>
+                  {/* My Orders */}
+                  <Pressable onPress={() => router.push('/order-history')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                    <View className="flex-row-reverse items-center gap-4">
+                      <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                        <Icons.Bag color="white" />
+                      </View>
+                      <Text className="font-tajawal-bold text-[16px] text-brand-title">طلباتي</Text>
                     </View>
-                  )}
-                  <Icons.ChevronLeft color="#A1A1AA" />
-                </View>
-              </Pressable>
+                    <Icons.ChevronLeft color="#A1A1AA" />
+                  </Pressable>
 
-              {/* Saved Addresses */}
-              <Pressable onPress={() => router.push('/addresses')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
-                    <Icons.MapPin color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">العناوين المحفوظة</Text>
-                </View>
-                <Icons.ChevronLeft color="#A1A1AA" />
-              </Pressable>
+                  {/* Loyalty Points */}
+                  <Pressable onPress={() => router.push('/loyalty-points')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                    <View className="flex-row-reverse items-center gap-4">
+                      <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                        <Ionicons name="star-outline" size={20} color="white" />
+                      </View>
+                      <Text className="font-tajawal-bold text-[16px] text-brand-title">نقاط الولاء</Text>
+                    </View>
+                    <Icons.ChevronLeft color="#A1A1AA" />
+                  </Pressable>
+                  
+                  {/* Saved Addresses */}
+                  <Pressable onPress={() => router.push('/addresses')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                    <View className="flex-row-reverse items-center gap-4">
+                      <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                        <Icons.MapPin color="white" />
+                      </View>
+                      <Text className="font-tajawal-bold text-[16px] text-brand-title">العناوين المحفوظة</Text>
+                    </View>
+                    <Icons.ChevronLeft color="#A1A1AA" />
+                  </Pressable>
 
-              {/* Saved Phones */}
-              <Pressable onPress={() => router.push('/contact-phones')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
-                <View className="flex-row-reverse items-center gap-4">
-                  <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
-                    <Ionicons name="call-outline" size={20} color="white" />
-                  </View>
-                  <Text className="font-tajawal-bold text-[16px] text-brand-title">أرقام التواصل المحفوظة</Text>
-                </View>
-                <Icons.ChevronLeft color="#A1A1AA" />
-              </Pressable>
+                  {/* Saved Phones */}
+                  <Pressable onPress={() => router.push('/contact-phones')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
+                    <View className="flex-row-reverse items-center gap-4">
+                      <View className="w-10 h-10 rounded-full bg-[#84BD00] items-center justify-center">
+                        <Ionicons name="call-outline" size={20} color="white" />
+                      </View>
+                      <Text className="font-tajawal-bold text-[16px] text-brand-title">أرقام التواصل المحفوظة</Text>
+                    </View>
+                    <Icons.ChevronLeft color="#A1A1AA" />
+                  </Pressable>
+                </>
+              )}
 
               {/* About Company */}
               <Pressable onPress={() => router.push('/about-us')} className="flex-row-reverse items-center justify-between p-4 border-b border-[#F4F4F5]">
@@ -305,14 +300,23 @@ export function ProfileScreen() {
             </View>
           </View>
 
-          {/* Logout Button */}
+          {/* Auth Button */}
           <View className="px-4 mt-6 mb-8">
             <Pressable
-              onPress={handleLogout}
-              className="bg-[#FAEDE8] rounded-[24px] h-[54px] flex-row-reverse items-center justify-center gap-2 border border-[#F4E1D8]"
+              onPress={async () => {
+                if (isGuest) {
+                  await setGuestMode(false);
+                  router.replace('/(auth)/login');
+                } else {
+                  handleLogout();
+                }
+              }}
+              className={`${isGuest ? 'bg-brand-primary' : 'bg-[#FAEDE8] border-[#F4E1D8]'} rounded-[24px] h-[54px] flex-row-reverse items-center justify-center gap-2 border`}
             >
-              <Text className="font-tajawal-bold text-[16px] text-[#DC2626]">تسجيل الخروج</Text>
-              <Icons.Logout color="#DC2626" />
+              <Text className={`font-tajawal-bold text-[16px] ${isGuest ? 'text-white' : 'text-[#DC2626]'}`}>
+                {isGuest ? 'تسجيل الدخول' : 'تسجيل الخروج'}
+              </Text>
+              {!isGuest && <Icons.Logout color="#DC2626" />}
             </Pressable>
           </View>
 

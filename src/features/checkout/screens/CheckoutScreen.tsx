@@ -47,9 +47,9 @@ export const CheckoutScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { items, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
 
-  // نقاط الولاء
+  // نقاط الولاء (only for authenticated users)
   const { data: loyaltyPoints = 0 } = useLoyaltyPoints(user);
   const redeemMutation = useRedeemLoyaltyPoints(user);
   const parseStringParam = (value: string | string[] | undefined) => {
@@ -90,6 +90,7 @@ export const CheckoutScreen = () => {
     notes: '',
   });
   const [contactPhone, setContactPhone] = useState(defaultContactPhone);
+  const [guestName, setGuestName] = useState('');
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [savedPhones, setSavedPhones] = useState<SavedPhone[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -264,37 +265,70 @@ export const CheckoutScreen = () => {
       return;
     }
 
-    if (!user?.id) {
-      router.replace('/(auth)/login');
+    const isGuestCheckout = !user?.id;
+
+    if (isGuestCheckout && !guestName.trim()) {
+      Alert.alert('تنبيه', 'يرجى إدخال اسمك للطلبية');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const selectedAddress = savedAddresses.find((item) => item.id === selectedAddressId);
       const timingLabel = deliveryTiming === 'asap' ? 'الاستلام: بأسرع وقت' : 'الاستلام: عادي خلال 24 ساعة';
       const combinedNote = [addressDetails.notes?.trim(), timingLabel].filter(Boolean).join(' | ');
 
       // Format the detailed address for the database
       const formattedAddress = `المدينة: ${addressDetails.city}, شارع: ${addressDetails.street}${addressDetails.building ? `, بناية: ${addressDetails.building}` : ''}`;
+      
+      let orderIdResult = '';
 
-      const { orderId } = await placeOrderFromCart({
-        addressLabel: selectedAddress?.label || 'طلب جديد',
-        addressDetails: formattedAddress,
-        contactPhone: contactPhone.trim(),
-        paymentMethod: 'cash_on_delivery',
-        deliveryFee: shipping,
-        note: [combinedNote, usePoints && pointsToRedeem > 0 ? `خصم نقاط الولاء: ${pointsToRedeem} نقطة` : undefined].filter(Boolean).join(' | ') || undefined
-      });
+      if (!user?.id) {
+        // Guest checkout
+        const itemsPayload = items.map(i => ({ product_id: i.productId, quantity: i.quantity }));
+        const { data, error } = await sb.rpc('place_order_guest', {
+          items: itemsPayload,
+          address_label: 'طلب ضيف',
+          address_details: formattedAddress,
+          contact_name_input: guestName.trim(),
+          contact_phone_input: contactPhone.trim(),
+          payment_method_input: 'cash_on_delivery',
+          delivery_fee_input: shipping,
+          note_input: combinedNote || null
+        });
+
+        if (error) throw error;
+        if (!data) throw new Error("تعذر إنشاء الطلب");
+        
+        orderIdResult = data;
+        
+        // Save guest order locally for tracking
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const guestOrdersRaw = await AsyncStorage.getItem('GUEST_ORDERS');
+        const guestOrders = guestOrdersRaw ? JSON.parse(guestOrdersRaw) : [];
+        guestOrders.push(orderIdResult);
+        await AsyncStorage.setItem('GUEST_ORDERS', JSON.stringify(guestOrders));
+
+      } else {
+        const selectedAddress = savedAddresses.find((item) => item.id === selectedAddressId);
+        const { orderId } = await placeOrderFromCart({
+          addressLabel: selectedAddress?.label || 'طلب جديد',
+          addressDetails: formattedAddress,
+          contactPhone: contactPhone.trim(),
+          paymentMethod: 'cash_on_delivery',
+          deliveryFee: shipping,
+          note: [combinedNote, usePoints && pointsToRedeem > 0 ? `خصم نقاط الولاء: ${pointsToRedeem} نقطة` : undefined].filter(Boolean).join(' | ') || undefined
+        });
+        orderIdResult = orderId;
+      }
 
       clearCart?.();
 
       router.replace({
         pathname: '/order-confirmation',
         params: {
-          orderId,
-          orderNumber: formatOrderNumber(orderId),
+          orderId: orderIdResult,
+          orderNumber: formatOrderNumber(orderIdResult),
           orderStatus: 'pending',
           currentStep: '0',
           total: total.toFixed(2),
@@ -308,7 +342,7 @@ export const CheckoutScreen = () => {
     }
   };
 
-  if (!user) {
+  if (!user && !isGuest) {
     return null; // أو يمكن إرجاع شاشة تحميل
   }
 
@@ -348,61 +382,78 @@ export const CheckoutScreen = () => {
           </View>
 
           <View style={styles.formCard}>
-            <View style={styles.savedHeaderRow}>
-              <TouchableOpacity onPress={() => router.push('/addresses')}>
-                <Text style={styles.manageAddressesText}>إدارة العناوين</Text>
-              </TouchableOpacity>
-              <Text style={styles.inputLabel}>العناوين المحفوظة</Text>
-            </View>
+            {!!user?.id && (
+              <>
+                <View style={styles.savedHeaderRow}>
+                  <TouchableOpacity onPress={() => router.push('/addresses')}>
+                    <Text style={styles.manageAddressesText}>إدارة العناوين</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.inputLabel}>العناوين المحفوظة</Text>
+                </View>
 
-            {isLoadingAddresses ? (
-              <Text style={styles.savedAddressHint}>جاري تحميل العناوين...</Text>
-            ) : savedAddresses.length === 0 ? (
-              <Text style={styles.savedAddressHint}>لا يوجد عناوين محفوظة. يمكنك الإضافة من صفحة العناوين.</Text>
-            ) : (
-              <View style={styles.savedAddressList}>
-                {savedAddresses.map((address) => {
-                  const isSelected = selectedAddressId === address.id;
-                  return (
-                    <TouchableOpacity
-                      key={address.id}
-                      style={[styles.savedAddressCard, isSelected && styles.savedAddressCardActive]}
-                      onPress={() => handleSelectSavedAddress(address)}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.savedAddressTitle}>{address.label}</Text>
-                      <Text style={styles.savedAddressLine}>{address.city}، {address.street}{address.building ? `، ${address.building}` : ''}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                {isLoadingAddresses ? (
+                  <Text style={styles.savedAddressHint}>جاري تحميل العناوين...</Text>
+                ) : savedAddresses.length === 0 ? (
+                  <Text style={styles.savedAddressHint}>لا يوجد عناوين محفوظة. يمكنك الإضافة من صفحة العناوين.</Text>
+                ) : (
+                  <View style={styles.savedAddressList}>
+                    {savedAddresses.map((address) => {
+                      const isSelected = selectedAddressId === address.id;
+                      return (
+                        <TouchableOpacity
+                          key={address.id}
+                          style={[styles.savedAddressCard, isSelected && styles.savedAddressCardActive]}
+                          onPress={() => handleSelectSavedAddress(address)}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.savedAddressTitle}>{address.label}</Text>
+                          <Text style={styles.savedAddressLine}>{address.city}، {address.street}{address.building ? `، ${address.building}` : ''}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                <View style={styles.savedHeaderRow}>
+                  <TouchableOpacity onPress={() => router.push('/contact-phones')}>
+                    <Text style={styles.manageAddressesText}>تحديث الأرقام</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.inputLabel}>الأرقام المحفوظة</Text>
+                </View>
+
+                {isLoadingPhones ? (
+                  <Text style={styles.savedAddressHint}>جاري تحميل الأرقام...</Text>
+                ) : savedPhones.length === 0 ? (
+                  <Text style={styles.savedAddressHint}>لا يوجد أرقام محفوظة. يمكنك إضافتها من صفحة أرقام التواصل.</Text>
+                ) : (
+                  <View style={styles.phoneChipList}>
+                    {savedPhones.map((phoneItem) => {
+                      const isSelected = selectedPhoneId === phoneItem.id;
+                      return (
+                        <TouchableOpacity
+                          key={`${phoneItem.id}-${phoneItem.phone}`}
+                          style={[styles.phoneChip, isSelected && styles.phoneChipActive]}
+                          onPress={() => handleSelectSavedPhone(phoneItem)}
+                        >
+                          <Text style={[styles.phoneChipText, isSelected && styles.phoneChipTextActive]}>{phoneItem.phone}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </>
             )}
 
-            <View style={styles.savedHeaderRow}>
-              <TouchableOpacity onPress={() => router.push('/contact-phones')}>
-                <Text style={styles.manageAddressesText}>تحديث الأرقام</Text>
-              </TouchableOpacity>
-              <Text style={styles.inputLabel}>الأرقام المحفوظة</Text>
-            </View>
-
-            {isLoadingPhones ? (
-              <Text style={styles.savedAddressHint}>جاري تحميل الأرقام...</Text>
-            ) : savedPhones.length === 0 ? (
-              <Text style={styles.savedAddressHint}>لا يوجد أرقام محفوظة. يمكنك إضافتها من صفحة أرقام التواصل.</Text>
-            ) : (
-              <View style={styles.phoneChipList}>
-                {savedPhones.map((phoneItem) => {
-                  const isSelected = selectedPhoneId === phoneItem.id;
-                  return (
-                    <TouchableOpacity
-                      key={`${phoneItem.id}-${phoneItem.phone}`}
-                      style={[styles.phoneChip, isSelected && styles.phoneChipActive]}
-                      onPress={() => handleSelectSavedPhone(phoneItem)}
-                    >
-                      <Text style={[styles.phoneChipText, isSelected && styles.phoneChipTextActive]}>{phoneItem.phone}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            {!user?.id && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>الاسم الكريم (مطلوب)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={guestName}
+                  onChangeText={setGuestName}
+                  placeholder="الاسم الكامل"
+                  placeholderTextColor="#999"
+                />
               </View>
             )}
 
@@ -524,47 +575,49 @@ export const CheckoutScreen = () => {
           </TouchableOpacity>
 
           {/* خيار استخدام النقاط أو كود الخصم */}
-          <View style={[styles.formCard, { marginBottom: 16 }]}> 
-            <Text style={styles.inputLabel}>الخصم</Text>
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
-              <TouchableOpacity
-                style={{ flexDirection: 'row-reverse', alignItems: 'center', marginLeft: 16 }}
-                onPress={handleToggleUsePoints}
-                disabled={!canUsePoints || isCouponValid}
-              >
-                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: usePoints ? PRIMARY_GREEN : '#D1D5DB', backgroundColor: usePoints ? PRIMARY_GREEN : '#fff', marginLeft: 8 }} />
-                <Text style={{ color: canUsePoints ? '#222' : '#aaa' }}>استخدم نقاط الولاء</Text>
-              </TouchableOpacity>
-              {usePoints && (
-                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginRight: 16 }}>
-                  <TouchableOpacity onPress={() => setPointsToRedeem(Math.max(500, pointsToRedeem - 500))} disabled={pointsToRedeem <= 500}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>-</Text></TouchableOpacity>
-                  <Text style={{ fontSize: 18 }}>{pointsToRedeem}</Text>
-                  <TouchableOpacity onPress={() => setPointsToRedeem(Math.min(maxRedeemablePoints, pointsToRedeem + 500))} disabled={pointsToRedeem >= maxRedeemablePoints}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>+</Text></TouchableOpacity>
-                  <Text style={{ marginRight: 8, color: '#888' }}>رصيدك: {loyaltyPoints} نقطة</Text>
-                </View>
+          {!!user?.id && (
+            <View style={[styles.formCard, { marginBottom: 16 }]}> 
+              <Text style={styles.inputLabel}>الخصم</Text>
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row-reverse', alignItems: 'center', marginLeft: 16 }}
+                  onPress={handleToggleUsePoints}
+                  disabled={!canUsePoints || isCouponValid}
+                >
+                  <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: usePoints ? PRIMARY_GREEN : '#D1D5DB', backgroundColor: usePoints ? PRIMARY_GREEN : '#fff', marginLeft: 8 }} />
+                  <Text style={{ color: canUsePoints ? '#222' : '#aaa' }}>استخدم نقاط الولاء</Text>
+                </TouchableOpacity>
+                {usePoints && (
+                  <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginRight: 16 }}>
+                    <TouchableOpacity onPress={() => setPointsToRedeem(Math.max(500, pointsToRedeem - 500))} disabled={pointsToRedeem <= 500}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>-</Text></TouchableOpacity>
+                    <Text style={{ fontSize: 18 }}>{pointsToRedeem}</Text>
+                    <TouchableOpacity onPress={() => setPointsToRedeem(Math.min(maxRedeemablePoints, pointsToRedeem + 500))} disabled={pointsToRedeem >= maxRedeemablePoints}><Text style={{ fontSize: 20, marginHorizontal: 8 }}>+</Text></TouchableOpacity>
+                    <Text style={{ marginRight: 8, color: '#888' }}>رصيدك: {loyaltyPoints} نقطة</Text>
+                  </View>
+                )}
+              </View>
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ color: '#888', marginLeft: 8 }}>كل 500 نقطة = 20 شيكل خصم</Text>
+              </View>
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+                <Text style={{ color: '#888', marginLeft: 8 }}>أو</Text>
+                <TextInput
+                  style={[styles.input, { flex: 1, backgroundColor: usePoints ? '#eee' : '#fff' }]}
+                  placeholder="ادخل كود الخصم هنا"
+                  placeholderTextColor="#6B6B6B"
+                  value={coupon}
+                  onChangeText={handleCouponChange}
+                  editable={!usePoints}
+                />
+              </View>
+              {usePoints && pointsToRedeem > 0 && (
+                <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>خصم النقاط: ₪ {pointsDiscount}</Text>
+              )}
+              {isCouponValid && (
+                <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>تم تطبيق كود خصم {(discountRate * 100).toFixed(0)}%</Text>
               )}
             </View>
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ color: '#888', marginLeft: 8 }}>كل 500 نقطة = 20 شيكل خصم</Text>
-            </View>
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
-              <Text style={{ color: '#888', marginLeft: 8 }}>أو</Text>
-              <TextInput
-                style={[styles.input, { flex: 1, backgroundColor: usePoints ? '#eee' : '#fff' }]}
-                placeholder="ادخل كود الخصم هنا"
-                placeholderTextColor="#6B6B6B"
-                value={coupon}
-                onChangeText={handleCouponChange}
-                editable={!usePoints}
-              />
-            </View>
-            {usePoints && pointsToRedeem > 0 && (
-              <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>خصم النقاط: ₪ {pointsDiscount}</Text>
-            )}
-            {isCouponValid && (
-              <Text style={{ color: PRIMARY_GREEN, marginTop: 8 }}>تم تطبيق كود خصم {(discountRate * 100).toFixed(0)}%</Text>
-            )}
-          </View>
+          )}
 
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>

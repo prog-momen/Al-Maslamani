@@ -98,7 +98,7 @@ export type Database = {
       addresses: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           label: string;
           full_name: string;
           phone: string;
@@ -112,7 +112,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           label: string;
           full_name: string;
           phone: string;
@@ -139,7 +139,7 @@ export type Database = {
       orders: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           address_id: string | null;
           assigned_delivery_user_id: string | null;
           status: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
@@ -148,12 +148,15 @@ export type Database = {
           delivery_fee: number;
           total: number;
           notes: string | null;
+          is_guest: boolean;
+          guest_name: string | null;
+          guest_phone: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           address_id?: string | null;
           assigned_delivery_user_id?: string | null;
           status?: 'pending' | 'confirmed' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
@@ -162,6 +165,9 @@ export type Database = {
           delivery_fee?: number;
           total: number;
           notes?: string | null;
+          is_guest?: boolean;
+          guest_name?: string | null;
+          guest_phone?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -174,6 +180,9 @@ export type Database = {
           delivery_fee?: number;
           total?: number;
           notes?: string | null;
+          is_guest?: boolean;
+          guest_name?: string | null;
+          guest_phone?: string | null;
           updated_at?: string;
         };
       };
@@ -376,6 +385,19 @@ export type Database = {
           _points_to_redeem: number;
         };
         Returns: number;
+      };
+      place_order_guest: {
+        Args: {
+          items: Json;
+          address_label: string;
+          address_details: string;
+          contact_name_input: string;
+          contact_phone_input: string;
+          payment_method_input: 'cash_on_delivery' | 'card';
+          delivery_fee_input: number;
+          note_input: string | null;
+        };
+        Returns: string;
       };
     };
   };

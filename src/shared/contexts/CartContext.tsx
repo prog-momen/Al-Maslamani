@@ -2,6 +2,7 @@ import * as cartService from '@/src/features/cart/services/cart.service';
 import { useRealtimeSignal } from '@/src/shared/contexts/RealtimeContext';
 import { useAuth } from '@/src/shared/hooks/useAuth';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type CartItem = {
   id: string; // This is the cart_item.id (database UUID)
@@ -29,35 +30,57 @@ type CartContextType = {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const cartSignal = useRealtimeSignal('cart');
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const refreshCart = useCallback(async () => {
-    if (!user?.id) {
-      setItems([]);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const data = await cartService.getCartItems(user.id);
-      const formatted: CartItem[] = (data || []).map((i: any) => {
-        // Supabase join can return an object or an array of objects
-        const product = Array.isArray(i.product) ? i.product[0] : i.product;
+      if (user?.id) {
+        // Authenticated flow
+        const data = await cartService.getCartItems(user.id);
+        const formatted: CartItem[] = (data || []).map((i: any) => {
+          const product = Array.isArray(i.product) ? i.product[0] : i.product;
+          return {
+            id: i.id,
+            productId: product?.id,
+            title: product?.name || 'منتج',
+            price: product?.price || 0,
+            quantity: i.quantity,
+            variant: product?.description,
+            image: product?.image_url ? { uri: product.image_url } : null,
+          };
+        });
+        setItems(formatted);
+      } else {
+        // Guest flow
+        const localCartRaw = await AsyncStorage.getItem('GUEST_CART');
+        const localCart: { productId: string; quantity: number; id: string }[] = localCartRaw ? JSON.parse(localCartRaw) : [];
         
-        return {
-          id: i.id,
-          productId: product?.id,
-          title: product?.name || 'منتج',
-          price: product?.price || 0,
-          quantity: i.quantity,
-          variant: product?.description,
-          image: product?.image_url ? { uri: product.image_url } : null,
-        };
-      });
-      setItems(formatted);
+        if (localCart.length > 0) {
+          const productIds = localCart.map(i => i.productId);
+          const { supabase } = require('@/src/lib/supabase/client');
+          const { data: products } = await supabase.from('products').select('*').in('id', productIds);
+          
+          const formatted: CartItem[] = localCart.map(item => {
+            const product = products?.find((p: any) => p.id === item.productId);
+            return {
+              id: item.id, // Using the local generated ID
+              productId: item.productId,
+              title: product?.name || 'منتج',
+              price: product?.price || 0,
+              quantity: item.quantity,
+              variant: product?.description,
+              image: product?.image_url ? { uri: product.image_url } : null,
+            };
+          });
+          setItems(formatted);
+        } else {
+          setItems([]);
+        }
+      }
     } catch (error) {
       console.error('Error refreshing cart:', error);
     } finally {
@@ -70,47 +93,63 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [refreshCart, cartSignal]);
 
   const addToCart = async (productId: string, quantity: number = 1) => {
-    if (!user?.id) return;
-    try {
+    if (user?.id) {
       await cartService.addToCart(user.id, productId, quantity);
-      await refreshCart();
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      throw error;
+    } else {
+      const localCartRaw = await AsyncStorage.getItem('GUEST_CART');
+      const localCart: { productId: string; quantity: number; id: string }[] = localCartRaw ? JSON.parse(localCartRaw) : [];
+      
+      const existingItem = localCart.find(i => i.productId === productId);
+      if (existingItem) {
+        existingItem.quantity += quantity;
+      } else {
+        // Generate a random ID for the local cart item
+        localCart.push({ id: Math.random().toString(36).substring(7), productId, quantity });
+      }
+      await AsyncStorage.setItem('GUEST_CART', JSON.stringify(localCart));
     }
+    await refreshCart();
   };
 
   const updateQuantity = async (cartItemId: string, newQuantity: number) => {
-    try {
-      if (newQuantity <= 0) {
-        await removeFromCart(cartItemId);
-      } else {
-        await cartService.updateQuantity(cartItemId, newQuantity);
-        await refreshCart();
-      }
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      throw error;
+    if (newQuantity <= 0) {
+      await removeFromCart(cartItemId);
+      return;
     }
+    
+    if (user?.id) {
+      await cartService.updateQuantity(cartItemId, newQuantity);
+    } else {
+      const localCartRaw = await AsyncStorage.getItem('GUEST_CART');
+      let localCart: { productId: string; quantity: number; id: string }[] = localCartRaw ? JSON.parse(localCartRaw) : [];
+      const item = localCart.find(i => i.id === cartItemId);
+      if (item) {
+        item.quantity = newQuantity;
+        await AsyncStorage.setItem('GUEST_CART', JSON.stringify(localCart));
+      }
+    }
+    await refreshCart();
   };
 
   const removeFromCart = async (cartItemId: string) => {
-    try {
+    if (user?.id) {
       await cartService.removeItem(cartItemId);
-      await refreshCart();
-    } catch (error) {
-      console.error('Error removing item:', error);
-      throw error;
+    } else {
+      const localCartRaw = await AsyncStorage.getItem('GUEST_CART');
+      let localCart: { productId: string; quantity: number; id: string }[] = localCartRaw ? JSON.parse(localCartRaw) : [];
+      localCart = localCart.filter(i => i.id !== cartItemId);
+      await AsyncStorage.setItem('GUEST_CART', JSON.stringify(localCart));
     }
+    await refreshCart();
   };
 
   const clearCart = async () => {
-    // In Supabase, we'd need a "clear all" service. 
-    // For now, we manually remove or just update the UI
-    setItems([]);
     if (user?.id) {
-        // Technically we should delete all from DB. 
-        // We'll leave this to be implemented if needed.
+      // Not implemented in service yet, just UI clear for now
+      setItems([]);
+    } else {
+      await AsyncStorage.removeItem('GUEST_CART');
+      setItems([]);
     }
   };
 

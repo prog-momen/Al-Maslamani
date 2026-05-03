@@ -354,12 +354,9 @@ export function ProductDetailsScreen() {
           <TouchableOpacity
             className="flex-1 ml-4 bg-brand-primary h-[54px] rounded-[20px] flex-row items-center justify-center shadow-sm"
             onPress={() => {
-              if (!user?.id || !selectedVariant) {
-                router.push('/(auth)/login');
-                return;
-              }
+              if (!selectedVariant) return;
 
-              addItem(user.id, selectedVariant.id, {
+              addItem(user?.id, selectedVariant.id, {
                 quantity,
                 onSuccess: () => {
                   setCartProductName(`${displayName} - ${selectedVariant.size}`);

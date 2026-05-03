@@ -6,7 +6,7 @@ import {
   setFavoriteProduct,
 } from '@/src/features/products/services/products.service';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AddToCartModal, AppHeader, BottomNavbar, NotificationBell } from '@/src/shared/ui';
+import { AddToCartModal, AppHeader, BottomNavbar, NotificationBell, GuestLoginPrompt } from '@/src/shared/ui';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -41,7 +41,7 @@ function toSuggestedUi(product: CatalogProduct): SuggestedProduct {
 }
 
 export function FavoritesScreen() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isGuest } = useAuth();
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [suggestedProducts, setSuggestedProducts] = useState<SuggestedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,9 +141,7 @@ export function FavoritesScreen() {
   };
 
   const handleAddToCart = async (productId: string, productName?: string) => {
-    if (!user?.id) return;
-
-    await addItem(user.id, productId, {
+    await addItem(user?.id, productId, {
       onSuccess: () => {
         setCartProductName(productName);
         setShowCartModal(true);
@@ -175,7 +173,11 @@ export function FavoritesScreen() {
           <Text className="text-[28px] font-tajawal-bold text-brand-title">المفضلة</Text>
         </View>
 
-        {!isAuthenticated ? (
+        {isGuest ? (
+          <View className="mt-8">
+            <GuestLoginPrompt message="يجب تسجيل الدخول لعرض وإدارة منتجاتك المفضلة" />
+          </View>
+        ) : !isAuthenticated ? (
           <View className="px-6">
             <Text className="font-tajawal-medium text-brand-text text-right">
               الرجاء تسجيل الدخول لعرض منتجاتك المفضلة.
@@ -183,23 +185,25 @@ export function FavoritesScreen() {
           </View>
         ) : null}
 
-        {isLoading ? (
+        {isLoading && !isGuest ? (
           <View className="mt-10 items-center justify-center">
             <ActivityIndicator color="#84BD00" size="large" />
           </View>
         ) : null}
 
         {/* Favorite Products List */}
-        <View className="px-6 space-y-6">
-          {favoriteProducts.map((product) => (
-            <FavoriteProductCard
-              key={product.id}
-              product={product}
-              onToggleFavorite={handleToggleFavorite}
-              onAddToCart={(id) => handleAddToCart(id, product.title)}
-            />
-          ))}
-        </View>
+        {!isGuest && (
+          <View className="px-6 space-y-6">
+            {favoriteProducts.map((product) => (
+              <FavoriteProductCard
+                key={product.id}
+                product={product}
+                onToggleFavorite={handleToggleFavorite}
+                onAddToCart={(id) => handleAddToCart(id, product.title)}
+              />
+            ))}
+          </View>
+        )}
 
         {/* Suggested horizontal list */}
         <View className="mt-8 mb-6">

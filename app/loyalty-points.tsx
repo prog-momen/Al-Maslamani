@@ -4,7 +4,7 @@ import { ScrollView, Text, TouchableOpacity, View, StatusBar } from 'react-nativ
 import { useAuth } from '../src/shared/hooks/useAuth';
 import { User } from '@supabase/supabase-js';
 import { useLoyaltyHistory, useLoyaltyPoints } from '../src/shared/hooks/useLoyalty';
-import { AppHeader } from '../src/shared/ui';
+import { AppHeader, GuestLoginPrompt } from '../src/shared/ui';
 import { BottomNavbar } from '../src/shared/ui/BottomNavbar';
 import { NotificationBell } from '../src/shared/ui/NotificationBell';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,7 +57,7 @@ function LoyaltyPointsHistoryPreview({ user }: { user: User | null }) {
 
 export default function LoyaltyPointsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { data: points = 0, isLoading: loadingPoints } = useLoyaltyPoints(user);
 
   const handleGoBack = () => {
@@ -68,11 +68,11 @@ export default function LoyaltyPointsScreen() {
     }
   };
 
-  if (!user) {
+  if (!user && !isGuest) {
     return null;
   }
 
-  if (loadingPoints) {
+  if (loadingPoints && !isGuest) {
     return (
       <View style={{ flex: 1, backgroundColor: PAGE_BG, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: '#8B948D', fontFamily: 'Tajawal_500Medium' }}>جاري تحميل النقاط...</Text>
@@ -105,40 +105,48 @@ export default function LoyaltyPointsScreen() {
       />
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }}>
-        <View style={{ paddingHorizontal: 16, marginTop: 12, alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 28, padding: 24, alignItems: 'center', width: '100%', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, borderWidth: 1, borderColor: '#E5E2DB' }}>
-            <View style={{ backgroundColor: '#EEF6E8', borderRadius: 24, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Ionicons name="star" size={24} color={BRAND_GREEN} />
-            </View>
-            <Text style={{ fontSize: 32, color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold', marginBottom: 4 }}>{points} نقطة</Text>
-            <Text style={{ color: '#445047', fontSize: 16, fontFamily: 'Tajawal_500Medium', marginBottom: 12 }}>كل 1₪ مشتريات = 1 نقطة</Text>
-            
-            <View style={{ width: '100%', height: 10, backgroundColor: '#ECEBE9', borderRadius: 5, marginVertical: 8, overflow: 'hidden' }}>
-              <View style={{ width: `${Math.min((points / nextTarget) * 100, 100)}%`, height: '100%', backgroundColor: BRAND_GREEN, borderRadius: 5 }} />
-            </View>
-            <Text style={{ color: '#8B948D', fontSize: 13, marginTop: 4, fontFamily: 'Tajawal_500Medium' }}>باقي {pointsToNext} نقطة لتحصل على 20₪ خصم</Text>
+        {isGuest ? (
+          <View style={{ marginTop: 24 }}>
+            <GuestLoginPrompt message="يجب تسجيل الدخول لعرض تفاصيل نقاط الولاء الخاصة بك" />
           </View>
-        </View>
-
-        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: '#E5E2DB' }}>
-            <Text style={{ fontSize: 18, fontFamily: 'Tajawal_700Bold', color: '#1B1C1C', marginBottom: 8, textAlign: 'right' }}>كيف تجمع النقاط</Text>
-            <Text style={{ color: '#445047', fontSize: 14, fontFamily: 'Tajawal_500Medium', marginBottom: 14, textAlign: 'right', lineHeight: 22 }}>النقاط تنحسب تلقائيًا بعد ما يصير الطلب مكتمل. كل شيكل على الطلب يعطيك نقطة واحدة، وبعدها يتقرب الرقم للأسفل إذا فيه كسور.</Text>
-            
-            <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
-              <View style={{ backgroundColor: '#EEF6E8', borderRadius: 12, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
-                <Ionicons name="gift-outline" size={20} color={BRAND_GREEN} />
+        ) : (
+          <>
+            <View style={{ paddingHorizontal: 16, marginTop: 12, alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 28, padding: 24, alignItems: 'center', width: '100%', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, borderWidth: 1, borderColor: '#E5E2DB' }}>
+                <View style={{ backgroundColor: '#EEF6E8', borderRadius: 24, width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <Ionicons name="star" size={24} color={BRAND_GREEN} />
+                </View>
+                <Text style={{ fontSize: 32, color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold', marginBottom: 4 }}>{points} نقطة</Text>
+                <Text style={{ color: '#445047', fontSize: 16, fontFamily: 'Tajawal_500Medium', marginBottom: 12 }}>كل 1₪ مشتريات = 1 نقطة</Text>
+                
+                <View style={{ width: '100%', height: 10, backgroundColor: '#ECEBE9', borderRadius: 5, marginVertical: 8, overflow: 'hidden' }}>
+                  <View style={{ width: `${Math.min((points / nextTarget) * 100, 100)}%`, height: '100%', backgroundColor: BRAND_GREEN, borderRadius: 5 }} />
+                </View>
+                <Text style={{ color: '#8B948D', fontSize: 13, marginTop: 4, fontFamily: 'Tajawal_500Medium' }}>باقي {pointsToNext} نقطة لتحصل على 20₪ خصم</Text>
               </View>
-              <Text style={{ color: '#1B1C1C', fontSize: 14, fontFamily: 'Tajawal_500Medium', flex: 1, textAlign: 'right' }}>مثال: طلب بـ <Text style={{ color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold' }}>57.80₪</Text> يعطيك <Text style={{ color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold' }}>57 نقطة</Text></Text>
             </View>
-            
-            <View style={{ height: 1, backgroundColor: '#ECEBE9', marginVertical: 14 }} />
-            
-            <Text style={{ color: '#8B948D', fontSize: 13, fontFamily: 'Tajawal_500Medium', textAlign: 'right' }}>كل 500 نقطة = 20₪ خصم، والخصم ينعمل فقط في صفحة الدفع.</Text>
-          </View>
-        </View>
 
-        <LoyaltyPointsHistoryPreview user={user} />
+            <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: '#E5E2DB' }}>
+                <Text style={{ fontSize: 18, fontFamily: 'Tajawal_700Bold', color: '#1B1C1C', marginBottom: 8, textAlign: 'right' }}>كيف تجمع النقاط</Text>
+                <Text style={{ color: '#445047', fontSize: 14, fontFamily: 'Tajawal_500Medium', marginBottom: 14, textAlign: 'right', lineHeight: 22 }}>النقاط تنحسب تلقائيًا بعد ما يصير الطلب مكتمل. كل شيكل على الطلب يعطيك نقطة واحدة، وبعدها يتقرب الرقم للأسفل إذا فيه كسور.</Text>
+                
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#EEF6E8', borderRadius: 12, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
+                    <Ionicons name="gift-outline" size={20} color={BRAND_GREEN} />
+                  </View>
+                  <Text style={{ color: '#1B1C1C', fontSize: 14, fontFamily: 'Tajawal_500Medium', flex: 1, textAlign: 'right' }}>مثال: طلب بـ <Text style={{ color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold' }}>57.80₪</Text> يعطيك <Text style={{ color: BRAND_GREEN, fontFamily: 'Tajawal_700Bold' }}>57 نقطة</Text></Text>
+                </View>
+                
+                <View style={{ height: 1, backgroundColor: '#ECEBE9', marginVertical: 14 }} />
+                
+                <Text style={{ color: '#8B948D', fontSize: 13, fontFamily: 'Tajawal_500Medium', textAlign: 'right' }}>كل 500 نقطة = 20₪ خصم، والخصم ينعمل فقط في صفحة الدفع.</Text>
+              </View>
+            </View>
+
+            <LoyaltyPointsHistoryPreview user={user} />
+          </>
+        )}
       </ScrollView>
       <BottomNavbar activeTab="profile" />
     </SafeAreaView>

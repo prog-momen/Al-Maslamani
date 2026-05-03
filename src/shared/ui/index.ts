@@ -10,4 +10,4 @@ export * from './SidebarDrawer';
 export * from './StaffBottomNavbar';
 export * from './NotificationPermissionModal';
 export * from './SocialLoginButtons';
-
+export * from './GuestLoginPrompt';

@@ -4,7 +4,7 @@ import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { useAuth } from '../src/shared/hooks/useAuth';
 import { useLoyaltyHistory } from '../src/shared/hooks/useLoyalty';
-import { AppHeader } from '../src/shared/ui';
+import { AppHeader, GuestLoginPrompt } from '../src/shared/ui';
 import { BottomNavbar } from '../src/shared/ui/BottomNavbar';
 import { NotificationBell } from '../src/shared/ui/NotificationBell';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ const PAGE_BG = '#F5F4F0';
 
 export default function LoyaltyPointsHistoryScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { data: history = [], isLoading } = useLoyaltyHistory(user);
 
   const handleGoBack = () => {
@@ -25,7 +25,7 @@ export default function LoyaltyPointsHistoryScreen() {
     }
   };
 
-  if (!user) return null;
+  if (!user && !isGuest) return null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: PAGE_BG }} edges={['top']}>
@@ -49,21 +49,27 @@ export default function LoyaltyPointsHistoryScreen() {
       />
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}>
-        <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontFamily: 'Tajawal_700Bold', color: '#1B1C1C', textAlign: 'right' }}>سجل النقاط</Text>
-          <Text style={{ fontSize: 14, fontFamily: 'Tajawal_500Medium', color: '#8B948D', textAlign: 'right', marginTop: 4 }}>تاريخ عمليات جمع واستهلاك النقاط</Text>
-        </View>
-
-        {isLoading ? (
-          <View style={{ marginTop: 40, alignItems: 'center' }}>
-            <Text style={{ textAlign: 'center', fontFamily: 'Tajawal_500Medium', color: '#8B948D' }}>جاري التحميل...</Text>
-          </View>
-        ) : history.length === 0 ? (
-          <View style={{ marginTop: 40, alignItems: 'center' }}>
-            <Ionicons name="receipt-outline" size={48} color="#ECEBE9" />
-            <Text style={{ textAlign: 'center', marginTop: 16, color: '#8B948D', fontFamily: 'Tajawal_500Medium' }}>لا يوجد عمليات نقاط بعد.</Text>
+        {isGuest ? (
+          <View style={{ marginTop: 24 }}>
+            <GuestLoginPrompt message="يجب تسجيل الدخول لعرض سجل نقاط الولاء الخاص بك" />
           </View>
         ) : (
+          <>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ fontSize: 24, fontFamily: 'Tajawal_700Bold', color: '#1B1C1C', textAlign: 'right' }}>سجل النقاط</Text>
+              <Text style={{ fontSize: 14, fontFamily: 'Tajawal_500Medium', color: '#8B948D', textAlign: 'right', marginTop: 4 }}>تاريخ عمليات جمع واستهلاك النقاط</Text>
+            </View>
+
+            {isLoading ? (
+              <View style={{ marginTop: 40, alignItems: 'center' }}>
+                <Text style={{ textAlign: 'center', fontFamily: 'Tajawal_500Medium', color: '#8B948D' }}>جاري التحميل...</Text>
+              </View>
+            ) : history.length === 0 ? (
+              <View style={{ marginTop: 40, alignItems: 'center' }}>
+                <Ionicons name="receipt-outline" size={48} color="#ECEBE9" />
+                <Text style={{ textAlign: 'center', marginTop: 16, color: '#8B948D', fontFamily: 'Tajawal_500Medium' }}>لا يوجد عمليات نقاط بعد.</Text>
+              </View>
+            ) : (
           history.map((item, idx) => {
             const pointsAmount = item.points ?? item.amount ?? 0;
             const isPositive = pointsAmount > 0;
@@ -83,6 +89,8 @@ export default function LoyaltyPointsHistoryScreen() {
               </View>
             );
           })
+        )}
+        </>
         )}
       </ScrollView>
       <BottomNavbar activeTab="profile" />

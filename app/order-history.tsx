@@ -121,9 +121,11 @@ function OrderCard({ order, onPress, onReorder, canReorder, isReordering }: Orde
   );
 }
 
+import { GuestLoginPrompt } from '@/src/shared/ui';
+
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { refreshCart } = useCart();
   const ordersSignal = useRealtimeSignal('orders');
   const [orders, setOrders] = useState<OrderHistoryItem[]>([]);
@@ -236,7 +238,9 @@ export default function OrderHistoryScreen() {
           <Text style={styles.pageSubtitle}>المنسق</Text>
         </View>
 
-        {isLoading ? (
+        {isGuest ? (
+          <GuestLoginPrompt message="يجب تسجيل الدخول لعرض سجل الطلبات الخاص بك" />
+        ) : isLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={PRIMARY_GREEN} size="large" />
           </View>

@@ -174,8 +174,7 @@ export function SearchScreen() {
                 group={group}
                 user={user}
                 onAddToCart={(id, name) => {
-                  if (!user?.id) return;
-                  addItem(user.id, id, {
+                  addItem(user?.id, id, {
                     onSuccess: () => {
                       setCartProductName(name);
                       setShowCartModal(true);

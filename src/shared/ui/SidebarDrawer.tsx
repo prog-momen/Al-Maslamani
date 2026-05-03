@@ -68,7 +68,7 @@ const staffItems: {
 
 export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerProps) {
   const router = useRouter();
-  const { user, role } = useAuth();
+  const { user, role, isGuest } = useAuth();
   const { unreadCount } = useNotifications();
   const insets = useSafeAreaInsets();
 
@@ -93,7 +93,12 @@ export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerPro
     }
   };
 
-  const displayName = user?.user_metadata?.full_name || 'أحمد العامري';
+  const handleLogin = () => {
+    onClose();
+    router.replace('/(auth)/login');
+  };
+
+  const displayName = isGuest || !user?.id ? 'ضيف' : (user?.user_metadata?.full_name || 'مستخدم');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -141,14 +146,25 @@ export function SidebarDrawer({ visible, onClose, activeItem }: SidebarDrawerPro
           </View>
 
           <View className="mt-auto px-4 pt-3 border-t border-[#E8E3DB]">
-            <TouchableOpacity
-              className="h-[42px] rounded-full bg-[#F1E6DD] flex-row-reverse items-center justify-center gap-2"
-              onPress={handleLogout}
-              activeOpacity={0.85}
-            >
-              <Text className="font-tajawal-bold text-[18px] text-[#D94716]">تسجيل الخروج</Text>
-              <Ionicons name="log-out-outline" size={20} color="#D94716" />
-            </TouchableOpacity>
+            {isGuest || !user?.id ? (
+              <TouchableOpacity
+                className="h-[42px] rounded-full bg-[#E2F2E2] flex-row-reverse items-center justify-center gap-2"
+                onPress={handleLogin}
+                activeOpacity={0.85}
+              >
+                <Text className="font-tajawal-bold text-[18px] text-[#84BD00]">تسجيل الدخول</Text>
+                <Ionicons name="log-in-outline" size={20} color="#84BD00" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                className="h-[42px] rounded-full bg-[#F1E6DD] flex-row-reverse items-center justify-center gap-2"
+                onPress={handleLogout}
+                activeOpacity={0.85}
+              >
+                <Text className="font-tajawal-bold text-[18px] text-[#D94716]">تسجيل الخروج</Text>
+                <Ionicons name="log-out-outline" size={20} color="#D94716" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

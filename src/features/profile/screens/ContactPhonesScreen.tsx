@@ -1,6 +1,6 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader } from '@/src/shared/ui';
+import { AppHeader, GuestLoginPrompt } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,7 +31,7 @@ type ContactPhoneRow = {
 
 export function ContactPhonesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [phones, setPhones] = useState<ContactPhoneRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newPhone, setNewPhone] = useState('');
@@ -128,49 +128,55 @@ export function ContactPhonesScreen() {
           }
         />
 
-        <View style={styles.formCard}>
-          <Text style={styles.label}>رقم جديد</Text>
-          <View style={styles.inputRow}>
-            <Pressable style={[styles.addBtn, isSaving && { opacity: 0.7 }]} onPress={addPhone} disabled={isSaving}>
-              {isSaving ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="add" size={20} color="white" />}
-            </Pressable>
-            <TextInput
-              style={styles.input}
-              value={newPhone}
-              onChangeText={setNewPhone}
-              keyboardType="phone-pad"
-              placeholder="مثال: 0599123456"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-        </View>
-
-        {isLoading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={PRIMARY_GREEN} />
-          </View>
+        {isGuest ? (
+          <GuestLoginPrompt message="يجب تسجيل الدخول لإدارة أرقام التواصل الخاصة بك" />
         ) : (
-          <FlatList
-            data={phones}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <View style={styles.phoneCard}>
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity style={styles.deleteBtn} onPress={() => removePhone(item.id)}>
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.defaultBtn, item.is_default && styles.defaultBtnActive]} onPress={() => setDefault(item.id)}>
-                    <Text style={[styles.defaultBtnText, item.is_default && styles.defaultBtnTextActive]}>
-                      {item.is_default ? 'الافتراضي' : 'جعله افتراضي'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.phoneText}>{item.phone}</Text>
+          <>
+            <View style={styles.formCard}>
+              <Text style={styles.label}>رقم جديد</Text>
+              <View style={styles.inputRow}>
+                <Pressable style={[styles.addBtn, isSaving && { opacity: 0.7 }]} onPress={addPhone} disabled={isSaving}>
+                  {isSaving ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="add" size={20} color="white" />}
+                </Pressable>
+                <TextInput
+                  style={styles.input}
+                  value={newPhone}
+                  onChangeText={setNewPhone}
+                  keyboardType="phone-pad"
+                  placeholder="مثال: 0599123456"
+                  placeholderTextColor="#9CA3AF"
+                />
               </View>
+            </View>
+
+            {isLoading ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="large" color={PRIMARY_GREEN} />
+              </View>
+            ) : (
+              <FlatList
+                data={phones}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                renderItem={({ item }) => (
+                  <View style={styles.phoneCard}>
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity style={styles.deleteBtn} onPress={() => removePhone(item.id)}>
+                        <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.defaultBtn, item.is_default && styles.defaultBtnActive]} onPress={() => setDefault(item.id)}>
+                        <Text style={[styles.defaultBtnText, item.is_default && styles.defaultBtnTextActive]}>
+                          {item.is_default ? 'الافتراضي' : 'جعله افتراضي'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.phoneText}>{item.phone}</Text>
+                  </View>
+                )}
+                ListEmptyComponent={<Text style={styles.emptyText}>لا يوجد أرقام محفوظة بعد.</Text>}
+              />
             )}
-            ListEmptyComponent={<Text style={styles.emptyText}>لا يوجد أرقام محفوظة بعد.</Text>}
-          />
+          </>
         )}
       </SafeAreaView>
 

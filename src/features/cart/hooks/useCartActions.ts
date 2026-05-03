@@ -11,8 +11,8 @@ type AddItemOptions = {
 export const useCartActions = () => {
   const { addToCart } = useCart();
 
-  const addItem = async (userId: string, productId: string, options?: AddItemOptions) => {
-    if (!userId || !productId) return false;
+  const addItem = async (userId: string | null | undefined, productId: string, options?: AddItemOptions) => {
+    if (!productId) return false;
 
     const quantity = Math.max(1, Math.floor(options?.quantity ?? 1));
     const showSuccessPopup = options?.showSuccessPopup ?? true;

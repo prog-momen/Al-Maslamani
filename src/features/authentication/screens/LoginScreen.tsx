@@ -15,7 +15,7 @@ import { useState } from 'react';
 export function LoginScreen() {
     const router = useRouter();
     const { login, isLoading, error } = useLogin();
-    const { isAuthenticated, role, isInitializing } = useAuth();
+    const { isAuthenticated, role, isInitializing, setGuestMode } = useAuth();
     const [isSocialLoading, setIsSocialLoading] = useState(false);
 
     const { control, handleSubmit, formState: { errors } } = useForm({
@@ -155,13 +155,27 @@ export function LoginScreen() {
                             />
                         </View>
 
-                        <View className="mt-12 flex-row-reverse items-center justify-center gap-2">
-                            <Text className="font-tajawal-medium text-[16px] text-brand-text">
-                                ليس لديك حساب؟
-                            </Text>
-                            <Pressable onPress={() => router.push('/(auth)/signup')} hitSlop={10}>
-                                <Text className="font-tajawal-bold text-[16px] text-brand-primary">
-                                    أنشئ حساباً جديداً
+                        <View className="mt-12 flex-col items-center justify-center gap-4">
+                            <View className="flex-row-reverse items-center justify-center gap-2">
+                                <Text className="font-tajawal-medium text-[16px] text-brand-text">
+                                    ليس لديك حساب؟
+                                </Text>
+                                <Pressable onPress={() => router.push('/(auth)/signup')} hitSlop={10}>
+                                    <Text className="font-tajawal-bold text-[16px] text-brand-primary">
+                                        أنشئ حساباً جديداً
+                                    </Text>
+                                </Pressable>
+                            </View>
+
+                            <Pressable 
+                                onPress={async () => {
+                                    await setGuestMode(true);
+                                    router.replace('/home');
+                                }} 
+                                hitSlop={10}
+                            >
+                                <Text className="font-tajawal-bold text-[16px] text-gray-500 border-b border-gray-400 pb-0.5">
+                                    المتابعة كضيف
                                 </Text>
                             </Pressable>
                         </View>

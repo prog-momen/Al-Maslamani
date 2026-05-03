@@ -220,7 +220,7 @@ export async function getMyOrders(userId: string): Promise<OrderHistoryItem[]> {
 export async function getAdminOrders(): Promise<AdminOrderItem[]> {
   const { data: ordersData, error: ordersError } = await sb
     .from("orders")
-    .select("id,user_id,status,total,created_at,assigned_delivery_user_id")
+    .select("id,user_id,status,total,created_at,assigned_delivery_user_id,is_guest,guest_name,guest_phone")
     .order("created_at", { ascending: false });
 
   if (ordersError) {
@@ -257,8 +257,8 @@ export async function getAdminOrders(): Promise<AdminOrderItem[]> {
       orderNumber: formatOrderNumber(order.id),
       status: order.status,
       total: order.total,
-      customerName: toDisplayName(profile?.full_name, profile?.email, "عميل"),
-      customerPhone: profile?.phone ?? null,
+      customerName: order.is_guest ? (order.guest_name || "ضيف") : toDisplayName(profile?.full_name, profile?.email, "عميل"),
+      customerPhone: order.is_guest ? (order.guest_phone || null) : (profile?.phone ?? null),
       userId: order.user_id,
       createdAt: order.created_at,
       assignedDeliveryUserId: order.assigned_delivery_user_id ?? null,
@@ -432,7 +432,7 @@ export async function getDeliveryOrderDetails(params: {
   let query = sb
     .from("orders")
     .select(
-      "id,status,total,notes,user_id,address:addresses(label,city,street,building,notes)",
+      "id,status,total,notes,user_id,is_guest,guest_name,guest_phone,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", params.deliveryUserId)
     .not("status", "in", '("delivered","cancelled")') // Added: Hide finished orders
@@ -443,7 +443,7 @@ export async function getDeliveryOrderDetails(params: {
     query = sb
       .from("orders")
       .select(
-        "id,status,total,notes,user_id,address:addresses(label,city,street,building,notes)",
+        "id,status,total,notes,user_id,is_guest,guest_name,guest_phone,address:addresses(label,city,street,building,notes)",
       )
       .eq("assigned_delivery_user_id", params.deliveryUserId)
       .eq("id", params.orderId)
@@ -514,8 +514,8 @@ export async function getDeliveryOrderDetails(params: {
     orderNumber: formatOrderNumber(order.id),
     status: order.status,
     total: order.total,
-    customerName: toDisplayName(profile?.full_name, undefined, "عميل"),
-    customerPhone: profile?.phone ?? null,
+    customerName: order.is_guest ? (order.guest_name || "ضيف") : toDisplayName(profile?.full_name, undefined, "عميل"),
+    customerPhone: order.is_guest ? (order.guest_phone || null) : (profile?.phone ?? null),
     addressTitle: address?.label || "عنوان التوصيل",
     addressDetails: finalAddressDetails,
     notes: order.notes,
@@ -598,7 +598,7 @@ export async function getDeliveryReport(
   const { data: orders, error } = await sb
     .from("orders")
     .select(
-      "id,total,status,created_at,user_id",
+      "id,total,status,created_at,user_id,is_guest,guest_name",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .order("created_at", { ascending: false });
@@ -636,7 +636,7 @@ export async function getDeliveryReport(
     total: Number(o.total),
     status: o.status,
     createdAt: o.created_at,
-    customerName: toDisplayName(
+    customerName: o.is_guest ? (o.guest_name || "ضيف") : toDisplayName(
       profileMap.get(o.user_id)?.full_name,
       profileMap.get(o.user_id)?.email,
       "عميل",
@@ -674,7 +674,7 @@ export async function getDeliveryDashboard(
   const { data: ordersToday, error } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
+      "id,status,total,created_at,user_id,is_guest,guest_name,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .gte("created_at", todayISO)
@@ -696,7 +696,7 @@ export async function getDeliveryDashboard(
   const { data: activeOrders, error: activeOrdersError } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
+      "id,status,total,created_at,user_id,is_guest,guest_name,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .not("status", "in", '("delivered","cancelled")')
@@ -748,7 +748,7 @@ export async function getDeliveryDashboard(
       orderNumber: formatOrderNumber(o.id),
       status: o.status,
       total: Number(o.total),
-      customerName: toDisplayName(
+      customerName: o.is_guest ? (o.guest_name || "ضيف") : toDisplayName(
         activeProfileMap.get(o.user_id)?.full_name,
         activeProfileMap.get(o.user_id)?.email,
         "عميل",
@@ -780,7 +780,7 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
   const { data: orders, error } = await sb
     .from("orders")
     .select(
-      "id,status,total,created_at,user_id,address:addresses(label,city,street,building,notes)",
+      "id,status,total,created_at,user_id,is_guest,guest_name,guest_phone,address:addresses(label,city,street,building,notes)",
     )
     .eq("assigned_delivery_user_id", deliveryUserId)
     .not("status", "in", '("delivered","cancelled")')
@@ -825,12 +825,12 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
       orderNumber: formatOrderNumber(o.id),
       status: o.status,
       total: Number(o.total),
-      customerName: toDisplayName(
+      customerName: o.is_guest ? (o.guest_name || "ضيف") : toDisplayName(
         profileMap.get(o.user_id)?.full_name,
         profileMap.get(o.user_id)?.email,
         "عميل",
       ),
-      customerPhone: profileMap.get(o.user_id)?.phone ?? null,
+      customerPhone: o.is_guest ? (o.guest_phone || null) : (profileMap.get(o.user_id)?.phone ?? null),
       addressDetails,
       createdAt: o.created_at,
     };

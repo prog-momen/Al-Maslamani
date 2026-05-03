@@ -1,6 +1,6 @@
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import { AppHeader } from '@/src/shared/ui';
+import { AppHeader, GuestLoginPrompt } from '@/src/shared/ui';
 import { BottomNavbar } from '@/src/shared/ui/BottomNavbar';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -24,7 +24,7 @@ const sb = supabase as any;
 
 export function AddressesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [addresses, setAddresses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -113,7 +113,9 @@ export function AddressesScreen() {
           }
         />
 
-        {isLoading ? (
+        {isGuest ? (
+          <GuestLoginPrompt message="يجب تسجيل الدخول لإدارة العناوين الخاصة بك" />
+        ) : isLoading ? (
           <View style={styles.centerBox}>
             <ActivityIndicator size="large" color={PRIMARY_GREEN} />
           </View>
@@ -133,15 +135,17 @@ export function AddressesScreen() {
         )}
 
         {/* Add New Address Button */}
-        <View style={styles.footer}>
-          <Pressable
-            style={styles.addBtn}
-            onPress={() => router.push('/add-address')}
-          >
-            <Ionicons name="add" size={24} color="white" />
-            <Text style={styles.addBtnText}>إضافة عنوان جديد</Text>
-          </Pressable>
-        </View>
+        {!isGuest && (
+          <View style={styles.footer}>
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => router.push('/add-address')}
+            >
+              <Ionicons name="add" size={24} color="white" />
+              <Text style={styles.addBtnText}>إضافة عنوان جديد</Text>
+            </Pressable>
+          </View>
+        )}
       </SafeAreaView>
 
       <BottomNavbar activeTab="profile" />
