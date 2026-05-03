@@ -10,6 +10,7 @@ const sb = supabase as any;
 export type AppRole = Database["public"]["Tables"]["profiles"]["Row"]["role"];
 export type OrderStatus =
   Database["public"]["Tables"]["orders"]["Row"]["status"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export type OrderHistoryItem = {
   id: string;
@@ -243,7 +244,7 @@ export async function getAdminOrders(): Promise<AdminOrderItem[]> {
     throw profilesError;
   }
 
-  const profileMap = new Map((profilesData ?? []).map((p: any) => [p.id, p]));
+  const profileMap = new Map<string, Profile>((profilesData ?? []).map((p: any) => [p.id, p]));
 
   return (ordersData ?? []).map((order: any) => {
     const profile: any = profileMap.get(order.user_id);
@@ -627,7 +628,7 @@ export async function getDeliveryReport(
     throw profilesError;
   }
 
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  const profileMap = new Map<string, Profile>((profiles ?? []).map((p: any) => [p.id, p]));
 
   const mappedOrders: DeliveryReportItem[] = (orders ?? []).map((o: any) => ({
     id: o.id,
@@ -721,7 +722,7 @@ export async function getDeliveryDashboard(
     throw activeProfilesError;
   }
 
-  const activeProfileMap = new Map(
+  const activeProfileMap = new Map<string, Profile>(
     (activeProfiles ?? []).map((p: any) => [p.id, p]),
   );
 
@@ -804,7 +805,7 @@ export async function getDeliveryPendingOrders(deliveryUserId: string): Promise<
     throw profilesError;
   }
 
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  const profileMap = new Map<string, Profile>((profiles ?? []).map((p: any) => [p.id, p]));
 
   const mappedOrders = (orders ?? []).map((o: any) => {
     const address = Array.isArray(o.address) ? o.address[0] : o.address;

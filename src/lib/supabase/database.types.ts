@@ -236,6 +236,103 @@ export type Database = {
         };
         Update: never;
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          type: string;
+          title: string;
+          body: string;
+          image_url: string | null;
+          order_id: string | null;
+          discount_code: string | null;
+          discount_value: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          type: string;
+          title: string;
+          body: string;
+          image_url?: string | null;
+          order_id?: string | null;
+          discount_code?: string | null;
+          discount_value?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          type?: string;
+          title?: string;
+          body?: string;
+          image_url?: string | null;
+          order_id?: string | null;
+          discount_code?: string | null;
+          discount_value?: string | null;
+        };
+      };
+      coupons: {
+        Row: {
+          id: string;
+          code: string;
+          discount_type: 'percentage' | 'fixed';
+          discount_value: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          discount_type: 'percentage' | 'fixed';
+          discount_value: number;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          code?: string;
+          discount_type?: 'percentage' | 'fixed';
+          discount_value?: number;
+          is_active?: boolean;
+        };
+      };
+      push_tokens: {
+        Row: {
+          user_id: string;
+          token: string;
+          platform: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          token: string;
+          platform: string;
+          created_at?: string;
+        };
+        Update: {
+          token?: string;
+          platform?: string;
+        };
+      };
+      user_contact_phones: {
+        Row: {
+          id: string;
+          user_id: string;
+          phone: string;
+          is_default: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          phone: string;
+          is_default?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          phone?: string;
+          is_default?: boolean;
+        };
+      };
     };
   };
 };

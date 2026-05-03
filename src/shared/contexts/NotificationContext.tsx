@@ -1,3 +1,4 @@
+import storage from '@/src/lib/storage';
 import {
     getNotifications,
     markAllAsRead,
@@ -31,6 +32,9 @@ const NotificationContext = createContext<NotificationContextValue>({
   markAllNotificationsRead: async () => {},
 });
 
+const PERMISSION_DEFER_KEY = '@notification_permission_deferred_until';
+const DEFER_DAYS = 5;
+
 export function NotificationProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
   const notificationsSignal = useRealtimeSignal('notifications');
@@ -58,24 +62,39 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     }
   }, [user?.id]);
 
-  // Initial load + real-time refresh
+  // Handle data fetching when signal or user changes
   useEffect(() => {
     refresh();
+  }, [refresh, notificationsSignal]);
 
+  // Handle permission check separately and only once per session/user change
+  useEffect(() => {
     if (user?.id) {
-      // Check permission status
-      getNotificationPermissionStatus().then((status) => {
-        if (status === 'undetermined' || status === 'denied') {
-          // If denied, we might not want to nag, but if undetermined (first time), definitely show.
-          // For now, let's show if not granted.
-          setShowPermissionModal(true);
-        } else if (status === 'granted') {
-          registerForPushNotificationsAsync(user.id);
-        }
-      });
+      checkPermissions(user.id);
+    }
+  }, [user?.id]);
+
+  const checkPermissions = async (userId: string) => {
+    const status = await getNotificationPermissionStatus();
+    
+    if (status === 'granted') {
+      await registerForPushNotificationsAsync(userId);
+      return;
     }
 
-  }, [refresh, user?.id, notificationsSignal]);
+    // Check if we should show the custom modal (deferred logic)
+    const deferredUntil = await storage.getItem(PERMISSION_DEFER_KEY);
+    if (deferredUntil) {
+      const deferredTime = parseInt(deferredUntil, 10);
+      if (Date.now() < deferredTime) {
+        // Still in the deferral period
+        return;
+      }
+    }
+
+    // If we reach here, show the modal
+    setShowPermissionModal(true);
+  };
 
   const markNotificationRead = useCallback(
     async (id: string) => {
@@ -109,18 +128,27 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     [notifications, unreadCount, isLoading, refresh, markNotificationRead, markAllNotificationsRead]
   );
 
+  const handleAllow = async () => {
+    setShowPermissionModal(false);
+    if (user?.id) {
+      await registerForPushNotificationsAsync(user.id);
+    }
+  };
+
+  const handleDecline = async () => {
+    setShowPermissionModal(false);
+    // Defer for 5 days
+    const deferUntil = Date.now() + DEFER_DAYS * 24 * 60 * 60 * 1000;
+    await storage.setItem(PERMISSION_DEFER_KEY, deferUntil.toString());
+  };
+
   return (
     <NotificationContext.Provider value={value}>
       {children}
       <NotificationPermissionModal
         visible={showPermissionModal}
-        onAllow={async () => {
-          setShowPermissionModal(false);
-          if (user?.id) {
-            await registerForPushNotificationsAsync(user.id);
-          }
-        }}
-        onDecline={() => setShowPermissionModal(false)}
+        onAllow={handleAllow}
+        onDecline={handleDecline}
       />
     </NotificationContext.Provider>
   );

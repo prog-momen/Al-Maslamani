@@ -1,6 +1,6 @@
-import { supabase } from '@/src/lib/supabase/client';
 import { useAuth } from '@/src/shared/hooks/useAuth';
-import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
+import { useRealtimeTable } from '../hooks/useRealtimeTable';
 
 type RealtimeDomain = 'cart' | 'orders' | 'notifications' | 'profiles' | 'products';
 
@@ -28,31 +28,59 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     products: 0,
   });
 
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
+  const bump = (domain: RealtimeDomain) => {
+    setSignals((prev) => ({ ...prev, [domain]: prev[domain] + 1 }));
+  };
 
-    const bump = (domain: RealtimeDomain) => {
-      setSignals((prev) => ({ ...prev, [domain]: prev[domain] + 1 }));
-    };
+  // We use the same centralized realtime logic to bump signals
+  // This ensures we only have ONE subscription per table globally
+  useRealtimeTable('cart_items', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('cart') 
+  });
+  
+  useRealtimeTable('notifications', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('notifications') 
+  });
 
-    const channel = supabase
-      .channel(`app-realtime-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cart_items' }, () => bump('cart'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => bump('notifications'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => bump('orders'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => bump('orders'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => bump('orders'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => bump('profiles'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => bump('products'))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => bump('products'))
-      .subscribe();
+  useRealtimeTable('orders', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('orders') 
+  });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
+  useRealtimeTable('order_items', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('orders') 
+  });
+
+  useRealtimeTable('order_status_history', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('orders') 
+  });
+
+  useRealtimeTable('profiles', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('profiles') 
+  });
+
+  useRealtimeTable('products', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('products') 
+  });
+
+  useRealtimeTable('categories', { 
+    enabled: !!user?.id, 
+    fetchInitial: false,
+    onDataChange: () => bump('products') 
+  });
 
   const value = useMemo(() => ({ signals }), [signals]);
 
