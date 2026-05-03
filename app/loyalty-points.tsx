@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { useAuth } from '../src/shared/hooks/useAuth';
+import { User } from '@supabase/supabase-js';
 import { useLoyaltyHistory, useLoyaltyPoints } from '../src/shared/hooks/useLoyalty';
 import { AppHeader } from '../src/shared/ui';
 import { BottomNavbar } from '../src/shared/ui/BottomNavbar';
@@ -12,7 +13,7 @@ const BRAND_GREEN = '#84BD00';
 const PAGE_BG = '#F5F4F0';
 const CARD_BG = '#FFFFFF';
 
-function LoyaltyPointsHistoryPreview({ user }: { user: any }) {
+function LoyaltyPointsHistoryPreview({ user }: { user: User | null }) {
   const router = useRouter();
   const { data: history = [], isLoading } = useLoyaltyHistory(user);
 

@@ -333,6 +333,50 @@ export type Database = {
           is_default?: boolean;
         };
       };
+      loyalty_points: {
+        Row: {
+          user_id: string;
+          points: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          points?: number;
+          updated_at?: string;
+        };
+        Update: {
+          points?: number;
+          updated_at?: string;
+        };
+      };
+      loyalty_points_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          points: number | null;
+          amount: number | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          points?: number | null;
+          amount?: number | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: never;
+      };
+    };
+    Functions: {
+      redeem_loyalty_points: {
+        Args: {
+          _user_id: string;
+          _points_to_redeem: number;
+        };
+        Returns: number;
+      };
     };
   };
 };
